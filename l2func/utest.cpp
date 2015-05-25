@@ -116,7 +116,7 @@ TEST(Prim, Construct) {
 
   RSTO s1(2, 1.0);
   RGTO g1(2, 1.0);
-  EXPECT_ANY_THROW(RSTO s2(3, 1.1, Normalized));
+  RSTO s2(3, 1.1, Normalized);
 
   EXPECT_EQ(2, s1.n());
   EXPECT_EQ(2, g1.n());
@@ -126,7 +126,6 @@ TEST(Prim, Construct) {
   CGTO g3(3, CD(1.0, -0.2));
   EXPECT_EQ(3, s3.n());
   EXPECT_EQ(3, g3.n());
-  std::cout << AtX(2.0, s1) << std::endl;
 }
 TEST(Prim, OrbitalExp) {
   RSTO s1(2, 1.1);
@@ -166,17 +165,50 @@ TEST(Prim, CIP) {
   EXPECT_NEAR(0.012359047425198447, CIP(g2, CGTO(g1)).imag(), eps);
   
 }
+TEST(Prim, Normalized) {
+  
+  RSTO n_s1(2, 1.1, Normalized);
+  RSTO s1(1.0, 2, 1.1);
+  RSTO n_s2(3, 1.2, Normalized);
+  RSTO s2(1.0, 3, 1.2);
+  
+  EXPECT_DOUBLE_EQ(1.0, CIP(n_s1, n_s1));
+
+  EXPECT_NEAR( CIP(n_s1, Op(OpDDr<RSTO>(), n_s2)),
+	       CIP(s1, Op(OpDDr<RSTO>(), s2)) /
+	       sqrt(CIP(s1, s1) * CIP(s2, s2)),
+	       0.000000000001);
+
+  RGTO n_g1(2, 1.1, Normalized);
+  RGTO g1(1.0, 2, 1.1);
+  RGTO n_g2(3, 1.2, Normalized);
+  RGTO g2(1.0, 3, 1.2);
+  
+  EXPECT_DOUBLE_EQ(1.0, CIP(n_g1, n_g1));
+
+  EXPECT_NEAR( CIP(n_g1, Op(OpDDr<RGTO>(), n_g2)),
+	       CIP(g1,   Op(OpDDr<RGTO>(), g2)) /
+	       sqrt(CIP(g1, g1) * CIP(g2, g2)),
+	       0.000000000001);  
+}
 TEST(Prim, power) {
 
   EXPECT_EQ(1, CSTO::exp_power);
   
 }
-TEST(Prim, OP) {
+TEST(Prim, DBasis) {
   
   RSTO d_s1 = DBasis<1, RSTO>(1.0, 3, 0.2);
   EXPECT_DOUBLE_EQ(-1.0, d_s1.c());
   EXPECT_EQ(4, d_s1.n());
   EXPECT_EQ(0.2, d_s1.z());
+  
+}
+TEST(Prim, AtX) {
+
+  RSTO s1(1.1, 2, 0.2);
+  double x0(3.0);
+  EXPECT_DOUBLE_EQ(1.1 * x0 * x0 * exp(-0.2 * x0), AtX(x0, s1));
   
 }
 TEST(LinearComb, Construct) {
@@ -241,6 +273,33 @@ TEST(LinearComb, op) {
 			    RSTO(1.1, 2, 1.2));
   EXPECT_EQ(4, df2.size());  
   
+}
+TEST(LinearComb, AtX) {
+
+  RSTO s1(1.1, 1, 0.2);
+  RSTO s2(1.2, 1, 0.3);
+  LinearComb<RSTO> sto;
+  sto += 0.3 * s1;
+  sto += 0.4 * s2;
+  
+  double x0(3.0);
+  EXPECT_DOUBLE_EQ(x0 * (0.3 * 1.1 * exp(-0.2 * x0) +
+			 0.4 * 1.2 * exp(-0.3*x0)),
+		   AtX(x0, sto));
+  
+}
+TEST(LinearComb, dbasis) {
+
+  RSTO s1(1.2, 2, 0.3);
+  LinearComb<RSTO> d_s1  = D1Normalized(s1);
+  LinearComb<RSTO> dd_s1 = D2Normalized(s1);
+
+  double x0 = 3.3;
+  double dx = 0.01;
+  EXPECT_NEAR( (AtX(x0+dx, s1) + AtX(x0-dx, s1) - 2 * AtX(x0, s1)) / dx,
+	       AtX(x0, d_s1),  0.00001);
+  EXPECT_NEAR( (AtX(x0 + dx, s1) + AtX(x0 - dx, s1))/(dx * dx),
+	       AtX(x0, dd_s1), 0.00001);  
 }
 TEST(HAtom, EigenState) {
 

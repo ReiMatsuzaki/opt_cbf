@@ -1,6 +1,8 @@
 #ifndef FACT_HPP
 #define FACT_HPP
 
+#include <stdexcept>
+
 namespace fact {
   
   int Factorial(int n) {

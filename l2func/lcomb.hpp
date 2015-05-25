@@ -207,6 +207,96 @@ namespace l2func {
   function<LinearComb<Prim>(const Prim&)> OpDDr2() {
     return bind(OperateDDr2<Prim>, _1);
   }
+
+  template<class Prim>
+  typename Prim::Field AtX(typename Prim::Field x,
+			   const LinearComb<Prim>& f) {
+    
+    typename Prim::Field acc(0);
+
+    typedef typename LinearComb<Prim>::const_iterator IT;
+    for(IT it = f.begin(), end_it = f.end(); it != end_it; ++it) 
+      acc += it->first * AtX(x, it->second);
+
+    return acc;
+  }
+
+  // --------- derivative basis -------------
+  // assuming a is normalized basis set.
+  // above formula is from Sotsuron.
+  // STO  
+  // a(r) = N r^n Exp[-zr]
+  //    N = 1/sqrt((2z)^{-2n-1} (2n)!) = z^{n+1/2} / sqrt(2n!)
+  //   dN = (n+1/2)z^{n-1/2} / sqrt(2n!)
+  //  ddN = (n-1/2)(n+1/2)z^{n-3/2} / sqrt(2n!)
+  // dN/N = (n+1/2)/z
+  //ddN/N = (n-1/2)(n+1/2)/(z^2)
+  // GTO
+  // a(r) = N r^n Exp[-zr^2]
+  // dN/N = (1/4 + n/2) / z
+  //ddN/N = (-3/4+n/2)(1/4+n/2)/(z^2)
+
+  template<class F>
+  LinearComb<ExpBasis<F,1> > D1Normalized(const ExpBasis<F, 1>& a) {
+    LinearComb<ExpBasis<F, 1> > res;
+    F   c = a.c(); // normalization term
+    int n = a.n(); // principle number
+    F   z = a.z(); // orbital expoent
+
+    F   cp = (n + 0.5) / z * c;
+    
+    res += 1.0 * RSTO(cp, n,   z);
+    res += 1.0 * RSTO(-c, n+1, z);
+
+    return res;
+  }
+  template<class F>
+  LinearComb<ExpBasis<F,2> > D1Normalized(const ExpBasis<F, 2>& a) {
+    LinearComb<ExpBasis<F, 2> > res;
+    F   c = a.c(); // normalization term
+    int n = a.n(); // principle number
+    F   z = a.z(); // orbital expoent
+
+    F   cp = (n * 0.5 + 0.25) / z * c;
+    
+    res += 1.0 * RSTO(cp, n,   z);
+    res += 1.0 * RSTO(-c, n+2, z);
+
+    return res;
+  }
+  template<class F>
+  LinearComb<ExpBasis<F,1> > D2Normalized(const ExpBasis<F, 1>& a) {
+    LinearComb<ExpBasis<F, 1> > res;
+    F   c = a.c(); // normalization term
+    int n = a.n(); // principle number
+    F   z = a.z(); // orbital expoent
+
+    F   cp = (n + 0.5) / z * c;
+    F  cpp = (4 * n * n - 1) / (F(4) * z * z);
+    
+    res += 1.0 * RSTO(cpp,        n,   z);
+    res += 1.0 * RSTO(-F(2) * cp, n+1, z);
+    res += 1.0 * RSTO(c,          n+2, z);
+
+    return res;
+  }
+  template<class F>
+  LinearComb<ExpBasis<F,2> > D2Normalized(const ExpBasis<F, 2>& a) {
+    LinearComb<ExpBasis<F, 2> > res;
+    F   c = a.c(); // normalization term
+    int n = a.n(); // principle number
+    F   z = a.z(); // orbital expoent
+
+    F   cp = (n * 0.5 + 0.25) / z * c;
+    F  cpp = (-3.0/4.0 + n / 2.0) * (0.25 + n * 0.5) / (z*z) * c;    
+    
+    res += 1.0 * RSTO(cpp,       n,   z);
+    res += 1.0 * RSTO(-F(2)*cp , n+2, z);
+    res += 1.0 * RSTO(cpp,       n+4, z);
+
+    return res;
+  }    
+  
 }
 
 #endif

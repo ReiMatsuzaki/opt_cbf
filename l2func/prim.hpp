@@ -25,59 +25,8 @@ namespace l2func {
     Normalized
   };
   template<typename T> struct raise_error;
-       
-  // ==================== STO or GTO =================
-  // represent STO or GTO.
-  // m==1 => STO, m==2 => GTO
-  // value of m can be called exp_power;
-  template<class F, int m>
-  class ExpBasis {
-    
-  public:
-    // ---------- typedef ---------------------------
-    typedef F Field;
-    enum EExpPower { exp_power=m };
-    
-    // ---------- Field Member ----------------------
-  private:
-    F c_;    // coefficient
-    int n_;  // principle number
-    F z_;    // orbital exponent
-    //    bool is_zero_; // if true this basis is 0 in Hilbert space.
-    
-  public:
-    // ----------- Constructors ---------------------
-    ExpBasis():
-      c_(F(0.0)), n_(0), z_(F(1.0)) {}
-    ExpBasis(int _n, F _z):
-      c_(F(1)), n_(_n), z_(_z) {}
-    ExpBasis(F _c, int _n, F _z) :
-      c_(_c), n_(_n), z_(_z) {}
-    ExpBasis(int _n, F _z, ENormalized):
-      c_(F(1)), n_(_n), z_(_z) {
-
-      string msg = "this is not implemented yet";
-      msg += "ExpBasis(int, F, Normalized)";
-      throw msg;
-    }
-    template<class U>
-    ExpBasis(const ExpBasis<U, m>& o):
-      c_(o.c()), n_(o.n()), z_(o.z()) {}
-    // ----------- Accessors ------------------------
-    F c() const { return c_; }
-    int n() const { return n_; }
-    F z() const { return z_; }
-    void set_z(F z) { z_ = z; }
-  };
-
-  // =========== typedef =========================
   
-  typedef ExpBasis<double, 1> RSTO;
-  typedef ExpBasis<double, 2> RGTO;
-  typedef ExpBasis<CD, 1> CSTO;
-  typedef ExpBasis<CD, 2> CGTO;
-
-  // =========== inner product ===================
+  // ============= inner product ==========
   const CD operator*(const CD& a, int b) {
     return CD(a.real() * b, a.imag() * b); }
   const CD operator*(int b, const CD& a) {
@@ -110,6 +59,63 @@ namespace l2func {
     }
     return res;
   }
+       
+  // ==================== STO or GTO =================
+  // represent STO or GTO.
+  // m==1 => STO, m==2 => GTO
+  // value of m can be called exp_power;
+  template<class F, int m>
+  class ExpBasis {
+    
+  public:
+    // ---------- typedef ---------------------------
+    typedef F Field;
+    enum EExpPower { exp_power=m };
+    
+    // ---------- Field Member ----------------------
+  private:
+    F c_;    // coefficient
+    int n_;  // principle number
+    F z_;    // orbital exponent
+    //    bool is_zero_; // if true this basis is 0 in Hilbert space.
+    
+  public:
+    // ----------- Constructors ---------------------
+    ExpBasis():
+      c_(F(0.0)), n_(0), z_(F(1.0)) {}
+    ExpBasis(int _n, F _z):
+      c_(F(1)), n_(_n), z_(_z) {}
+    ExpBasis(F _c, int _n, F _z) :
+      c_(_c), n_(_n), z_(_z) {}
+    ExpBasis(int _n, F _z, ENormalized):
+      c_(F(1)), n_(_n), z_(_z) {
+
+      F c2;
+      if(m == 1)
+	c2 = STO_Int<F>(2 * z_, 2 * n_);
+      else
+	c2 = GTO_Int<F>(2 * z_, 2 * n_);
+      
+      c_ = F(1) / sqrt(c2);
+    }
+    template<class U>
+    ExpBasis(const ExpBasis<U, m>& o):
+      c_(o.c()), n_(o.n()), z_(o.z()) {}
+    // ----------- Accessors ------------------------
+    F c() const { return c_; }
+    int n() const { return n_; }
+    F z() const { return z_; }
+    void set_z(F z) { z_ = z; }
+  };
+
+  // =========== typedef =========================
+  
+  typedef ExpBasis<double, 1> RSTO;
+  typedef ExpBasis<double, 2> RGTO;
+  typedef ExpBasis<CD, 1> CSTO;
+  typedef ExpBasis<CD, 2> CGTO;
+
+  // =========== inner product ===================
   template<class F> F sto_gto_int_0(F as, F ag) {
     F erfcVal, expVal, sqrtPi,pi,res;
     ErfcCalcData data;
@@ -296,6 +302,7 @@ namespace l2func {
 
     return res;
   }
+  
   template<class F>
   F CIP(const ExpBasis<F, 1>& a, const ExpBasis<F, 1>& b) {
     return STO_Int(a.z() + b.z(), a.n() + b.n()) * a.c() * b.c();
