@@ -4,7 +4,8 @@
 #include <string>
 #include <complex>
 #include <math.h>
-#include <tr1/functional>
+// #include <tr1/functional>
+#include <functional>
 #include "erfc.hpp"
 #include "fact.hpp"
 
@@ -13,9 +14,12 @@ namespace {
   typedef std::complex<double> CD;
   using erfc_mori::ErfcCalcData;
 
-  using std::tr1::function;
-  using std::tr1::bind;
-  using namespace std::tr1::placeholders;
+  // using std::tr1::function;
+  // using std::tr1::bind;
+  // using namespace std::tr1::placeholders;
+  using std::function;
+  using std::bind;
+  using namespace std::placeholders;
 }
 
 namespace l2func {
