@@ -2,7 +2,8 @@
 SRCDIR=${HOME}/src/git/opt_cbf/l2func
 LIBGTEST=-lpthread ${HOME}/local/gtest-1.7.0/build/libgtest_main.a
 LIBPATH=-L${HOME}/local/lib -I${HOME}/local/gtest-1.7.0/include/  ${LIBGTEST}
-CXX=clang++ -std=c++11
+#CXX=g++ -std=c++11
+CXX=g++
 
 # ubuntu (CAUSION: SRCDIR must be modify)
 #SRCDIR=${HOME}/src/git/opt_cbf/l2func
