@@ -245,8 +245,8 @@ namespace l2func {
 
     F   cp = (n + 0.5) / z * c;
     
-    res += 1.0 * RSTO(cp, n,   z);
-    res += 1.0 * RSTO(-c, n+1, z);
+    res += F(1) * ExpBasis<F, 1>(cp, n,   z);
+    res += F(1) * ExpBasis<F, 1>(-c, n+1, z);
 
     return res;
   }
@@ -259,8 +259,8 @@ namespace l2func {
 
     F   cp = (n * 0.5 + 0.25) / z * c;
     
-    res += 1.0 * RSTO(cp, n,   z);
-    res += 1.0 * RSTO(-c, n+2, z);
+    res += 1.0 * ExpBasis<F, 2>(cp, n,   z);
+    res += 1.0 * ExpBasis<F, 2>(-c, n+2, z);
 
     return res;
   }
@@ -272,11 +272,11 @@ namespace l2func {
     F   z = a.z(); // orbital expoent
 
     F   cp = (n + 0.5) / z * c;
-    F  cpp = (4 * n * n - 1) / (F(4) * z * z);
+    F  cpp = F(4 * n * n - 1) / (F(4) * z * z) * c;
     
-    res += 1.0 * RSTO(cpp,        n,   z);
-    res += 1.0 * RSTO(-F(2) * cp, n+1, z);
-    res += 1.0 * RSTO(c,          n+2, z);
+    res += F(1) * ExpBasis<F, 1>(cpp,        n,   z);
+    res += F(1) * ExpBasis<F, 1>(-F(2) * cp, n+1, z);
+    res += F(1) * ExpBasis<F, 1>(c,          n+2, z);
 
     return res;
   }
@@ -290,9 +290,9 @@ namespace l2func {
     F   cp = (n * 0.5 + 0.25) / z * c;
     F  cpp = (-3.0/4.0 + n / 2.0) * (0.25 + n * 0.5) / (z*z) * c;    
     
-    res += 1.0 * RSTO(cpp,       n,   z);
-    res += 1.0 * RSTO(-F(2)*cp , n+2, z);
-    res += 1.0 * RSTO(cpp,       n+4, z);
+    res += 1.0 * ExpBasis<F, 2>(cpp,       n,   z);
+    res += 1.0 * ExpBasis<F, 2>(-F(2)*cp , n+2, z);
+    res += 1.0 * ExpBasis<F, 2>(cpp,       n+4, z);
 
     return res;
   }    

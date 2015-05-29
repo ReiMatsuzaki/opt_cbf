@@ -9,12 +9,15 @@
 #include "l_algebra.hpp"
 #include "opt.hpp"
 #include "driv.hpp"
+#include "opt_cbf.hpp"
 
 using namespace Eigen;
 using namespace opt_cbf_h;
 using namespace l2func;
 using namespace std::tr1;
 using namespace std::tr1::placeholders;
+using namespace std;
+typedef std::complex<double> CD;
 
 class TwoDimFunc {
   // represent 2d sample function for optimization.
@@ -24,11 +27,8 @@ class TwoDimFunc {
   // dxdx f     = 8
   // dydy f     = -4x
   // dxdy f     = -4x
-  // the minimum points are?
-  // the reason of slowing is from emacs?
-  // using vim this slowing does not occur.
-  // launch emacs without reading aak.
-  // no! Even in using vim, slowing occur.
+  // the minimum points are:
+  // Rule[x, -1.3646556076560374`], Rule[y, -0.5344287681232319`]]
   
 public:
   void CalcGradHess(VectorXd z, VectorXd* g, MatrixXd* h) {
@@ -192,7 +192,7 @@ TEST(LinearAlgebra, real_sto) {
 }
 TEST(Optimizer, Newton) {
 
-  IOptimizer<double>* opt = new OptByNewton<double>();
+  IOptimizer<double>* opt = new OptimizerNewton<double>();
   TwoDimFunc func;
 
 
@@ -203,20 +203,67 @@ TEST(Optimizer, Newton) {
     (bind(&TwoDimFunc::CalcGradHess, func, _1, _2, _3), x0);
   
   delete opt;
+  double eps(0.000000001);
 
   EXPECT_TRUE(res.convergence);
-  //  EXPECT_NEAR(res.z(0,0), )
+  EXPECT_TRUE(res.iter_num < 50);
+  
+  EXPECT_NEAR(res.z(0,0), -1.3646556076560374, eps);
+  EXPECT_NEAR(res.z(1,0), -0.5344287681232319, eps);
 }
 TEST(Driv, Construct) {
 
   LinearComb<RSTO> mu_phi;
   mu_phi += 1.0 * RSTO(1.0, 2, 1.0);
-  
-  HAtomPI<double> hatom(1, 1.0, 0.5, mu_phi);
+
+  IDrivSystem<RSTO>* hatom = new HAtomPI<RSTO>(1, 1.0, 0.5, mu_phi);
+  // HAtomPI<double>* hatom = new HAtomPI<double>(1, 1.0, 0.5, mu_phi);
   RSTO s1(1.1, 2, 1.2);
   RSTO s2(2.1, 2, 1.3);
-  double h01 = hatom.OpEle(s1, s2);
+  double h01 = hatom->OpEle(s1, s2);
   EXPECT_NEAR(-0.195858432000038, h01,
 	      +0.0000000000001);
+}
+TEST(STL, vector) {
+
+  vector<int> xs(10, 42);
+  vector<int>::const_iterator it0 = xs.begin() + 1;
+  vector<int>::const_iterator it1 = xs.begin() + 3;
+  vector<int> ys(it0, it1); // ys have copied value
+
+  ys[0] = 44;
+  ys[1] = 45;
+
+  EXPECT_EQ(xs[0], 42);
+  EXPECT_EQ(xs[1], 42);
+  EXPECT_EQ(xs[2], 42);
+  EXPECT_EQ(xs[3], 42);
+  EXPECT_EQ(xs[4], 42);
+  EXPECT_EQ(2, ys.size());
+  EXPECT_EQ(44, ys[0]);
+
+  EXPECT_EQ(2, std::distance(it0, it1));
+}
+TEST(OptCBF, construct) {
+
+  vector<CSTO> basis_set(2);
+  basis_set[0] = CSTO(2, CD(2.5, -0.4), Normalized);
+  basis_set[1] = CSTO(2, CD(1.5, -0.9), Normalized);
+  
+  LinearComb<CSTO> mu_phi;
+  mu_phi += 1.0 * RSTO(1.0, 2, 1.0);
+  
+  HAtomPI<CSTO> h_atom(1, 1.0, 1.1, mu_phi);
+  
+  OptCBF<CSTO> opt_cbf(basis_set, h_atom);
+
+  vector<std::complex<double> > zs(2);
+  zs[0] = 2.1; zs[1] = 2.2;
+  VectorXcd grad;
+  MatrixXcd hess;
+  std::complex<double> alpha;
+  opt_cbf.Compute(zs, &alpha, &grad, &hess);
+  cout << alpha << endl;
+  
 }
 

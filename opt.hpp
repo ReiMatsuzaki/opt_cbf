@@ -15,8 +15,11 @@ namespace opt_cbf_h {
   template<class F>
   class OptRes {
   public:
+    OptRes() :
+      convergence(false), iter_num(0){}
     bool convergence;
     Matrix<F, Dynamic, 1> z;
+    int iter_num;
   };
 
   // interface for optimization class
@@ -32,7 +35,7 @@ namespace opt_cbf_h {
 
   // simple newton iteration
   template<class F>
-  class OptByNewton : public IOptimizer<F> {
+  class OptimizerNewton : public IOptimizer<F> {
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
     typedef function<void (VecF, VecF*, MatF*)> FuncGradHess;
@@ -45,9 +48,8 @@ namespace opt_cbf_h {
 
       res.z = VecF::Zero(2);
       res.z = z0;
-      double eps = 0.0000001;
-      int max_num = 20;
-
+      double eps = 0.000000001;
+      int max_num = 100;
 
       int num = z0.rows();
       MatF hess = MatF::Zero(num, num);
@@ -65,7 +67,7 @@ namespace opt_cbf_h {
 	res.z -= dz;
 
 	// check convergence
-	if( dz.norm() < eps) {
+	if( dz.norm() < eps && grad.maxCoeff() < eps) {
 	  res.convergence = true;
 	  break;
 	}
@@ -73,7 +75,6 @@ namespace opt_cbf_h {
       return res;
     }
   };
-
 }
 
 #endif

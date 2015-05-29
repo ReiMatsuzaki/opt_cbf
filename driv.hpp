@@ -13,21 +13,40 @@ namespace opt_cbf_h {
 
   // express driven type equation for hydrogen problem
   // (H-E)\psi = \phi
-  
-  template<class F>
-  class HAtomPI {
-    typedef LinearComb<ExpBasis<F, 1> > STOs;
+  template<class Basis>
+  class IDrivSystem {
+  private:
+    typedef typename Basis::Field F;
     
+  public:
+    virtual ~IDrivSystem() {}
+    virtual F OpEle(const Basis& a, const Basis& b) = 0;
+    virtual F DrivEle(const Basis& a) = 0;
+  };
+  
+  // driven type equation for radial part of 
+  // Hydrogen atom photoionization.
+  template<class Basis>
+  class HAtomPI : public IDrivSystem<Basis> {
+    
+    // ------ type -----------
+    typedef typename Basis::Field F;
+    typedef LinearComb<ExpBasis<F, 1> > STOs;
+
+    // ------ field ----------
     int l_;   // angular quantum number;
     F   z_;   // charge;
     F   ene_; // energy;
-    LinearComb<ExpBasis<F, 1> > driv_;
+    STOs driv_;
     
   public:
+    // ------ constructors ---
     HAtomPI(int _l, F _z, F _ene, STOs _driv ) :
       l_(_l), z_(_z), ene_(_ene), driv_(_driv) {}
-    template<class Basis>
-    F OpEle(Basis& a, Basis& b) {
+    ~HAtomPI() { IsPrimitive<Basis>(); }
+
+    // ------ matrix elements ------
+    F OpEle(const Basis& a, const Basis& b) {
 
       F acc(0);
       acc += -0.5 * CIP(a, Op(OpDDr2<RSTO>(), b));
@@ -38,8 +57,7 @@ namespace opt_cbf_h {
 
       return acc;
     }
-    template<class Basis>
-    F DrivEle(Basis& a) {
+    F DrivEle(const Basis& a) {
       return CIP(a, driv_);
     }
   };
