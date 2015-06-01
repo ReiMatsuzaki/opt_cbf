@@ -27,10 +27,12 @@ namespace opt_cbf_h {
   class IOptimizer {
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef function<void (VecF, VecF*, MatF*)> FuncGradHess;
+    //    typedef function<void (const VecF&, VecF*, MatF*)> FuncGradHess;
+    typedef function<void (const VecF&, F*, VecF*, MatF*)> FuncValGradHess;
   public:
     virtual ~IOptimizer() {}
-    virtual OptRes<F> Optimize(FuncGradHess f, VecF z0) = 0;
+    //    virtual OptRes<F> Optimize(FuncGradHess f, VecF z0) = 0;
+    virtual OptRes<F> Optimize(FuncValGradHess f, VecF z0) = 0;
   };
 
   // simple newton iteration
@@ -38,9 +40,10 @@ namespace opt_cbf_h {
   class OptimizerNewton : public IOptimizer<F> {
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef function<void (VecF, VecF*, MatF*)> FuncGradHess;
+    //    typedef function<void (VecF, VecF*, MatF*)> FuncGradHess;
+    typedef function<void (const VecF&, F*, VecF*, MatF*)> FuncValGradHess;
   public:
-    OptRes<F> Optimize(FuncGradHess f, VecF z0) {
+    OptRes<F> Optimize(FuncValGradHess f, VecF z0) {
 
       // initialize
       OptRes<F> res;
@@ -52,6 +55,7 @@ namespace opt_cbf_h {
       int max_num = 100;
 
       int num = z0.rows();
+      F    value;
       MatF hess = MatF::Zero(num, num);
       VecF grad = VecF::Zero(num);
       VecF dz = VecF::Zero(num);
@@ -60,7 +64,7 @@ namespace opt_cbf_h {
       for(int i = 0; i < max_num; i++) {
 
 	// compute grad and hess
-	f(res.z, &grad, &hess);
+	f(res.z, &value, &grad, &hess);
 
 	// update
 	dz = hess.colPivHouseholderQr().solve(grad);

@@ -17,7 +17,7 @@ using namespace l2func;
 using namespace std::tr1;
 using namespace std::tr1::placeholders;
 using namespace std;
-typedef std::complex<double> CD;
+//typedef std::complex<double> CD;
 
 class TwoDimFunc {
   // represent 2d sample function for optimization.
@@ -31,9 +31,11 @@ class TwoDimFunc {
   // Rule[x, -1.3646556076560374`], Rule[y, -0.5344287681232319`]]
   
 public:
-  void CalcGradHess(VectorXd z, VectorXd* g, MatrixXd* h) {
+  void CalcGradHess(VectorXd z, double* a, VectorXd* g, MatrixXd* h) {
     double x = z(0,0);
     double y = z(1,0);
+
+    *a = 0.5*x*x*x*x - 2.0*x*x*y + 4.0*y*y + 8.0*x + 8.0*y;
     
     (*g)(0, 0) = 2 * x * x * x - 4 * x * y + 8;
     (*g)(1, 0) = -2*x*x + 8*y + 8;
@@ -195,12 +197,11 @@ TEST(Optimizer, Newton) {
   IOptimizer<double>* opt = new OptimizerNewton<double>();
   TwoDimFunc func;
 
-
   VectorXd x0 = VectorXd::Zero(2);
   x0(0,0) = 1.0; x0(1, 0) = 2.0;
   
   OptRes<double> res = opt->Optimize
-    (bind(&TwoDimFunc::CalcGradHess, func, _1, _2, _3), x0);
+    (bind(&TwoDimFunc::CalcGradHess, func, _1, _2, _3, _4), x0);
   
   delete opt;
   double eps(0.000000001);
@@ -239,31 +240,114 @@ TEST(STL, vector) {
   EXPECT_EQ(xs[2], 42);
   EXPECT_EQ(xs[3], 42);
   EXPECT_EQ(xs[4], 42);
-  EXPECT_EQ(2, ys.size());
+  //  EXPECT_EQ(2, ys.size());
   EXPECT_EQ(44, ys[0]);
 
   EXPECT_EQ(2, std::distance(it0, it1));
 }
-TEST(OptCBF, construct) {
+class TestOptSTO: public ::testing::Test {
+public:
+  VectorXcd zs;
+  vector<CSTO> basis_set; 
+  LinearComb<CSTO> mu_phi;// driven term
+  HAtomPI<CSTO>* h_atom;
+  OptCBF<CSTO>* opt_cbf;
+  virtual void SetUp() {
 
-  vector<CSTO> basis_set(2);
-  basis_set[0] = CSTO(2, CD(2.5, -0.4), Normalized);
-  basis_set[1] = CSTO(2, CD(1.5, -0.9), Normalized);
-  
-  LinearComb<CSTO> mu_phi;
-  mu_phi += 1.0 * RSTO(1.0, 2, 1.0);
-  
-  HAtomPI<CSTO> h_atom(1, 1.0, 1.1, mu_phi);
-  
-  OptCBF<CSTO> opt_cbf(basis_set, h_atom);
+    zs = VectorXcd::Zero(2);
+    zs(0) = CD(1.4, -0.2);
+    zs(1) = CD(0.2, -0.6);
 
-  vector<std::complex<double> > zs(2);
-  zs[0] = 2.1; zs[1] = 2.2;
-  VectorXcd grad;
-  MatrixXcd hess;
-  std::complex<double> alpha;
-  opt_cbf.Compute(zs, &alpha, &grad, &hess);
-  cout << alpha << endl;
+    basis_set.resize(2);
+    for(int i = 0; i < 2; i++)
+      basis_set[i] = CSTO(2, zs(i), Normalized);
+
+    mu_phi += 1.0 * CSTO(CD(2.0, 0.0), 2, CD(1.0, 0.0));
+
+    // w = 1.1, E0 = 0.5
+    h_atom = new HAtomPI<CSTO>(1, 1.0, 1.1 - 0.5, mu_phi);
+
+    opt_cbf = new OptCBF<CSTO>(basis_set, *h_atom);
+  }
+  virtual ~TestOptSTO() {
+    delete h_atom;
+    delete opt_cbf;
+  }
+};
+TEST_F(TestOptSTO, matrix) {
+
+  MatrixXcd D00, D10, D20, D11;
+  opt_cbf->computeMatrix(&D00, &D10, &D20, &D11);
+
+  double eps(0.000000001);
+  EXPECT_NEAR(-0.34, D00(0,0).real(), eps);
+  EXPECT_NEAR(-0.18, D00(0,0).imag(), eps);
+  EXPECT_NEAR(+0.777278, D00(1,0).real(),
+	      +0.000001);
+  EXPECT_NEAR(-0.987452, D00(1,0).imag(),
+	      +0.000001);
+  EXPECT_NEAR(-0.86, D00(1,1).real(), eps);
+  EXPECT_NEAR(+0.18, D00(1,1).imag(), eps);  
   
 }
+TEST_F(TestOptSTO, vector) {
+  
+  VectorXcd m0, m1, m2;
+  opt_cbf->computeVector(&m0, &m1, &m2);
+  EXPECT_NEAR(1.62413 ,m0(0).real(), 0.00001);
+  EXPECT_NEAR(0.0991355 ,m0(0).imag(), 0.0000001);
+  EXPECT_NEAR(-2.81312, m0(1).real(), 0.00001);
+  EXPECT_NEAR(2.92198 , m0(1).imag(), 0.00001);
+
+  EXPECT_NEAR(-0.525733, m1(0).real(), 0.000001);
+  EXPECT_NEAR(0.0943892, m1(0).imag(), 0.000001);
+  EXPECT_NEAR(-0.226781, m1(1).real(), 0.000001);
+  EXPECT_NEAR(-11.9481, m1(1).imag(), 0.0001);  
+}
+TEST_F(TestOptSTO, Construct) {
+  
+  EXPECT_DOUBLE_EQ(1.4, zs[0].real());
+  
+}
+TEST_F(TestOptSTO, alpha_grad_hess) {
+
+  CD alpha;
+  VectorXcd grad;
+  MatrixXcd hess;
+
+  opt_cbf->Compute(zs, &alpha, &grad, &hess);
+
+  double eps(0.000000001);
+  EXPECT_NEAR(-6.930263229774504, alpha.real(), eps);
+  EXPECT_NEAR(0.9284529898976182, alpha.imag(), eps);
+
+  EXPECT_NEAR(-8.61257434411908, grad(0, 0).real(),    0.00001);
+  EXPECT_NEAR(+0.02011898864080297, grad(0, 0).imag(), 0.00001);
+  EXPECT_NEAR(+4.725266440501804, grad(1, 0).real(),   0.00001);
+  EXPECT_NEAR(0.7486897022445742, grad(1, 0).imag(),   0.00001);
+
+  eps = 0.00001;
+  EXPECT_NEAR(-22.6814, hess(0, 0).real(),
+	        0.0001);
+  EXPECT_NEAR(-2.49483, hess(0, 0).imag(),
+	      +0.00001);
+  EXPECT_NEAR(27.1967, hess(1, 0).real(),
+	      +0.0001);
+  EXPECT_NEAR(9.97019, hess(1, 0).imag(),
+	      0.00001);
+  EXPECT_NEAR(27.1967, hess(0, 1).real(),
+	      +0.0001);
+  EXPECT_NEAR(9.97019, hess(0, 1).imag(),
+	      0.00001);
+  EXPECT_NEAR(-11.6649, hess(1, 1).real(),
+	      +0.0001);
+  EXPECT_NEAR(-2.89574, hess(1, 1).imag(),
+	      +0.00001);
+}
+TEST_F(TestOptSTO, optimization) {
+
+  IOptimizer<CD>
+  
+}
+
 

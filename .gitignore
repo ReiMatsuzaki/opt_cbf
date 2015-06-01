@@ -2,3 +2,4 @@ l2func/utest
 l2func/utest.o
 utest
 utest.o
+local.mk

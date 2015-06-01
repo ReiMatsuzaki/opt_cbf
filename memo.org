@@ -1,0 +1,7 @@
+* unit test
+  
+  reference of alpha and its gradient and hessian are
+  calculated in 2015_5.nb/31
+
+
+  

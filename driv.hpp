@@ -17,6 +17,7 @@ namespace opt_cbf_h {
   class IDrivSystem {
   private:
     typedef typename Basis::Field F;
+    typedef typename LinearComb<Basis>::const_iterator IT;
     
   public:
     virtual ~IDrivSystem() {}
@@ -32,6 +33,7 @@ namespace opt_cbf_h {
     // ------ type -----------
     typedef typename Basis::Field F;
     typedef LinearComb<ExpBasis<F, 1> > STOs;
+    typedef typename LinearComb<Basis>::const_iterator IT;
 
     // ------ field ----------
     int l_;   // angular quantum number;
@@ -49,16 +51,38 @@ namespace opt_cbf_h {
     F OpEle(const Basis& a, const Basis& b) {
 
       F acc(0);
-      acc += -0.5 * CIP(a, Op(OpDDr2<RSTO>(), b));
+      acc += -0.5 * CIP(a, Op(OpDDr2<Basis>(), b));
       F ll = l_ * (l_ + 1) * 0.5;
-      acc += ll    * CIP(a, Op(OpRm<RSTO>(-2), b));
-      acc += -z_   * CIP(a, Op(OpRm<RSTO>(-1), b));
+      acc += ll    * CIP(a, Op(OpRm<Basis>(-2), b));
+      acc += -z_   * CIP(a, Op(OpRm<Basis>(-1), b));
       acc += -ene_ * CIP(a, b);
 
       return acc;
     }
     F DrivEle(const Basis& a) {
       return CIP(a, driv_);
+    }
+    F OpEle(const LinearComb<Basis>& as, const Basis& b) {
+
+      F acc(0);
+      
+      for(IT it = as.begin(), end_it = as.end(); it != end_it; ++it) {
+	acc += it->first * this->OpEle(it->second, b);
+      }
+      return acc;
+    }
+    F OpEle(const LinearComb<Basis>& as, const LinearComb<Basis>& bs) {
+
+      F acc(0);
+      for(IT it = bs.begin(), it_end = bs.end(); it != it_end; ++it)
+	acc += it->first * this->OpEle(as, it->second);
+      return acc;
+    }    F DrivEle(const LinearComb<Basis>& as) {
+
+      F acc(0);
+      for(IT it = as.begin(), end_it = as.end(); it != end_it; ++it)
+	acc += it->first * this->DrivEle(it->second);
+      return acc;
     }
   };
 }
