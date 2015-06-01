@@ -71,7 +71,11 @@ namespace opt_cbf_h {
 	res.z -= dz;
 
 	// check convergence
-	if( dz.norm() < eps && grad.maxCoeff() < eps) {
+	double dz_norm = std::abs(dz.norm());
+	bool check1 = dz_norm < eps;
+	double max_grad = grad.array().abs().maxCoeff();
+	bool check2 =  max_grad < eps;
+	if( check1 && check2) {
 	  res.convergence = true;
 	  break;
 	}
