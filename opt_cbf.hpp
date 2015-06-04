@@ -34,19 +34,19 @@ namespace opt_cbf_h {
   // compute mD^-1m and its gradient and hessian.
   void computeAlphaGradHess(cM& D00, cM& D10, cM& D20, cM& D11,
 			    cV& m0,  cV&m1,   cV& m2,
-			    CD* alpha, VectorXcd* grad, MatrixXcd* hess) {
+			    CD* a, VectorXcd* g, MatrixXcd* h) {
   
     VectorXcd D_inv_m = D00.fullPivLu().solve(m0);
     VectorXcd tmp = VectorXcd::Zero(m0.rows());
 
     // alpha
-    *alpha = (m0.array() * D_inv_m.array()).sum();
+    *a = (m0.array() * D_inv_m.array()).sum();
 
     // grad
     Calc_a_Aj_b(D_inv_m, D10, D_inv_m, grad);
     Calc_ai_b(m1, D_inv_m, &tmp);
-    (*grad) *= -1;
-    (*grad) += 2 * tmp;
+    (*g) *= -1;
+    (*g) += 2 * tmp;
 
     // hess
     MatrixXcd Dinv = D00.inverse();
@@ -64,11 +64,17 @@ namespace opt_cbf_h {
     MatrixXcd tmp6;
     Calc_a_Ai_B_Aj_b(D_inv_m, D10, Dinv, D_inv_m, &tmp6);
     tmp6 *= 2;
-    *hess = tmp1 + tmp2 + tmp3 + tmp4 + tmp5 + tmp6;
+    *h = tmp1 + tmp2 + tmp3 + tmp4 + tmp5 + tmp6;
   }
 
+  class IOptTarget {
+  public:
+    virtual ~IOptTarget;
+    virtual void Compute(const VectorXcd&, F*, VectorXcd*, MatrixXcd*)=0;
+  };
+  
   template<class Prim>
-  class OptCBF {
+  class OptCBF :public IOptTarget {
 
     // ------ type --------
     typedef typename Prim::Field F;

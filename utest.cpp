@@ -250,6 +250,7 @@ public:
   VectorXcd zs;
   vector<CSTO> basis_set; 
   LinearComb<CSTO> mu_phi;// driven term
+  
   HAtomPI<CSTO>* h_atom;
   OptCBF<CSTO>* opt_cbf;
   virtual void SetUp() {
