@@ -21,6 +21,7 @@ bool IsNumber(const string& str) {
   return acc;
 }
 
+/*
 template<>
 double KeysValues::Get<double>(CS& key, int i) const {
   CheckIndex(key, i);
@@ -35,19 +36,18 @@ int KeysValues::Get<int>(CS& key, int i) const {
   return any_cast<int>(x);
 }
 template<>
+CD KeysValues::Get<CD>(CS& k, int i) const {
+
+  this->CheckIndex(k, i);
+  any x = dict_.find(k)->second[i];
+  return any_cast<CD>(x);
+}
+template<>
 string KeysValues::Get<string>(CS& key, int i) const {
 
-  /*
-  ConstIt it = key_val_map_.find(key);
-  if (it == key_val_map_.end())
-    {
-      string msg;
-      msg += "Error: KeyVal::GetAsString\n";
-      msg += "invalid key =" + key;
-      throw msg;
-    }
+  this->CheckIndex(key, i);
 
-  any val = it->second;  
+  any val = dict_.find(key)->second[i];
   std::type_info const & t = val.type();
   string res;
 
@@ -65,9 +65,8 @@ string KeysValues::Get<string>(CS& key, int i) const {
       msg += "key is " + key;
     }
   return res;
-  */
-  return "this is not implemented";
 }
+*/
 int KeysValues::Count(CS& key) const {
   
   if(this->ExistKey(key))
@@ -102,24 +101,7 @@ void KeysValues::CheckIndex(CS& key, int i ) const {
   }
   
 }
-
-void KeysValues::AddOld(CS& k, int t) {
-
-  this->Add<int>(k, t);
-  
-  //  key_val_map_[k]=int(t); 
-}
-void KeysValues::AddOld(CS& k, double t) {
-  
-  this->Add<double>(k, t);
-  //  key_val_map_[k]=double(t); 
-}
-void KeysValues::AddOld(CS& k, CS& t) {
-  this->Add<string>(k, t);
-  //  key_val_map_[k]=string(t); 
-}
-
-void KeysValues::AddCasting(CS& k, CS& v) {
+void KeysValues::AddAtomConverting(CS& k, CS& v) {
 
   if(IsInteger(v))
     {
@@ -134,61 +116,43 @@ void KeysValues::AddCasting(CS& k, CS& v) {
       this->Add(k, v);
     }
 }
-void KeysValues::AddSeparating(CS& k, CS& v, CS& sep) {
+void KeysValues::ReadLine(CS& line) {
 
-  if(v.find(sep) == string::npos) {
+    // separate with sep_kv
+    vector<string> kv;
+    split(kv, line, is_any_of(sep_kv_));
+
+    // check the structure
+    if(kv.size() != 2) {
+      string msg;
+      SUB_LOCATION(msg);
+      msg += "line must be 'key:value'";
+      throw runtime_error(msg);
+    }
+
+    // copy
+    string key = trim_copy(kv[0]);
+    string val = trim_copy(kv[1]);
+    // string key = kv[0];
+    // string val = kv[1];
+
+    // add key value as string
+    this->Add<string>(key, val);
     
-    // failed to find sep in v.
-    // v is treated atomic value.
-    this->AddCasting(k, v);
-    
-  } else {
-    // find sep in v.
-    // v is treated as tuple.
-    
-    this->Add();
   }
-  
-}
-
-void KeyVal::Read(ifstream& ifs, string sep) {
+void KeysValues::Read(ifstream& ifs) {
   
   string line;
-  while(getline(ifs, line))
-    {
-      if(line == "")
-	continue;
+  while(getline(ifs, line)) {
 
-      vector<string> str_vec;
-      split(str_vec, line, is_any_of(sep));
-      
-      if(str_vec.size() != 2)
-	{
-	  string msg;
-	  msg += "Error: KeyVal::Read\n";
-	  msg += "error line is \n";
-	  msg += line;
-	  throw msg;
-	}
+    if(line == "")
+      continue;
 
-      string key = trim_copy(str_vec[0]);
-      string val = trim_copy(str_vec[1]);
+    this->ReadLine(line);
+  }
 
-      try
-	{
-	  this->AddCasting(key, val);
-	}
-      catch(...)
-	{
-	  string msg2;
-	  msg2 += "Error: KeyVal::Read\n";
-	  msg2 += "bad cast error\n";
-	  msg2 += "error line is\n";
-	  msg2 += line;
-	  throw msg2;
-	}
-    }
 }
+
 /*
 void KeyVal::Write(ofstream& ofs) const {
   

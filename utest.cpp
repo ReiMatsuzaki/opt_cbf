@@ -350,9 +350,17 @@ TEST_F(TestOptSTO, optimization) {
   VectorXcd zs0(2);
   zs0 << CD(0.8, -0.1), CD(0.4, -0.6);
 
-  IOptimizer<CD>* opt = new OptimizerNewton<complex<double> >();
+
+  IOptTarget* opt_target = new OptCBF<CSTO>(basis_set, *h_atom);
+  IOptimizer<CD>* opt = new OptimizerNewton<CD>();
+  OptRes<complex<double> > opt_res = opt->Optimize
+    (bind(&IOptTarget::Compute, opt_target, _1, _2, _3, _4),zs0);
+
+  /*  
+  IOptimizer<CD>* opt = new OptimizerNewton<CD>();
   OptRes<complex<double> > opt_res = opt->Optimize
     (bind(&OptCBF<CSTO>::Compute, opt_cbf, _1, _2, _3, _4),zs0);
+  */
 
   EXPECT_TRUE(opt_res.convergence);
   EXPECT_NEAR(0.964095, opt_res.z(0).real(), 0.000001);

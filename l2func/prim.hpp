@@ -342,7 +342,7 @@ namespace l2func {
     
     IsPrimitive<Prim>();
     int m = Prim::exp_power;
-    return Prim(pow(-1, num) * c, n + m * num, z);
+    return Prim(pow(-1.0, num) * c, n + m * num, z);
   }
   template<class Prim>
   Prim OperateRm( int m, const Prim& f) {

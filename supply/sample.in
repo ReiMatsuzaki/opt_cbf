@@ -1,0 +1,3 @@
+basis: STO
+max_iter: 50
+eps: 0.00001

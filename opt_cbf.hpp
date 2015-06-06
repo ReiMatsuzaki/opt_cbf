@@ -5,7 +5,9 @@
 #include <complex>
 #include <vector>
 #include <Eigen/Core>
+#include <Eigen/LU>
 #include <l2func.hpp>
+#include "l_algebra.hpp"
 #include "driv.hpp"
 
 // represents optimization target for CBF
@@ -43,7 +45,7 @@ namespace opt_cbf_h {
     *a = (m0.array() * D_inv_m.array()).sum();
 
     // grad
-    Calc_a_Aj_b(D_inv_m, D10, D_inv_m, grad);
+    Calc_a_Aj_b(D_inv_m, D10, D_inv_m, g);
     Calc_ai_b(m1, D_inv_m, &tmp);
     (*g) *= -1;
     (*g) += 2 * tmp;
@@ -67,15 +69,16 @@ namespace opt_cbf_h {
     *h = tmp1 + tmp2 + tmp3 + tmp4 + tmp5 + tmp6;
   }
 
+  // interface to access cSTO or cGTO
   class IOptTarget {
   public:
-    virtual ~IOptTarget;
-    virtual void Compute(const VectorXcd&, F*, VectorXcd*, MatrixXcd*)=0;
-  };
-  
-  template<class Prim>
-  class OptCBF :public IOptTarget {
+    virtual void Compute(const VectorXcd& zs, CD* a, VectorXcd* g, MatrixXcd* h) = 0;
+  };  
 
+  // calculator of alpha, gradient and hessian
+  template<class Prim>
+   class OptCBF : public IOptTarget {
+    
     // ------ type --------
     typedef typename Prim::Field F;
     typedef LinearComb<Prim> LC;
@@ -92,6 +95,7 @@ namespace opt_cbf_h {
     
   public:
     // ------ constructor --------
+    ~OptCBF() {}
     OptCBF(const vector<Prim>& _opt_basis_set,
 	   const HAtomPI<Prim>& _h_atom_pi) :
       basis_set_(_opt_basis_set),
@@ -124,7 +128,7 @@ namespace opt_cbf_h {
     // ------ method -----------
     // calculation of gradient and hessian from orbital exponent.
     // this method will be used for optimization.
-    void Compute(const VectorXcd& zs, F* a, VectorXcd* g, MatrixXcd* h) {
+    void Compute(const VectorXcd& zs, CD* a, VectorXcd* g, MatrixXcd* h) {
 
       // update orbital exponent (zeta)
       updateZeta(zs);
