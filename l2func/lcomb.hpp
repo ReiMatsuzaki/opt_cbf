@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <tr1/functional>
+#include "prim.hpp"
 
 namespace{
   using std::vector;
@@ -32,38 +33,29 @@ namespace l2func {
     
   public:
     // ---------- Constructor ---------------
-    LinearComb() { IsPrimitive<Prim>();}
-    LinearComb(int n):
-      cf_list_(n) {}
-    LinearComb(const Prim& prim):
-      cf_list_(1) {
-      cf_list_[0] = make_pair(1.0, prim);
-    }
+    LinearComb();
+    LinearComb(int n);
+    LinearComb(const Prim& prim);
+    
     // ---------- Accessor ------------------
     int size() const { return cf_list_.size(); }
     const_iterator begin() const { return cf_list_.begin(); }
     const_iterator end() const { return cf_list_.end(); }
-    void operator += (pair<Field, Prim> cf) {
-      cf_list_.push_back(cf);
-    }
-    void operator += (const Prim& f) {
-      cf_list_.push_back(make_pair(Field(1), f));
-    }
-    void operator += (const LinearComb<Prim>& o) {
-      for(const_iterator it = o.begin(), it_end = o.end();
-	  it != it_end; ++it ) {
-	cf_list_.push_back(*it);
-      }
-    }
-    pair<Field, Prim>& operator [] (int i) { return cf_list_[i]; }
-    const Prim& prim_i (int i) const { return cf_list_[i].second; }
+    pair<Field, Prim>& operator [] (int i) {
+      return cf_list_[i]; }
+    const Prim& prim_i (int i) const {
+      return cf_list_[i].second; }
     Field coef_i (int i) const { return cf_list_[i].first; }
+    void operator += (pair<Field, Prim> cf);
+    void operator += (const Prim& f);
+    void operator += (const LinearComb<Prim>& o);
   };
 
   // =============== Functions ==================
   template<class Prim>
-  pair<typename Prim::Field, Prim> operator *(typename Prim::Field c,
-					      const Prim& f) {
+  pair<typename Prim::Field, Prim> operator *
+  (typename Prim::Field c, const Prim& f) {
+   
     return make_pair(c, f);
   }
 
@@ -101,27 +93,6 @@ namespace l2func {
     return CIP(lc1, o);
   }
 
-  // ---------------- operation ------------------
-  /*  
-  template<class Prim> class DDr1 {
-  public:
-    DDr1() {
-      IsPrimitive<Prim>();
-    }
-    LinearComb<Prim> operator() (const Prim& prim) {
-      
-    }
-  };
-  template<class Prim> class OpRm {
-  public:
-    int m;
-    OpRm(int _m) : m(_m) {}
-    LinearComb<Prim> operator() (const Prim& a) {
-      Prim prim(a.c(), a.n() + );
-      return LinearComb<Prim>(
-    }
-  };
-  */
   template<class Prim>
   LinearComb<Prim> Op(function<Prim(const Prim&)> op,
 		      const Prim& f) {
@@ -131,8 +102,9 @@ namespace l2func {
     return res;
   }
   template<class Prim>
-  LinearComb<Prim> Op(function<LinearComb<Prim>(const Prim&)> op,
-		      const Prim& f) {
+  LinearComb<Prim> Op
+  (function<LinearComb<Prim>(const Prim&)> op,
+   const Prim& f) {
     return op(f);
   }
   template<class Prim>
@@ -142,7 +114,8 @@ namespace l2func {
     LinearComb<Prim> res;
 
     typedef typename LinearComb<Prim>::const_iterator IT;
-    for(IT it = f.begin(), end_it = f.end(); it != end_it; ++it) {
+    for(IT it = f.begin(), end_it = f.end();
+	it != end_it; ++it) {
 
       typename Prim::Field ci = it->first;
       Prim op_fi = op(it->second);
@@ -153,7 +126,8 @@ namespace l2func {
     return res;
   }
   template<class Prim>
-  LinearComb<Prim> Op(function<LinearComb<Prim>(const Prim&)> op,
+  LinearComb<Prim> Op
+  (function<LinearComb<Prim>(const Prim&)> op,
 		      const LinearComb<Prim>& f) {
     IsPrimitive<Prim>();
     LinearComb<Prim> g;
@@ -172,7 +146,9 @@ namespace l2func {
   }
 
   template<class F, int m>
-  LinearComb<ExpBasis<F,m> > OperateDDrForExp(const ExpBasis<F,m>& f) {
+  LinearComb<ExpBasis<F,m> > OperateDDrForExp
+  (const ExpBasis<F,m>& f) {
+    
     typedef ExpBasis<F,m> Basis;
 
     F c = f.c();
@@ -190,7 +166,8 @@ namespace l2func {
   template<class Prim>
   LinearComb<Prim> OperateDDr(const Prim& f) {
     IsPrimitive<Prim>();
-    return OperateDDrForExp<typename Prim::Field, Prim::exp_power>(f);
+    return OperateDDrForExp<typename Prim::Field,
+			    Prim::exp_power>(f);
   }
   template<class Prim>
   function<LinearComb<Prim>(const Prim&)> OpDDr() {

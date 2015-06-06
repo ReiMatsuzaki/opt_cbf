@@ -1,14 +1,12 @@
 include local.mk
 CXXFLAGS=${LIBPATH}
-OPT_CBF_OBJS=run.o controller.o ${UTILS_DIR}/keys_values.o
+OPT_CBF_OBJS= opt.o l_algebra.o
+RUN_OBJS=run.o controller.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${L2_DIR}/l2.a
 
-utest: utest.o 
-	${CXX} -o utest ${CXXFLAGS} utest.o ${LIBGTEST}
+utest: utest.o ${OPT_CBF_OBJS}
+	${CXX} -o utest ${CXXFLAGS} utest.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${LIBGTEST}
 	./utest
 
-opt_cbf: ${OPT_CBF_OBJS}
-	${CXX} -o opt_cbf ${CXXFLAGS} ${OPT_CBF_OBJS}
+opt_cbf: ${OBJS}
+	${CXX} -o opt_cbf ${CXXFLAGS} ${OBJS}
 
-clean:
-	rm *.o
-	rm utest

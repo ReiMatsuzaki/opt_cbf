@@ -17,7 +17,11 @@
 
 include ../local.mk
 CXXFLAGS=${LIBPATH}
+OBJS=utest.o lcomb.o prim.o erfc.o fact.o
 
-utest: utest.o
-	${CXX} -o $@ ${CXX_FLAGS} ${LIBGTEST} utest.o
+l2.a: lcomb.o prim.o erfc.o fact.o
+	ar -cr -o $@ ${CXX_FLAGS} lcomb.o prim.o erfc.o fact.o
+
+utest: utest.o l2.a
+	${CXX} -o $@ ${CXX_FLAGS} ${LIBGTEST} utest.o l2.a
 	./utest

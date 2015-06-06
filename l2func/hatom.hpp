@@ -17,27 +17,6 @@ namespace l2func {
       z_(_z), l_(_l) {}
   };
 
-  /*
-  template<class F=double>
-  class HAtomRadial {
-  private:
-    F z_;
-    int l_;
-  public:
-    HAtomRadial(F _z, int _l) : z_(_z), l_(_l) {}
-    template<class Prim> LinearComb<Prim> OperateHamiltonian(const Prim& o) {
-      
-      IsPrimitive<Prim>();
-      LinearComb<Prim> res;
-      res += Op(OpCst<Prim>(-0.5), Op(OpDDr2<Prim>(), o));
-      res += Op(OpCst<Prim>(-z), Op(OpRm<Prim>(-1), o));
-      if(l_ != 0)
-	res += Op(OpCst<Prim>(l_*(l_+1)/2.0), Op(OpRm<Prim>(-2), o));
-      return res;
-    }
-  };
-  */
-
   // ----------- Hamiltonian -------------------
   template<class Prim>
   LinearComb<Prim>

@@ -12,12 +12,7 @@ using namespace erfc_mori;
 using namespace l2func;
 using namespace fact;
 
-TEST(first, first) {
-
-  EXPECT_EQ(2, 1+1);
-  
-}
-TEST(Factorial, Factorial) {
+TEST(math, Factorial) {
 
   EXPECT_ANY_THROW(Factorial(-1));
   EXPECT_EQ(1, Factorial(0));
@@ -40,7 +35,7 @@ TEST(Factorial, Factorial) {
   
   
 }
-TEST(Erfc, real) {
+TEST(math, real) {
 
 
   // this function is forbidden
@@ -73,7 +68,7 @@ TEST(Erfc, real) {
   EXPECT_TRUE(calc_data.convergence);
   
 }
-TEST(Erfc, complex) {
+TEST(math, complex) {
   
   CD x, y, y_expect;
   ErfcCalcData calc_data;
