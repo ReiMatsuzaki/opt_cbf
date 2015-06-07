@@ -63,6 +63,28 @@ namespace l2func {
       
       c_ = F(1) / sqrt(c2);
     }
+  
+  template<class F, int m>
+  std::ostream& operator << (std::ostream& os, 
+			     const ExpBasis<F,m>& a) {
+    //    int m = Prim::exp_power;
+    //    typename Prim::Field c = a.c();
+    //typename Prim::Field z = a.z();
+    F c = a.c(); F z = a.z();
+
+    if(m == 1) 
+      os << (char *)"STO(" ;
+    else
+      os << (char *)"GTO(";
+    char* comma = (char*)", ";
+    os << c;
+    os << comma << a.n() << comma << a.z() << (char*)")";
+  }
+  template std::ostream& operator <<<CD,1> (std::ostream& os, const CSTO& a);
+  template std::ostream& operator <<<double,1> (std::ostream& os, const RSTO& a);
+  template std::ostream& operator <<<CD,2> (std::ostream& os, const CGTO& a);
+  template std::ostream& operator <<<double,2> (std::ostream& os, const RGTO& a);
+
 
   // =========== inner product ===================
   template<class F> F sto_gto_int_0(F as, F ag) {

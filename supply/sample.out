@@ -1,0 +1,6 @@
+convergence: true
+iter_num: 15
+opt_basis: 2 (0.964095,-0.0600633)
+opt_basis: 2 (0.664185,-1.11116)
+read_time: 0
+calc_time: 0

@@ -2,9 +2,10 @@
 include ../local.mk
 
 CXXFLAGS=${LIBPATH} -Wall
+OBJS=keys_values.o timer.o
 
-utest: utest.o keys_values.o
-	${CXX} -o $@ ${CXXFLAGS} utest.o keys_values.o ${LIBGTEST}
+utest: utest.o ${OBJS}
+	${CXX} -o $@ ${CXXFLAGS} utest.o ${OBJS} ${LIBGTEST}
 	./utest
 
 clean:

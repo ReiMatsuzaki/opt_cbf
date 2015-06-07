@@ -4,31 +4,8 @@
 #include <complex>
 #include <gtest/gtest.h>
 #include "keys_values.hpp"
+#include "timer.hpp"
 
-TEST(RemoveElement, first) {
-
-  vector<int> xs;
-  for(int i = 0; i < 4; i++)
-    xs.push_back(i);
-
-  RemoveElement(2, &xs);
-
-  EXPECT_EQ(3, (int)xs.size());
-  EXPECT_EQ(0, xs[0]);
-  EXPECT_EQ(1, xs[1]);
-  EXPECT_EQ(3, xs[2]);
-  
-}
-TEST(RemoveElement, split) {
-
-  string line("a  b     c");
-  vector<string> str_vec;
-  split(str_vec, line, is_any_of(" "), token_compress_on);
-  EXPECT_EQ("a", str_vec[0]);
-  EXPECT_EQ("b", str_vec[1]);
-  EXPECT_EQ("c", str_vec[2]);
-  
-}
 TEST(TestConvertData, Atomic) {
 
   EXPECT_EQ(1, ConvertData<int>("1"));
@@ -119,6 +96,16 @@ TEST(TestKeysValues, ConvertData) {
   EXPECT_DOUBLE_EQ(1.1,
 		   get<1>(keys_values.Get<tuple<string,double,CD> >("cc", 1)));
 }
+TEST(TestKeysValues, SetIfNull) {
+
+  KeysValues keys_values(":", " ");
+
+  keys_values.Add<string>("a", "1.2");
+  keys_values.Add<string>("a", "3.2");
+  keys_values.SetIfNull<int>("b", 21);
+
+  EXPECT_EQ(21, keys_values.Get<int>("b"));
+}
 TEST(TestKeysValues, ReadLine) {
 
   KeysValues keys_values(":", " ");
@@ -149,5 +136,12 @@ TEST(TestKeysValues, Read) {
   EXPECT_DOUBLE_EQ(1.0, keys_values.Get<double>("key2", 2));
 
   
+}
+TEST(TestTimer, Construct) {
+  Timer timer;
+  timer.Start("a");
+  EXPECT_ANY_THROW(timer.End("b"));
+  timer.End("a");
+  timer.Display();
 }
 #endif

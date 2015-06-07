@@ -11,6 +11,7 @@
 using namespace erfc_mori;
 using namespace l2func;
 using namespace fact;
+using namespace std;
 
 TEST(math, Factorial) {
 
@@ -206,6 +207,11 @@ TEST(Prim, AtX) {
   EXPECT_DOUBLE_EQ(1.1 * x0 * x0 * exp(-0.2 * x0), AtX(x0, s1));
   
 }
+TEST(Prim, stream) {
+  RSTO n_s1(2, 1.1, Normalized);
+  cout << n_s1 << endl;
+
+}
 TEST(LinearComb, Construct) {
 
   LinearComb<RSTO> rstos;
@@ -318,9 +324,13 @@ TEST(LinearComb, dbasis) {
 }
 TEST(HAtom, EigenState) {
 
-  LinearComb<CSTO> f00 = HAtomEigenState<CD>(1, 0);
-  LinearComb<CSTO> f10 = HAtomEigenState<CD>(2, 0);
-  LinearComb<CSTO> f11 = HAtomEigenState<CD>(2, 1);
+  HLikeAtom<CD> hatom00(1, 1.0, 0);
+  HLikeAtom<CD> hatom10(2, 1.0, 0);
+  HLikeAtom<CD> hatom11(2, 1.0, 1);
+
+  LinearComb<CSTO> f00 = hatom00.EigenState();
+  LinearComb<CSTO> f10 = hatom10.EigenState();
+  LinearComb<CSTO> f11 = hatom11.EigenState();
   EXPECT_EQ(1, f00.size());
 
   EXPECT_EQ(0.0, abs(CIP(f00, f10)));
@@ -332,18 +342,19 @@ TEST(HAtom, EigenState) {
 
   double eps = machine_eps() * 10;
   
-  EXPECT_NEAR(HAtomEigenEnergy(1),
-	      CIP(f00, Op(OpHAtomRadial<CSTO>(1.0, 0), f00)).real(), eps);
+  EXPECT_NEAR(hatom00.EigenEnergy(),
+	      CIP(f00, Op(hatom00.Hamiltonian<CSTO>(), f00)).real(), eps);
   EXPECT_NEAR(0.0,
-	      CIP(f00, Op(OpHAtomRadial<CSTO>(1.0, 0), f10)).real(), eps);
-  EXPECT_NEAR(HAtomEigenEnergy(2),
-	      CIP(f10, Op(OpHAtomRadial<CSTO>(1.0, 0), f10)).real(), eps);
-  EXPECT_NEAR(HAtomEigenEnergy(2),
-	      CIP(f11, Op(OpHAtomRadial<CSTO>(1.0, 1), f11)).real(), eps);
+	      CIP(f00, Op(hatom10.Hamiltonian<CSTO>(), f10)).real(), eps);
+  EXPECT_NEAR(hatom10.EigenEnergy(),
+	      CIP(f10, Op(hatom10.Hamiltonian<CSTO>(), f10)).real(), eps);
+  EXPECT_NEAR(hatom11.EigenEnergy(),
+	      CIP(f11, Op(hatom11.Hamiltonian<CSTO>(), f11)).real(), eps);
 }
 TEST(HAtom, DipoleInitLength) {
 
-  LinearComb<CSTO> mu_phi_00 = HAtomDipoleInitL<CD>(1, 0, 1);
+  HLikeAtom<CD> hatom(2, 1.0, 1);
+  LinearComb<CSTO> mu_phi_00 = hatom.DipoleInitLength(2);
   EXPECT_EQ(1, mu_phi_00.size());
   
 }

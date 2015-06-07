@@ -1,13 +1,19 @@
+#include <iostream>
 #include "driv.hpp"
+#include <l2func.hpp>
+
+using namespace std;
+using namespace l2func;
 
 namespace opt_cbf_h {
 
-  class HAtomPI::Impl {
+  template<class Basis>
+  class HAtomPI<Basis>::Impl {
   private:
     // ------ type -----------
     typedef typename Basis::Field F;
     typedef typename LinearComb<Basis>::const_iterator IT;
-    typedef typename LinearComb<Basis> LCBasis;
+    typedef LinearComb<Basis> LCBasis;
 
     // ------ field ----------
     int l_;   // angular quantum number;
@@ -18,8 +24,11 @@ namespace opt_cbf_h {
   public:
     // ------ constructors ---
     Impl(int _l, F _z, F _ene, STOs _driv ) :
-      l_(_l), z_(_z), ene_(_ene), driv_(_driv) {}
-    ~Impl() { IsPrimitive<Basis>(); }
+      l_(_l), z_(_z), ene_(_ene), driv_(_driv) {
+      IsPrimitive<Basis>();
+      
+    }
+    ~Impl() { }
 
     // ------ matrix elements ------
     F OpEle(const Basis& a, const Basis& b) {
@@ -56,12 +65,62 @@ namespace opt_cbf_h {
 
       F acc(0);
       for(IT it = as.begin(), end_it = as.end();
-	  it != end_it; ++it)
+	  it != end_it; ++it) {
 	acc += it->first * this->DrivEle(it->second);
+      }
       return acc;
+    }
+
+    // ------- print --------------
+    void Display() {
+      cout << "l_z_e_d: " << l_ << ", " << z_ << ", " <<ene_ ;
+      cout << ", " << driv_.size() << endl;
     }
   };
 
   template<class Basis>
-  HAtomPI<Basis>::HAtomPI
+  HAtomPI<Basis>::HAtomPI(int _l, F _z, F _ene, STOs _driv) :
+    impl_(new HAtomPI<Basis>::Impl(_l, _z, _ene, _driv)) {}
+  template<class Basis>
+  HAtomPI<Basis>::~HAtomPI() { 
+    delete impl_;
+  }
+  template<class Basis>
+  typename Basis::Field HAtomPI<Basis>::OpEle
+  (const Basis& a, const Basis& b) {
+    return impl_->OpEle(a, b); 
+  }
+  template<class Basis>
+  typename Basis::Field HAtomPI<Basis>::OpEle
+  (const LinearComb<Basis>& a, const Basis& b) {
+    return impl_->OpEle(a, b); 
+  }
+  template<class Basis>
+  typename Basis::Field HAtomPI<Basis>::OpEle
+  (const LinearComb<Basis>& a, const LinearComb<Basis>& b) {
+    return impl_->OpEle(a, b); 
+  }
+  template<class Basis>
+  typename Basis::Field HAtomPI<Basis>::DrivEle
+  (const LinearComb<Basis>& a) {
+    return impl_->DrivEle(a); 
+  }
+  template<class Basis>
+  typename Basis::Field HAtomPI<Basis>::DrivEle
+  (const Basis& a) {
+    return impl_->DrivEle(a); 
+  }
+  template<class Basis>
+  void HAtomPI<Basis>::Display() {
+    impl_->Display();
+  }
+  
+
+  // Explicit instance
+  template class HAtomPI<RSTO>;
+  template class HAtomPI<CSTO>;
+  template class HAtomPI<RGTO>;
+  template class HAtomPI<CGTO>;
+    
 }
+

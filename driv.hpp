@@ -1,13 +1,11 @@
 #ifndef DRIV_HPP
 #define DRIV_HPP
 
-#include <vector>
-#include <l2func.hpp>
-
-//namespace {
-using std::vector;
-using namespace l2func;
-//}
+// ======== forward decralation ============
+namespace l2func {
+  template<class F, int m> class ExpBasis;
+  template<class Prim> class LinearComb;
+}
 
 namespace opt_cbf_h {
 
@@ -17,7 +15,6 @@ namespace opt_cbf_h {
   class IDrivSystem {
   private:
     typedef typename Basis::Field F;
-    typedef typename LinearComb<Basis>::const_iterator IT;
     
   public:
     virtual ~IDrivSystem() {}
@@ -31,15 +28,30 @@ namespace opt_cbf_h {
   template<class Basis>
   class HAtomPI : public IDrivSystem<Basis> {
   private:
-    typedef LinearComb<ExpBasis<F, 1> > STOs;
+    // ------- type -----------
+    typedef typename Basis::Field F;
+    typedef l2func::LinearComb<l2func::ExpBasis<F, 1> > STOs;
+    typedef l2func::LinearComb<Basis> LCBasis;
+
+    // ------- PIMPL idiom -----
     class Impl;
     Impl* impl_;
+
+    // ------- uncopyable -------
+    HAtomPI(const HAtomPI<Basis>&);
+    HAtomPI& operator= (const HAtomPI<Basis>&);
     
   public:
     HAtomPI(int _l, F _z, F _ene, STOs _driv);
+    
     ~HAtomPI();
+    F OpEle(const Basis& a, const Basis& b);
+    F OpEle(const LCBasis& a, const Basis& b);
+    F OpEle(const LCBasis& a, const LCBasis& b);
+    F DrivEle(const Basis& a);
+    F DrivEle(const LCBasis& a);
+    void Display();
   };
-
 }
 
 #endif

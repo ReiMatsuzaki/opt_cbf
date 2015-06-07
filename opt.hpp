@@ -37,11 +37,21 @@ namespace opt_cbf_h {
   // simple newton iteration
   template<class F>
   class OptimizerNewton : public IOptimizer<F> {
+  private:
+    // --------------- type ----------------
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
     typedef function<void (const VecF&, F*, VecF*, MatF*)>
     FuncValGradHess;
+
+    // ------------- Field -----------------
+    int max_iter_;
+    double eps_;
+    int debug_level_;
+
   public:
+    OptimizerNewton(int _max_iter, double _eps);
+    OptimizerNewton(int _max_iter, double _eps, int _d_lvl);
     OptRes<F> Optimize(FuncValGradHess f, VecF z0);
   };
 }

@@ -7,6 +7,7 @@
 
 namespace {
   using std::string;
+  using std::ostream;
   typedef std::complex<double> CD;
   using std::tr1::function;
   using std::tr1::bind;
@@ -56,11 +57,12 @@ namespace l2func {
     template<class U>
     ExpBasis(const ExpBasis<U, m>& o):
       c_(o.c()), n_(o.n()), z_(o.z()) {}      
+
     // ----------- Accessors ------------------------
     F c() const { return c_; }
     int n() const { return n_; }
     F z() const { return z_; }
-    void set_z(F z) { z_ = z; }
+    void set_z(F z) { z_ = z; }    
   };
 
   // =========== typedef =========================
@@ -87,6 +89,9 @@ namespace l2func {
   template<> struct IsPrimitive<CGTO> {};
 
   // ============= operation =================
+  template<class F, int m>
+  ostream& operator << (ostream& os, const ExpBasis<F,m>& a);
+
   template<class Prim>
   typename Prim::Field AtX(typename Prim::Field x, const Prim& f) {
     int m = Prim::exp_power;

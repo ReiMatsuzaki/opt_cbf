@@ -4,12 +4,12 @@
 #include <vector>
 #include <tr1/functional>
 #include <gtest/gtest.h>
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <l2func.hpp>
 #include "l_algebra.hpp"
 #include "opt.hpp"
 #include "driv.hpp"
-//#include "opt_cbf.hpp"
+#include "opt_cbf.hpp"
 
 using namespace Eigen;
 using namespace opt_cbf_h;
@@ -195,7 +195,8 @@ TEST(LinearAlgebra, real_sto) {
 }
 TEST(Optimizer, Newton) {
 
-  IOptimizer<double>* opt = new OptimizerNewton<double>();
+  IOptimizer<double>* opt = 
+    new OptimizerNewton<double>(100, 0.0000001);
   TwoDimFunc func;
 
   VectorXd x0 = VectorXd::Zero(2);
@@ -226,31 +227,10 @@ TEST(Driv, Construct) {
   EXPECT_NEAR(-0.195858432000038, h01,
 	      +0.0000000000001);
 }
-/*
-TEST(STL, vector) {
-
-  vector<int> xs(10, 42);
-  vector<int>::const_iterator it0 = xs.begin() + 1;
-  vector<int>::const_iterator it1 = xs.begin() + 3;
-  vector<int> ys(it0, it1); // ys have copied value
-
-  ys[0] = 44;
-  ys[1] = 45;
-
-  EXPECT_EQ(xs[0], 42);
-  EXPECT_EQ(xs[1], 42);
-  EXPECT_EQ(xs[2], 42);
-  EXPECT_EQ(xs[3], 42);
-  EXPECT_EQ(xs[4], 42);
-  //  EXPECT_EQ(2, ys.size());
-  EXPECT_EQ(44, ys[0]);
-
-  EXPECT_EQ(2, std::distance(it0, it1));
-}
 class TestOptSTO: public ::testing::Test {
 public:
   VectorXcd zs;
-  vector<CSTO> basis_set; 
+  vector<CSTO> basis_set;
   LinearComb<CSTO> mu_phi;// driven term
   
   HAtomPI<CSTO>* h_atom;
@@ -269,12 +249,11 @@ public:
 
     // w = 1.1, E0 = 0.5
     h_atom = new HAtomPI<CSTO>(1, 1.0, 1.1 - 0.5, mu_phi);
-
-    opt_cbf = new OptCBF<CSTO>(basis_set, *h_atom);
+    opt_cbf = new OptCBF<CSTO>(basis_set, h_atom);
   }
   virtual ~TestOptSTO() {
-    delete h_atom;
-    delete opt_cbf;
+    //delete h_atom;
+    //delete opt_cbf;
   }
 };
 TEST_F(TestOptSTO, matrix) {
@@ -352,9 +331,8 @@ TEST_F(TestOptSTO, optimization) {
   VectorXcd zs0(2);
   zs0 << CD(0.8, -0.1), CD(0.4, -0.6);
 
-
-  IOptTarget* opt_target = new OptCBF<CSTO>(basis_set, *h_atom);
-  IOptimizer<CD>* opt = new OptimizerNewton<CD>();
+  IOptTarget* opt_target = new OptCBF<CSTO>(basis_set, h_atom);
+  IOptimizer<CD>* opt = new OptimizerNewton<CD>(100, 0.00001);
   OptRes<complex<double> > opt_res = opt->Optimize
     (bind(&IOptTarget::Compute, opt_target, _1, _2, _3, _4),zs0);
 
@@ -371,4 +349,4 @@ TEST_F(TestOptSTO, optimization) {
 }
 
 
-*/
+
