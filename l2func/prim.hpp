@@ -3,15 +3,18 @@
 
 #include <string>
 #include <complex>
-#include <tr1/functional>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 
 namespace {
   using std::string;
   using std::ostream;
   typedef std::complex<double> CD;
-  using std::tr1::function;
-  using std::tr1::bind;
-  using namespace std::tr1::placeholders;
+  //  using std::tr1::function;
+  //  using std::tr1::bind;
+  //  using namespace std::tr1::placeholders;
+using boost::function;
+using boost::bind;  
 }
 
 namespace l2func {

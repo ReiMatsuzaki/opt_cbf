@@ -2,11 +2,11 @@
 #define OPT_HPP
 
 #include <Eigen/Core>
-#include <tr1/functional>
+#include <boost/function.hpp>
 
 namespace {
   using namespace Eigen;
-  using std::tr1::function;
+  using boost::function;
 }
 
 namespace opt_cbf_h {

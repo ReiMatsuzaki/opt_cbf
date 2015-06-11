@@ -20,12 +20,16 @@ namespace l2func {
     return res;        
   }
 
+  /*
   template<class F> template<class Prim>
   function<LinearComb<Prim>(const Prim&) >
   HLikeAtom<F>::Hamiltonian() {
+    
     return bind(&HLikeAtom<F>::OperateHamiltonian<Prim>,
 		this, _1);
+    
   }
+  */
 
   // ----------- eigen state ------------
   template<class F>
@@ -129,10 +133,12 @@ namespace l2func {
   template LinearComb<RSTO>  
   HLikeAtom<double>::OperateHamiltonian(const RSTO& o);
 
+  /*
   template
   function<LinearComb<CSTO>(const CSTO&) >
   HLikeAtom<CD>::Hamiltonian();
   template
   function<LinearComb<CGTO>(const CGTO&) >
   HLikeAtom<CD>::Hamiltonian();
+    */
 }

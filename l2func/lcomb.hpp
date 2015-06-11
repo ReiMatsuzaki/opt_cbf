@@ -2,17 +2,21 @@
 #define LCOMB_HPP
 
 #include <vector>
-#include <tr1/functional>
+// #include <tr1/functional>
+#include <boost/function.hpp>
 #include "prim.hpp"
 
 namespace{
   using std::vector;
   using std::pair;
   using std::make_pair;
+using boost::function;
+using boost::bind;
 
-  using std::tr1::function;
-  using std::tr1::bind;
-  using namespace std::tr1::placeholders;
+//using std::tr1::function;
+//  using std::tr1::bind;
+//  using namespace std::tr1::placeholders;
+
 }
 
 namespace l2func {

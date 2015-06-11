@@ -2,7 +2,7 @@
 #include <complex>
 #include <string>
 #include <vector>
-#include <tr1/functional>
+#include <boost/function.hpp>
 #include <gtest/gtest.h>
 #include <Eigen/Core>
 #include <l2func.hpp>
@@ -14,8 +14,6 @@
 using namespace Eigen;
 using namespace opt_cbf_h;
 using namespace l2func;
-using namespace std::tr1;
-using namespace std::tr1::placeholders;
 using namespace std;
 //typedef std::complex<double> CD;
 
