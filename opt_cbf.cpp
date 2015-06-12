@@ -1,19 +1,26 @@
 
+#include <stdexcept>
+#include <fstream>
 #include <Eigen/LU>
 #include <l2func.hpp>
+#include <macros.hpp>
 #include "l_algebra.hpp"
 #include "opt_cbf.hpp"
 #include "driv.hpp"
 
+
 using namespace l2func;
+using std::ofstream;
+using std::runtime_error;
 
 namespace opt_cbf_h {
-  void computeAlphaGradHess(cM& D00, cM& D10, cM& D20, cM& D11,
+  void computeAlphaGradHess(cV& D_inv_m,
+			    cM& D00, cM& D10, cM& D20, cM& D11,
 			    cV& m0,  cV&m1,   cV& m2,
 			    CD* a, 
 			    VectorXcd* g, MatrixXcd* h) {
   
-    VectorXcd D_inv_m = D00.fullPivLu().solve(m0);
+    //    VectorXcd D_inv_m = D00.fullPivLu().solve(m0);
     VectorXcd tmp = VectorXcd::Zero(m0.rows());
 
     // alpha
@@ -57,11 +64,13 @@ namespace opt_cbf_h {
      * basis_set = {opt_basis1, ............... , opt_basisM }
      *           fix_basis1(= it_fix_begin), ...., fix_basisN,
     */
-    vector<Prim>  basis_set_; 
+    vector<Prim>  basis_set_;
     IT            it_fix_begin_;
     HAtomPI<Prim>* h_atom_pi_;
     vector<LC>    d_basis_set_;    // derivative basis
     vector<LC>    dd_basis_set_;   // second derivative basis
+
+    VectorXcd     coef_;
 
     // ------- constructor ---------
     Impl(const vector<Prim>& _opt_basis_set,
@@ -105,17 +114,20 @@ namespace opt_cbf_h {
 
       // prepare matrix
       //      int num_all = basis_set_.size();
-      int num_opt = numOptBasis();
+      //int num_opt = numOptBasis();
 
       MatrixXcd D00, D10, D20, D11;
       VectorXcd m0, m1, m2;
-      VectorXcd tmp = VectorXcd::Zero(num_opt);
+      //      VectorXcd tmp = VectorXcd::Zero(num_opt);
+      
 
       // compute matrix and vector
       computeMatrix(&D00, &D10, &D20, &D11);
       computeVector(&m0, &m1, &m2);
+      coef_ = D00.fullPivLu().solve(m0);
 
-      computeAlphaGradHess(D00, D10, D20, D11, m0, m1, m2, 
+      computeAlphaGradHess(coef_,
+			   D00, D10, D20, D11, m0, m1, m2, 
 			   a, g, h);
       
     }
@@ -159,6 +171,7 @@ namespace opt_cbf_h {
 	  (*D20)(i,j) = h_atom_pi_->OpEle(dd_basis_set_[i], 
 					  basis_set_[j]);
 	}
+      
     }  
     void computeVector
     (VectorXcd* m0, VectorXcd* m1, VectorXcd* m2) {
@@ -214,6 +227,40 @@ namespace opt_cbf_h {
       cout << "OptCBF_Display" << endl;
       h_atom_pi_->Display();
     }
+    LinearComb<Prim> WaveFunc() const {
+      
+      LinearComb<Prim> psi;
+      int num_basis = basis_set_.size();
+      for(int i = 0; i < num_basis; i++) 
+	psi += coef_(i, 0) * basis_set_[i];
+      return psi;
+      
+    }
+    void WritePsi(const string& fn, double rmax, double dr) {
+
+      ofstream ofs(fn.c_str());
+
+      if(ofs.fail()) {
+	string msg;
+	SUB_LOCATION(msg);
+	msg+="failed to open file: ";
+	msg += string(fn);
+	throw runtime_error(msg);
+      }
+      
+      int num_grid(int(rmax/dr));
+      LinearComb<Prim> psi = this->WaveFunc();
+      
+      for(int i = 0; i < num_grid; i++) {
+
+	double r = i * dr;
+	CD     v = AtX(r, psi);
+	ofs << r << ", " << v.real();
+	ofs <<      ", " << v.imag() << endl;
+	
+      }
+    }
+    
   };
 
 
@@ -256,6 +303,12 @@ namespace opt_cbf_h {
   void OptCBF<Prim>::Display() {
     impl_->Display();
   }
+  
+  template<class Prim>
+  void OptCBF<Prim>::WritePsi(const string& fn, double rm, double dr) {
+    impl_->WritePsi(fn, rm, dr);
+  }
+  
 
   // ============= explicit instance ===============
   template class OptCBF<CSTO>;

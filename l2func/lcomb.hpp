@@ -2,7 +2,6 @@
 #define LCOMB_HPP
 
 #include <vector>
-// #include <tr1/functional>
 #include <boost/function.hpp>
 #include "prim.hpp"
 
@@ -12,11 +11,6 @@ namespace{
   using std::make_pair;
 using boost::function;
 using boost::bind;
-
-//using std::tr1::function;
-//  using std::tr1::bind;
-//  using namespace std::tr1::placeholders;
-
 }
 
 namespace l2func {
@@ -273,7 +267,7 @@ namespace l2func {
     
     res += 1.0 * ExpBasis<F, 2>(cpp,       n,   z);
     res += 1.0 * ExpBasis<F, 2>(-F(2)*cp , n+2, z);
-    res += 1.0 * ExpBasis<F, 2>(cpp,       n+4, z);
+    res += 1.0 * ExpBasis<F, 2>(c,         n+4, z);
 
     return res;
   }    

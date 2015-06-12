@@ -33,6 +33,16 @@ TEST(TestConvertData, Tuple) {
 		   get<1>(ConvertData<int,CD,double>
 			  ("2  (1.3,0.2) 5", " ")).real());
 }
+TEST(TestConvertData, bool) {
+  
+  EXPECT_TRUE(ConvertData<bool>("true"));
+  EXPECT_TRUE(ConvertData<bool>("TRUE"));
+  EXPECT_TRUE(ConvertData<bool>(" TRUE "));
+  EXPECT_TRUE(ConvertData<bool>("  t "));
+  EXPECT_FALSE(ConvertData<bool>("  f "));
+  EXPECT_FALSE(ConvertData<bool>("  False "));
+  EXPECT_ANY_THROW(ConvertData<bool>("123"));
+}
 TEST(TestKeysValues, Add) {
   
   KeysValues keys_values(":", " ");
@@ -87,7 +97,7 @@ TEST(TestKeysValues, ConvertData) {
   keys_values.ConvertValues<double>("a");
   keys_values.ConvertValues<CD>("b");
   keys_values.ConvertValues<string,double,CD>("cc");
-
+  
   EXPECT_DOUBLE_EQ(2.2, keys_values.Get<double>("a", 1));
   EXPECT_NEAR(1.1, keys_values.Get<CD>("b", 1).real(),
 	      0.0000001);

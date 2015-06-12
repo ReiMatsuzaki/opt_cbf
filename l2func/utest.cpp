@@ -289,7 +289,7 @@ TEST(LinearComb, AtX) {
 		   AtX(x0, sto));
   
 }
-TEST(LinearComb, dbasis) {
+TEST(LinearComb, dbasis_STO) {
 
   double dz = 0.001;
   RSTO s1(2, 0.3, Normalized);
@@ -320,7 +320,27 @@ TEST(LinearComb, dbasis) {
 	       AtX(cx0, d_g1).real(),  0.00001);
   EXPECT_NEAR( (AtX(cx0, g1_p)+AtX(cx0, g1_m) -2.0 * AtX(cx0, g1)).real()
 	       /(dz * dz),
-	       AtX(cx0, dd_g1).real(), 0.0001);    
+	       AtX(cx0, dd_g1).real(), 0.0001);
+}
+TEST(LinearComb, dbasis_GTO) {
+
+  double dz = 0.0001;
+  typedef std::complex<double> CD;
+  CGTO g1(2, CD(0.3), Normalized);
+  CGTO g1_p(2, CD(0.3 + dz), Normalized);
+  CGTO g1_m(2, CD(0.3 - dz), Normalized);
+  
+  LinearComb<CGTO> d_g1  = D1Normalized(g1);
+  LinearComb<CGTO> dd_g1 = D2Normalized(g1);
+
+  CD cx0(3.3, 0.0);
+  EXPECT_NEAR( ((AtX(cx0, g1_p) - AtX(cx0, g1_m)) /
+		(2.0 * dz)).real(),
+	       AtX(cx0, d_g1).real(),  0.00001);
+  EXPECT_NEAR( (AtX(cx0, g1_p)+AtX(cx0, g1_m)
+		-2.0 * AtX(cx0, g1)).real()
+	       /(dz * dz),
+	       AtX(cx0, dd_g1).real(), 0.0001);
 }
 TEST(HAtom, EigenState) {
 

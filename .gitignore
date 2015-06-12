@@ -1,7 +1,8 @@
 l2func/utest
-l2func/*.o
 utils/utest
-utils/*.o
 utest
+opt_cbf
 *.o
+supply/*.out
+l2func/l2.a
 local.mk

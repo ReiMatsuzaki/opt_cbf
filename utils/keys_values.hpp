@@ -14,25 +14,25 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/trim.hpp>
-//#include <boost/tuple/tuple.hpp>
-#include <tr1/tuple>
+#include <boost/tuple/tuple.hpp>
+
 
 namespace {
 
   using namespace std;
   typedef complex<double> CD;
+  using std::transform;
   using boost::any;
   using boost::any_cast;
   using boost::lexical_cast;
   using boost::algorithm::is_any_of;
   using boost::algorithm::split;
   using boost::algorithm::trim_copy;
+  using boost::algorithm::trim;
   using boost::algorithm::token_compress_on;
-  //  using boost::tuple;
-  //  using boost::make_tuple;
-  using std::tr1::tuple;
-  using std::tr1::make_tuple;
-  using std::tr1::get;
+  using boost::tuple;
+  using boost::make_tuple;
+  using boost::get;
   
   typedef const string CS;
 }

@@ -19,6 +19,7 @@ namespace opt_cbf_h {
       convergence(false), iter_num(0){}
     bool convergence;
     Matrix<F, Dynamic, 1> z;
+    Matrix<F, Dynamic, Dynamic> hess;
     int iter_num;
   };
 
@@ -54,6 +55,22 @@ namespace opt_cbf_h {
     OptimizerNewton(int _max_iter, double _eps, int _d_lvl);
     OptRes<F> Optimize(FuncValGradHess f, VecF z0);
   };
+
+  /*
+  // Decorator pattern
+  template<class F>
+  class Decorator : public IOptimizer<F> {
+  private:
+    // --------------- type ----------------
+    typedef Matrix<F, Dynamic, 1>       VecF;
+    typedef Matrix<F, Dynamic, Dynamic> MatF;
+    typedef function<void (const VecF&, F*, VecF*, MatF*)>
+    FuncValGradHess;
+
+    // --------------- Field ---------------
+    IOptimizer* optimizer_;
+  };
+  */
 }
 
 #endif

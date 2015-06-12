@@ -27,7 +27,8 @@ namespace opt_cbf_h {
 
   // ------- logic ----------------------
   // compute mD^-1m and its gradient and hessian.
-  void computeAlphaGradHess(cM& D00, cM& D10, cM& D20, cM& D11,
+  void computeAlphaGradHess(cV& D_inv_m,
+			    cM& D00, cM& D10, cM& D20, cM& D11,
 			    cV& m0,  cV&m1,   cV& m2,
 			    CD* a, VectorXcd* g, MatrixXcd* h);
 
@@ -37,6 +38,7 @@ namespace opt_cbf_h {
     virtual ~IOptTarget() {} ;
     virtual void Compute(const VectorXcd& zs, CD* a, VectorXcd* g, MatrixXcd* h) = 0;
     virtual void Display() = 0;
+    virtual void WritePsi(const string&,double,double)=0;
   };  
 
   // ====== calculator of alpha, gradient and hessian ==
@@ -68,6 +70,7 @@ namespace opt_cbf_h {
     void computeVector (VectorXcd* m0, VectorXcd* m1, 
 			VectorXcd* m2);
     void Display();
+    void WritePsi(const string&, double rmax, double dr);
     
   };
 }

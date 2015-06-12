@@ -331,9 +331,11 @@ TEST_F(TestOptSTO, optimization) {
 
   IOptTarget* opt_target = new OptCBF<CSTO>(basis_set, h_atom);
   IOptimizer<CD>* opt = new OptimizerNewton<CD>(100, 0.00001);
-  OptRes<complex<double> > opt_res = opt->Optimize
-    (bind(&IOptTarget::Compute, opt_target, _1, _2, _3, _4),zs0);
+  OptRes<CD> opt_res = opt->Optimize
+    (bind(&IOptTarget::Compute, opt_target,
+	  _1, _2, _3, _4), zs0);
 
+  opt_target->WritePsi("supply/psi.out", 10.0, 1.0);
 
 //  IOptimizer<CD>* opt = new OptimizerNewton<CD>();
 //  OptRes<complex<double> > opt_res = opt->Optimize
@@ -345,6 +347,7 @@ TEST_F(TestOptSTO, optimization) {
   EXPECT_NEAR(0.664185, opt_res.z(1).real(), 0.000001);
   EXPECT_NEAR(-1.11116, opt_res.z(1).imag(), 0.00001);
 }
+
 
 
 

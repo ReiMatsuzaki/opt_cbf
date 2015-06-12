@@ -152,7 +152,6 @@ void KeysValues::Read(ifstream& ifs) {
   }
 
 }
-
 /*
 void KeyVal::Write(ofstream& ofs) const {
   
@@ -166,3 +165,29 @@ void KeyVal::Write(ofstream& ofs) const {
     }
 }
 */
+
+template<>
+bool ConvertData<bool>(const string& str) {
+
+  string tmp = str;
+  trim(tmp);
+  transform(tmp.begin(), tmp.end(), tmp.begin(), ::toupper);
+  
+  if(tmp == "TRUE" || tmp == "T") 
+    return true;
+  else if(tmp == "FALSE" || tmp == "F")
+    return false;
+
+  string msg;
+  SUB_LOCATION(msg);
+  msg += "\nConvertData<bool> failed. ";
+  msg += "\nOriginal string : ";
+  msg += str;
+  msg += "\nTransformed string : \"";
+  msg += tmp;
+  msg += "\"\n";
+  throw runtime_error(msg);
+  
+}
+
+

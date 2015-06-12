@@ -1,18 +1,18 @@
 #ifndef OP_HPP
 #define OP_HPP
 
-#include <vector>
-#include <tr1/functional>
-#include "lcomb.hpp"
+
 /*
+#include <vector>
+#include <boost/functio.hpp>
+#include "lcomb.hpp"
 
 namespace {
   using std::vector;
   using std::pair;
   using std::make_pair;
   
-  using std::tr1::function;
-  using namespace std::tr1::placeholders;
+  using boost::function;
 }
 
 namespace l2func {

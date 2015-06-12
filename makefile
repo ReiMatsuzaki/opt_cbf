@@ -9,9 +9,12 @@ utest: utest.o ${OPT_CBF_OBJS}
 
 opt_cbf: ${RUN_OBJS}
 	${CXX} -o opt_cbf ${CXXFLAGS} ${RUN_OBJS}
-	./opt_cbf
+	./opt_cbf supply/sample.in supply/sample.out
 	cat supply/sample.out
 clean:
 	rm -f *.o
 	rm -f *.a
 	rm -f utest
+
+install: opt_cbf
+	cp opt_cbf ${INSTALL_PATH}

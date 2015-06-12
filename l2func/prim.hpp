@@ -10,9 +10,6 @@ namespace {
   using std::string;
   using std::ostream;
   typedef std::complex<double> CD;
-  //  using std::tr1::function;
-  //  using std::tr1::bind;
-  //  using namespace std::tr1::placeholders;
 using boost::function;
 using boost::bind;  
 }

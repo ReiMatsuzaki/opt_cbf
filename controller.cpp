@@ -1,5 +1,5 @@
 #include <iostream>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
 #include <keys_values.hpp>
 #include <timer.hpp>
@@ -14,7 +14,7 @@ namespace {
   using std::endl;
   using std::ifstream;
   typedef std::complex<double> CD;
-  using boost::scoped_ptr;
+  using boost::shared_ptr;
   using namespace l2func;
 }
 
@@ -24,11 +24,12 @@ namespace opt_cbf_h {
   public:
     // -------- type -----------------
     typedef tuple<int, CD> I_CD;
+    typedef tuple<bool, string> BS;
 
     // -------- Member Field ---------
     KeysValues keys_values_;
-    IOptTarget* opt_target_;
-    IOptimizer<CD>* optimizer_;
+    shared_ptr<IOptTarget> opt_target_;
+    shared_ptr<IOptimizer<CD> > optimizer_;
     Timer      timer_;
     VectorXcd  zs_;
     OptRes<CD> opt_res_;
@@ -37,6 +38,11 @@ namespace opt_cbf_h {
     Impl() : keys_values_(":", " ") {}
 
     // ------- Read support ---------
+    void convertWriteOption(const string& key) {
+      BS default_val = make_tuple(false, "");
+      keys_values_.SetIfNull<BS>(key, default_val);
+      keys_values_.ConvertValues<bool, string>(key);
+    }
     void convertData() {
 
       keys_values_.ConvertValues<string>("channel");
@@ -50,6 +56,13 @@ namespace opt_cbf_h {
       keys_values_.ConvertValues<int>("max_iter");
       keys_values_.SetIfNull<double>("eps", 0.0000001);
       keys_values_.ConvertValues<double>("eps");
+
+      typedef tuple<double, double> DD;
+      keys_values_.SetIfNull<DD>("grid", make_tuple(10.0, 0.1));
+      keys_values_.ConvertValues<double, double>("grid");
+
+      this->convertWriteOption("write_psi");
+      this->convertWriteOption("write_hess");
       
     }
     template<class Prim>
@@ -111,18 +124,20 @@ namespace opt_cbf_h {
      
       string basis_type = 
 	keys_values_.Get<string>("basis_type");
+      IOptTarget* ptr;
+
       if(basis_type == "STO") {
 	vector<CSTO> basis_set;
 	this->setBasis<CSTO>(&basis_set);
 	HAtomPI<CSTO>* h_pi = 
 	  new HAtomPI<CSTO>(l1, 1.0, energy, mu_phi);
-	opt_target_ = new OptCBF<CSTO>(basis_set, h_pi);
+	ptr = new OptCBF<CSTO>(basis_set, h_pi);
       } else if (basis_type == "GTO") {
 	vector<CGTO> basis_set;
 	this->setBasis<CGTO>(&basis_set);
 	HAtomPI<CGTO>* h_pi = 
 	  new HAtomPI<CGTO>(l1, 1.0, energy, mu_phi);
-	opt_target_ = new OptCBF<CGTO>(basis_set, h_pi);
+	ptr = new OptCBF<CGTO>(basis_set, h_pi);
       } else {
 	string msg;
 	msg =  "invalid basis type\n";
@@ -130,14 +145,49 @@ namespace opt_cbf_h {
 	msg+= basis_type;
 	throw runtime_error(msg);
       }
+      opt_target_ = shared_ptr<IOptTarget>(ptr);
 
     }
     void setOptimizer() {
 
       int max_iter = keys_values_.Get<int>("max_iter");
       double eps   = keys_values_.Get<double>("eps");
-      optimizer_ = new OptimizerNewton<CD>(max_iter, eps, 0);
+      IOptimizer<CD>* ptr = new OptimizerNewton<CD>
+	(max_iter, eps, 0);
+      optimizer_ = shared_ptr<IOptimizer<CD> >(ptr);
 
+    }
+
+    // -------- Write support -------
+    void writeOptionalFiles() {
+
+      typedef tuple<double, double> DD;
+      DD rr = keys_values_.Get<DD>("grid");
+      double rmax = get<0>(rr);
+      double dr   = get<1>(rr);
+
+      BS bool_file1 = keys_values_.Get<BS>("write_psi");
+      if(get<0>(bool_file1)) {
+
+	string fn = get<1>(bool_file1);
+	opt_target_->WritePsi(fn, rmax, dr);
+
+      }
+
+      BS bool_file2 = keys_values_.Get<BS>("write_hess");
+      if(get<0>(bool_file2)) {
+	
+	ofstream ofs(get<1>(bool_file2).c_str());
+	if(ofs.fail()) {
+	  string msg = "Failed to open file.\n";
+	  msg += "File name : ";
+	  msg += get<1>(bool_file2);
+	  throw runtime_error(msg);
+	}
+
+	ofs << opt_res_.hess; 
+	ofs << endl;
+      }
     }
     
     // -------- Method --------------
@@ -156,7 +206,14 @@ namespace opt_cbf_h {
       
       keys_values_.Read(ifs);
 
-      this->convertData();
+      try {
+	this->convertData();
+      } catch (exception& e) {
+	string msg = "failed to convertData. ";
+	msg += "Error message is: \n";
+	msg += e.what();
+	throw runtime_error(msg);
+      }
       this->setOptTarget();
       this->setOptimizer();
 
@@ -197,10 +254,11 @@ namespace opt_cbf_h {
       }
       ofs << "read_time: " << timer_.GetTime("read") << endl;
       ofs << "calc_time: " << timer_.GetTime("calc") << endl;
-    }
-    
-  };
 
+      this->writeOptionalFiles();
+    }
+  };
+    
   // =========== interface =============
   OptCBFController::OptCBFController() : impl_(new Impl()) {}
   OptCBFController::~OptCBFController() { 

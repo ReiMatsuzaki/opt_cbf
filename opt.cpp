@@ -32,7 +32,8 @@ namespace opt_cbf_h {
     res.z = z0;
       
     F    value;
-    MatF hess = MatF::Zero(num, num);
+    //    MatF hess = MatF::Zero(num, num);
+    res.hess = MatF::Zero(num, num);
     VecF grad = VecF::Zero(num);
     VecF dz   = VecF::Zero(num);
 
@@ -40,7 +41,7 @@ namespace opt_cbf_h {
     for(int i = 0; i < max_iter_; i++) {
       
       // compute grad and hess
-      f(res.z, &value, &grad, &hess);
+      f(res.z, &value, &grad, &res.hess);
 
       // print if debugging mode
       if (debug_level_ > 0) {
@@ -54,7 +55,7 @@ namespace opt_cbf_h {
       }
       
       // update
-      dz = hess.fullPivLu().solve(grad);
+      dz = res.hess.fullPivLu().solve(grad);
       res.z -= dz;
       res.iter_num = i + 1;
 
@@ -68,6 +69,8 @@ namespace opt_cbf_h {
 	break;
       }
     }
+
+    //    res.hess = hess;
     return res;
   }
 
