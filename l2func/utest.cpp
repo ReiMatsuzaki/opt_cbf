@@ -347,10 +347,12 @@ TEST(HAtom, EigenState) {
   HLikeAtom<CD> hatom00(1, 1.0, 0);
   HLikeAtom<CD> hatom10(2, 1.0, 0);
   HLikeAtom<CD> hatom11(2, 1.0, 1);
+  HLikeAtom<CD> hatom_3d(3, 1.0, 2);
 
   LinearComb<CSTO> f00 = hatom00.EigenState();
   LinearComb<CSTO> f10 = hatom10.EigenState();
   LinearComb<CSTO> f11 = hatom11.EigenState();
+  LinearComb<CSTO> psi_3d = hatom_3d.EigenState();
   EXPECT_EQ(1, f00.size());
 
   EXPECT_EQ(0.0, abs(CIP(f00, f10)));
@@ -359,8 +361,15 @@ TEST(HAtom, EigenState) {
   EXPECT_DOUBLE_EQ(1.0, CIP(f00, f00).real());
   EXPECT_DOUBLE_EQ(1.0, CIP(f10, f10).real());
   EXPECT_DOUBLE_EQ(1.0, CIP(f11, f11).real());
+  EXPECT_DOUBLE_EQ(1.0, CIP(psi_3d, psi_3d).real());
 
   double eps = machine_eps() * 10;
+
+  EXPECT_NEAR
+    (hatom_3d.EigenEnergy(),
+     CIP(psi_3d,
+	 hatom_3d.OperateHamiltonian(psi_3d.prim_i(0))).real(),
+     eps);
 
   /*
   EXPECT_NEAR(hatom00.EigenEnergy(),

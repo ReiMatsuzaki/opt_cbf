@@ -63,7 +63,7 @@ namespace opt_cbf_h {
 
       this->convertWriteOption("write_psi");
       this->convertWriteOption("write_hess");
-      
+      this->convertWriteOption("write_grad");
     }
     template<class Prim>
     void setBasis(vector<Prim>* basis_set) {
@@ -158,22 +158,35 @@ namespace opt_cbf_h {
 
     }
 
-    // -------- Write support -------
+    // -------- Write support --------
     void writeOptionalFiles() {
 
+      // psi
       typedef tuple<double, double> DD;
       DD rr = keys_values_.Get<DD>("grid");
       double rmax = get<0>(rr);
       double dr   = get<1>(rr);
-
       BS bool_file1 = keys_values_.Get<BS>("write_psi");
       if(get<0>(bool_file1)) {
-
 	string fn = get<1>(bool_file1);
 	opt_target_->WritePsi(fn, rmax, dr);
-
       }
-
+      
+      // grad
+      BS bool_file_grad = keys_values_.Get<BS>("write_grad");
+      if(get<0>(bool_file_grad)) {
+	string fn = get<1>(bool_file_grad);
+	ofstream ofs(fn.c_str());
+	if(ofs.fail()) {
+	  string msg = "Failed to open file.\n";
+	  msg += "File name : ";
+	  msg += fn;
+	  throw runtime_error(msg);
+	}
+	ofs << opt_res_.grad << endl;
+      }
+      
+      // hess
       BS bool_file2 = keys_values_.Get<BS>("write_hess");
       if(get<0>(bool_file2)) {
 	
@@ -184,9 +197,7 @@ namespace opt_cbf_h {
 	  msg += get<1>(bool_file2);
 	  throw runtime_error(msg);
 	}
-
-	ofs << opt_res_.hess; 
-	ofs << endl;
+	ofs << opt_res_.hess << endl;
       }
     }
     
@@ -252,6 +263,12 @@ namespace opt_cbf_h {
 		      ("opt_basis", i));
 	ofs << " " << opt_res_.z(i) << endl;
       }
+      VectorXcd cs = opt_target_->GetCoefs();
+      for(int i = 0; i < cs.rows(); i++) {
+	ofs << "coef: ";
+	ofs << cs(i) << endl;
+      }
+      ofs << "alpha: " << opt_res_.value << endl;
       ofs << "read_time: " << timer_.GetTime("read") << endl;
       ofs << "calc_time: " << timer_.GetTime("calc") << endl;
 

@@ -31,17 +31,16 @@ namespace opt_cbf_h {
 
     res.z = z0;
       
-    F    value;
-    //    MatF hess = MatF::Zero(num, num);
+    res.value= F(0);
     res.hess = MatF::Zero(num, num);
-    VecF grad = VecF::Zero(num);
+    res.grad = VecF::Zero(num);
     VecF dz   = VecF::Zero(num);
 
     // start loop
     for(int i = 0; i < max_iter_; i++) {
       
       // compute grad and hess
-      f(res.z, &value, &grad, &res.hess);
+      f(res.z, &res.value, &res.grad, &res.hess);
 
       // print if debugging mode
       if (debug_level_ > 0) {
@@ -50,27 +49,26 @@ namespace opt_cbf_h {
 	  cout << res.z(i) << ", ";
 	cout << "; ";
 	for(int i = 0; i < num; i++)
-	  cout << grad(i) << ", ";
+	  cout << res.grad(i) << ", ";
 	cout << endl;
       }
       
       // update
-      dz = res.hess.fullPivLu().solve(grad);
+      dz = res.hess.fullPivLu().solve(res.grad);
       res.z -= dz;
       res.iter_num = i + 1;
 
       // check convergence
       double dz_norm = std::abs(dz.norm());
       bool check1 = dz_norm < eps_;
-      double max_grad = grad.array().abs().maxCoeff();
+      double max_grad = res.grad.array().abs().maxCoeff();
       bool check2 =  max_grad < eps_;
       if( check1 && check2) {
 	res.convergence = true;
 	break;
       }
     }
-
-    //    res.hess = hess;
+    
     return res;
   }
 

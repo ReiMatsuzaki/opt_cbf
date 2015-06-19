@@ -39,6 +39,7 @@ namespace opt_cbf_h {
     virtual void Compute(const VectorXcd& zs, CD* a, VectorXcd* g, MatrixXcd* h) = 0;
     virtual void Display() = 0;
     virtual void WritePsi(const string&,double,double)=0;
+    virtual VectorXcd GetCoefs() const = 0;
   };  
 
   // ====== calculator of alpha, gradient and hessian ==
@@ -71,6 +72,7 @@ namespace opt_cbf_h {
 			VectorXcd* m2);
     void Display();
     void WritePsi(const string&, double rmax, double dr);
+    VectorXcd GetCoefs() const;
     
   };
 }

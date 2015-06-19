@@ -14,6 +14,7 @@ using std::ofstream;
 using std::runtime_error;
 
 namespace opt_cbf_h {
+  
   void computeAlphaGradHess(cV& D_inv_m,
 			    cM& D00, cM& D10, cM& D20, cM& D11,
 			    cV& m0,  cV&m1,   cV& m2,
@@ -260,7 +261,9 @@ namespace opt_cbf_h {
 	
       }
     }
-    
+    VectorXcd GetCoefs() const {
+      return coef_;
+    }
   };
 
 
@@ -309,7 +312,11 @@ namespace opt_cbf_h {
     impl_->WritePsi(fn, rm, dr);
   }
   
-
+  template<class Prim>
+  VectorXcd OptCBF<Prim>::GetCoefs() const {
+    return impl_->GetCoefs();
+  }
+  
   // ============= explicit instance ===============
   template class OptCBF<CSTO>;
   template class OptCBF<CGTO>;

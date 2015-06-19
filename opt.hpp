@@ -3,10 +3,14 @@
 
 #include <Eigen/Core>
 #include <boost/function.hpp>
+//#include <boost/any.hpp>
 
 namespace {
+  using std::string;
+  //  using std::map;
   using namespace Eigen;
   using boost::function;
+  //  using boost::any;
 }
 
 namespace opt_cbf_h {
@@ -19,8 +23,12 @@ namespace opt_cbf_h {
       convergence(false), iter_num(0){}
     bool convergence;
     Matrix<F, Dynamic, 1> z;
+    F                     value;
+    Matrix<F, Dynamic, 1> grad;
     Matrix<F, Dynamic, Dynamic> hess;
+
     int iter_num;
+    //    map<string, any> others_map;
   };
 
   // interface for optimization class

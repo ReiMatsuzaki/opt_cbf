@@ -1,4 +1,6 @@
 #include "hatom.hpp"
+#include <boost/lexical_cast.hpp>
+#include <macros.hpp>
 
 namespace l2func {
 
@@ -19,17 +21,6 @@ namespace l2func {
 		Op(OpRm<Prim>(-2), o));
     return res;        
   }
-
-  /*
-  template<class F> template<class Prim>
-  function<LinearComb<Prim>(const Prim&) >
-  HLikeAtom<F>::Hamiltonian() {
-    
-    return bind(&HLikeAtom<F>::OperateHamiltonian<Prim>,
-		this, _1);
-    
-  }
-  */
 
   // ----------- eigen state ------------
   template<class F>
@@ -60,11 +51,21 @@ namespace l2func {
       double z = 1.0 / 3.0;
       lc += ExpBasis<F,1>(c,      2, z);
       lc += ExpBasis<F,1>(-c/6.0, 3, z);
+
+    } else if (n_ == 3 && l_ == 2) {
+
+      double c = (1.0 / 81.0) * sqrt(8.0/15.0);
+      lc += ExpBasis<F, 1>(c, 3, 1/3.0);
       
     } else {
 
       string msg;
-      msg = "inputted n and l is not supported for HAtomEigenState";
+      SUB_LOCATION(msg);
+      msg += "\ninputted n and l is not supported for HLikeAtom::EigenState\n";
+      msg += "n: ";
+      msg += boost::lexical_cast<string>(n_);
+      msg += "\nl: ";
+      msg += boost::lexical_cast<string>(l_);
       throw std::invalid_argument(msg);
       
     }
