@@ -9,6 +9,8 @@ namespace {
 }
 
 namespace opt_cbf_h {
+
+  // ============= Simple Newton ====================
   
   template<class F>
   OptimizerNewton<F>::OptimizerNewton
@@ -72,6 +74,74 @@ namespace opt_cbf_h {
     return res;
   }
 
+
+  // ============= Newton with Restriction ==========
+  template<class F>
+  OptimizerRestricted<F>::OptimizerRestricted
+  (int _max_iter, double _eps) :
+    max_iter_(_max_iter), eps_(_eps), debug_level_(0) {}
+  template<class F>
+  OptimizerRestricted<F>::OptimizerRestricted
+  (int _max_iter, double _eps, int _d) :
+    max_iter_(_max_iter), eps_(_eps), debug_level_(_d) {}
+
+  void PrintDebug(OptRes opt_res) const {
+    
+    if (debug_level_ > 0) {
+      cout << i << "; ";
+      for(int i = 0; i < num; i++)
+	cout << res.z(i) << ", ";
+      cout << "; ";
+      for(int i = 0; i < num; i++)
+	cout << res.grad(i) << ", ";
+      cout << endl;
+    }
+    
+  }
+  template<class F>
+  OptimizerRestricted<F>::Optimize
+  (FuncValGradHess f, VecF z0){
+
+    int num = z0.rows();
+
+    // initialize
+    OptRes<F> res;
+    res.convergence = false;
+    res.z = z0;
+    res.value= F(0);
+    res.hess = MatF::Zero(num, num);
+    res.grad = VecF::Zero(num);
+    VecF dz   = VecF::Zero(num);
+
+    // start loop
+    for(int i = 0; i < max_iter_; i++) {
+      
+      // compute grad and hess
+      f(res.z, &res.value, &res.grad, &res.hess);
+
+      // print if debugging mode
+      PrintDebug(res);
+      
+      // update
+      dz = res.hess.fullPivLu().solve(res.grad);
+      res.z -= dz;
+      res.iter_num = i + 1;
+
+      // check convergence
+      double dz_norm = std::abs(dz.norm());
+      bool check1 = dz_norm < eps_;
+      double max_grad = res.grad.array().abs().maxCoeff();
+      bool check2 =  max_grad < eps_;
+      if( check1 && check2) {
+	res.convergence = true;
+	break;
+      }
+    }
+    
+    return res;
+    
+  }
+  
   // explicit instance
   template class OptimizerNewton<double>;
   template class OptimizerNewton<std::complex<double> >;

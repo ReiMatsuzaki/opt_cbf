@@ -64,6 +64,28 @@ namespace opt_cbf_h {
     OptRes<F> Optimize(FuncValGradHess f, VecF z0);
   };
 
+  // simple newton method with restrictions
+  template<class F>
+  class OptimizerRestricted : public IOptimizer<F> {
+  private:
+    // ------------ Type --------------------
+    typedef Matrix<F, Dynamic, 1>       VecF;
+    typedef Matrix<F, Dynamic, Dynamic> MatF;
+    typedef function<void (const VecF&, F*, VecF*, MatF*)>
+    FuncValGradHess;
+    
+    // ------------ Field -------------------
+    int max_iter_;
+    double eps_;
+    int debug_level_;
+    
+  public:
+    // ------------ Method ------------------
+    OptimizerRestricted(int _max_iter, double _eps);
+    OptimizerRestricted(int _max_iter, double _eps, int _d);
+    OptRes<F> Optimize(FuncValGradHess f, VecF z0);
+  };
+  
   /*
   // Decorator pattern
   template<class F>
