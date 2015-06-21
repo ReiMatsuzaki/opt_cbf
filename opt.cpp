@@ -85,21 +85,23 @@ namespace opt_cbf_h {
   (int _max_iter, double _eps, int _d) :
     max_iter_(_max_iter), eps_(_eps), debug_level_(_d) {}
 
-  void PrintDebug(OptRes opt_res) const {
-    
-    if (debug_level_ > 0) {
-      cout << i << "; ";
-      for(int i = 0; i < num; i++)
-	cout << res.z(i) << ", ";
+  template<class F>
+  void PrintDebug(OptRes<F> opt_res) {
+    cout << opt_res.z << endl;
+    cout << opt_res.grad << endl;
+    /*    
+    for(int i = 0; i < num; i++) {
+      cout << res.z(i) << ", ";
       cout << "; ";
-      for(int i = 0; i < num; i++)
-	cout << res.grad(i) << ", ";
+    }
+    for(int i = 0; i < num; i++) {
+      cout << res.grad(i) << ", ";
       cout << endl;
     }
-    
+    */
   }
   template<class F>
-  OptimizerRestricted<F>::Optimize
+  OptRes<F> OptimizerRestricted<F>::Optimize
   (FuncValGradHess f, VecF z0){
 
     int num = z0.rows();
@@ -145,6 +147,7 @@ namespace opt_cbf_h {
   // explicit instance
   template class OptimizerNewton<double>;
   template class OptimizerNewton<std::complex<double> >;
+
 }
 
 
