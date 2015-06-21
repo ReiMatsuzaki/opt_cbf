@@ -220,8 +220,43 @@ TEST(Restriction, EvenTemp) {
   xs << 1.1, 2.2, 2.3, 2.4; 
   even_temp.SetVars(xs);
   
-  EXPECT_DOUBLE_EQ(1.1, even_temp.x0());
   EXPECT_DOUBLE_EQ(2.0, even_temp.ratio());
+  EXPECT_DOUBLE_EQ(1.1, even_temp.x0());
+
+  xs = even_temp.Xs();
+  EXPECT_DOUBLE_EQ(1.1, xs(0));
+  EXPECT_DOUBLE_EQ(2.2, xs(1));
+  EXPECT_DOUBLE_EQ(4.4, xs(2));
+
+  // consider 2 variable function
+  // f(x, y, z)    = x - 1.2y + 2.5sin(z)
+  // f(x, rx, rrx) = x - 1.2rx + 2.5sin(rrx)
+  // dx f          = 1 - 1.2r +2.5rr cos(rrx)
+  // dr f          = -1.2x + 5rx cos(rrx) 
+
+  VectorXd grad_xyz(3);
+  grad_xyz << 1.0, -1.2, 2.5 * cos(4.4);
+  VectorXd grad = even_temp.Grad(grad_xyz);
+  EXPECT_DOUBLE_EQ( 1.0 - 1.2 * 2 + 2.5 * 4 * cos(4.4),
+		    grad(0));
+  EXPECT_DOUBLE_EQ(-1.2*1.1 + 5 * 2 * 1.1 * cos(4.4),
+		   grad(1));
+  
+  // dxdx f = -2.5rrrr sin(rrx)
+  // dxdr f = -1.2 + 5r cos(rrx) - 5rrrx sin(rrx)
+  // drdr f = 5x cos(rrx) - 10rrxx sin(rrx)
+  MatrixXd hess_xyz(3,3);
+  hess_xyz << 
+    0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0,
+    0.0, 0.0, -2.5 * sin(4.4);
+  MatrixXd hess = even_temp.Hess(grad_xyz, hess_xyz);
+  EXPECT_DOUBLE_EQ(-2.5 * 16 * sin(4.4),
+		   hess(0, 0));
+  EXPECT_DOUBLE_EQ(-1.2 + 5*2*cos(4.4) - 5*8*1.1*sin(4.4),
+		   hess(1,0));
+  EXPECT_DOUBLE_EQ(5 * 1.1 * cos(4.4) - 10*4*1.1*1.1*sin(4.4),
+		   hess(1,1));
   
 }
 TEST(Driv, Construct) {
