@@ -1,6 +1,6 @@
 include local.mk
 CXXFLAGS=${LIBPATH} -g -Wall
-OPT_CBF_OBJS= opt_cbf.o driv.o opt.o l_algebra.o
+OPT_CBF_OBJS= opt_cbf.o driv.o opt.o restrict.o l_algebra.o
 RUN_OBJS=run.o controller.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${L2_DIR}/l2.a
 
 ${UTILS_DIR}/keys_values.o :

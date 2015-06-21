@@ -1,10 +1,10 @@
-#include "restrict.hpp"
 #include <Eigen/Core>
+#include "restrict.hpp"
 
-namespace opt_cbf {
+namespace opt_cbf_h {
 
   template<class F>
-  void EvenTemp<F>::SetVars(const VecF& xs) {
+  void EvenTemp<F>::SetVars(const Matrix<F, Dynamic, 1>& xs) {
 
     x0_    = xs(0);
     ratio_ = xs(1) / xs(0);
@@ -20,7 +20,7 @@ namespace opt_cbf {
    *       = sum_n anr^{n-1} df/dx_n
    */      
   template<class F>
-  VecF EvenTemp<F>::Grad(const VecF& dxs) {
+  Matrix<F, Dynamic, 1> EvenTemp<F>::Grad(const Matrix<F, Dynamic, 1>& dxs) const {
 
     int num = dxs.rows();
     
@@ -34,7 +34,18 @@ namespace opt_cbf {
     VecF grad(2);
     grad(0) = df_da; grad(1) = df_dr;
 
-    return grad(0);
+    return grad;
   }
 
+  template<class F>
+  Matrix<F, Dynamic, Dynamic> EvenTemp<F>::Hess(const Matrix<F, Dynamic, Dynamic>& ddxs) const {
+    
+    Matrix<F, Dynamic, Dynamic> hess(2, 2);
+    hess << F(0), F(1), F(2), F(3);
+    return hess;
+  }
+
+  // ============ Explicit Instance ==================
+  template class EvenTemp<double>;
+  template class EvenTemp<std::complex<double> >;
 }

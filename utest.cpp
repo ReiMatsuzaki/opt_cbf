@@ -7,6 +7,7 @@
 #include <Eigen/Core>
 #include <l2func.hpp>
 #include "l_algebra.hpp"
+#include "restrict.hpp"
 #include "opt.hpp"
 #include "driv.hpp"
 #include "opt_cbf.hpp"
@@ -211,6 +212,17 @@ TEST(Optimizer, Newton) {
   
   EXPECT_NEAR(res.z(0,0), -1.3646556076560374, eps);
   EXPECT_NEAR(res.z(1,0), -0.5344287681232319, eps);
+}
+TEST(Restriction, EvenTemp) {
+  
+  EvenTemp<double> even_temp;
+  VectorXd xs(4);
+  xs << 1.1, 2.2, 2.3, 2.4; 
+  even_temp.SetVars(xs);
+  
+  EXPECT_DOUBLE_EQ(1.1, even_temp.x0());
+  EXPECT_DOUBLE_EQ(2.0, even_temp.ratio());
+  
 }
 TEST(Driv, Construct) {
 

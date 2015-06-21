@@ -3,17 +3,21 @@
 
 #include <Eigen/Core>
 
-namespace opt_cbf {
+namespace {
+  using namespace Eigen;
+}
+
+namespace opt_cbf_h {
 
   template<class F>
   class IRestriction {
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
   public:
-    virtual ~IRestriction();
-    virtual void SetVars(const VecF& xs);
-    virtual VecF Grad(const VecF&);
-    virtual MatF Hess(const MatF&);
+    virtual ~IRestriction() = 0;
+    virtual void SetVars(const VecF& xs) = 0;
+    virtual VecF Grad(const VecF&) const = 0;
+    virtual MatF Hess(const MatF&) const = 0;
   };
 
   template<class F>
@@ -26,10 +30,16 @@ namespace opt_cbf {
     F x0_;
     
   public:
+    // ------- Constructors -----------------
+    EvenTemp() {}
+    ~EvenTemp() {}
+    // ------- Accessor ---------------------
+    F ratio() const { return ratio_; }
+    F x0()    const { return x0_; }
     // ------- Methods ----------------------
     void SetVars(const VecF&);
-    VecF Grad(const VecF&);
-    MatF Hess(const MatF&);    
+    VecF Grad(const VecF&) const;
+    MatF Hess(const MatF&) const;    
   };
 }
 
