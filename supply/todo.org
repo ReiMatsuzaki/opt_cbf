@@ -7,3 +7,11 @@
   Normal space: original variables (i.e. x0, x1, x2, ..., xN)
   Restricted space: restricted variables (i.e. x0 and ratio)
   
+* Refactoring KeysValues
+  Current code has multiplicity for example
+  template<class T> .....
+  template<class T, class V> .....
+  template<class T, class V, class U> .....
+  These code have many overlap and can be removed
+  by some technique in meta programming.
+  

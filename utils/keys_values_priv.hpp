@@ -68,17 +68,39 @@ tuple<T,U,V> ConvertData(CS& str, CS& sep) {
   string ut = trim_copy(str_vec[1]);
   string vt = trim_copy(str_vec[2]);
 
-  /*
-  // convert each value
-  string str_t, str_u, str_v;
-  str_t = ConvertData<T>(tt);
-  str_u = ConvertData<U>(ut);
-  str_v = ConvertData<V>(vt);
-  */
-
   tuple<T, U, V> res(ConvertData<T>(tt),
 		     ConvertData<U>(ut),
 		     ConvertData<V>(vt));
+  return res;
+}
+template<class T, class U, class V, class W>
+tuple<T,U,V,W> ConvertData(CS& str, CS& sep) {
+
+  // split string
+  vector<string> str_vec;
+  split(str_vec, str, is_any_of(sep), token_compress_on);
+
+  // remove black element
+  //  RemoveElement<string>(" ", &str_vec);
+
+  // check size
+  if(str_vec.size() < 4) {
+    string msg;
+    SUB_LOCATION(msg);
+    msg += "\nthe number of splitted strings are less than 4\n";
+    throw invalid_argument(msg);
+  }
+
+  // trim
+  string tt = trim_copy(str_vec[0]);
+  string ut = trim_copy(str_vec[1]);
+  string vt = trim_copy(str_vec[2]);
+  string wt = trim_copy(str_vec[3]);
+
+  tuple<T, U, V, W> res(ConvertData<T>(tt),
+			ConvertData<U>(ut),
+			ConvertData<V>(vt),
+			ConvertData<W>(wt));
   return res;
 }
 
@@ -233,40 +255,80 @@ void KeysValues::ConvertValues(CS& k) {
 template<class T, class U, class V>
 void KeysValues::ConvertValues(CS& k) {
 
-    this->CheckExistKey(k);
+  this->CheckExistKey(k);
 
-    // check original is string type.
-    // notice that every element of dict_[k] is same type.
-    bool is_string = dict_[k][0].type() == typeid(string);
-    bool is_type   = dict_[k][0].type() == typeid(tuple<T,U,V>);
+  // check original is string type.
+  // notice that every element of dict_[k] is same type.
+  bool is_string = dict_[k][0].type() == typeid(string);
+  bool is_type   = dict_[k][0].type() == typeid(tuple<T,U,V>);
 
-    if(is_type) {
-      return;
-    }
+  if(is_type) {
+    return;
+  }
 
-    if(!is_string) {
+  if(!is_string) {
+    string msg;
+    SUB_LOCATION(msg);
+    msg += "\nConverting values must be string\n";
+    throw std::runtime_error(msg);
+  }
+  
+  // loop for values for key k;
+  for(vector<any>::iterator it = dict_[k].begin();
+      it != dict_[k].end(); ++it) {
+    string str = any_cast<string>(*it);
+    
+    try {
+      *it = ConvertData<T,U,V>(str, sep_val_);
+    } catch (exception& e) {
       string msg;
       SUB_LOCATION(msg);
-      msg += "\nConverting values must be string\n";
-      throw std::runtime_error(msg);
-    }
-
-    // loop for values for key k;
-    for(vector<any>::iterator it = dict_[k].begin();
-	it != dict_[k].end(); ++it) {
-      string str = any_cast<string>(*it);
-
-      try {
-	*it = ConvertData<T,U,V>(str, sep_val_);
-      } catch (exception& e) {
-	string msg;
-	SUB_LOCATION(msg);
-	msg += "\n failed to ConvertData. ";
-	msg += "key: ";
-	msg += k;
-	throw runtime_error(msg);
-      }      
-    }
+      msg += "\n failed to ConvertData. ";
+      msg += "key: ";
+      msg += k;
+      throw runtime_error(msg);
+    }        
   }
+
+}
+template<class T, class U, class V, class W>
+void KeysValues::ConvertValues(CS& k) {
+
+  this->CheckExistKey(k);
+  
+  // check original is string type.
+  // notice that every element of dict_[k] is same type.
+  bool is_string = dict_[k][0].type() == typeid(string);
+  bool is_type   = dict_[k][0].type() == typeid(tuple<T,U,V>);
+  
+  if(is_type) {
+    return;
+  }
+
+  if(!is_string) {
+    string msg;
+    SUB_LOCATION(msg);
+    msg += "\nConverting values must be string\n";
+    throw std::runtime_error(msg);
+  }
+
+  // loop for values for key k;
+  for(vector<any>::iterator it = dict_[k].begin();
+      it != dict_[k].end(); ++it) {
+    string str = any_cast<string>(*it);
+    
+    try {
+      *it = ConvertData<T,U,V,W>(str, sep_val_);
+    } catch (exception& e) {
+      string msg;
+      SUB_LOCATION(msg);
+      msg += "\n failed to ConvertData. ";
+      msg += "key: ";
+      msg += k;
+      throw runtime_error(msg);
+    }      
+  }
+}
+
 
 #endif

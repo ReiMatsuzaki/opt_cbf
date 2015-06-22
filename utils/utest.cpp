@@ -94,9 +94,12 @@ TEST(TestKeysValues, ConvertData) {
   keys_values.Add<string>("cc", "abc 1.03 (1.1,2.0)");
   keys_values.Add<string>("cc", "a 1.1 (1.0,8.0)");
 
+  keys_values.Add<string>("dd", "1 2 3 1.1");
+
   keys_values.ConvertValues<double>("a");
   keys_values.ConvertValues<CD>("b");
   keys_values.ConvertValues<string,double,CD>("cc");
+  keys_values.ConvertValues<int, int, int, double>("dd");
   
   EXPECT_DOUBLE_EQ(2.2, keys_values.Get<double>("a", 1));
   EXPECT_NEAR(1.1, keys_values.Get<CD>("b", 1).real(),
@@ -105,6 +108,11 @@ TEST(TestKeysValues, ConvertData) {
 	      0.0000001);
   EXPECT_DOUBLE_EQ(1.1,
 		   get<1>(keys_values.Get<tuple<string,double,CD> >("cc", 1)));
+
+  typedef tuple<int,int,int,double> TT;
+  EXPECT_EQ(2,
+	    get<1>(keys_values.Get<TT>("dd", 0)));
+  
 }
 TEST(TestKeysValues, SetIfNull) {
 

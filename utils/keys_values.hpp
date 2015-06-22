@@ -48,6 +48,8 @@ template<class T, class U>
 tuple<T, U> ConvertData(CS& str, CS& sep );
 template<class T, class U, class V>
 tuple<T,U,V> ConvertData(CS& str, CS& sep);
+template<class T, class U, class V, class W>
+tuple<T,U,V,W> ConvertData(CS& str, CS& sep);
 
 // data
 class KeysValues {
@@ -100,6 +102,8 @@ public:
   template<class T> void ConvertValues(CS&);
   template<class T, class U> void ConvertValues(CS&);
   template<class T, class U, class V> void ConvertValues(CS&);
+  template<class T, class U, class V, class W> 
+  void ConvertValues(CS&);
   //
   // set value if the key is not exist.
   // this will is use for default values
