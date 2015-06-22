@@ -244,6 +244,7 @@ TEST(Restriction, NoRestriction) {
   IRestriction<double>* no_rest = new NoRestriction<double>(xs);
   no_rest->SetVars(xs);
   EXPECT_EQ(4, no_rest->size());
+
 }
 TEST(Restriction, EvenTemp) {
   

@@ -51,6 +51,7 @@ namespace opt_cbf_h {
 
       keys_values_.ConvertValues<string>("basis_type");
       keys_values_.ConvertValues<int, CD>("opt_basis");
+      keys_values_.ConvertValues<int,int,CD,CD>("opt_et_basis");
 
       keys_values_.SetIfNull<int>("max_iter", 100);
       keys_values_.ConvertValues<int>("max_iter");
