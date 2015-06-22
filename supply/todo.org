@@ -1,0 +1,9 @@
+* Refactoring opt.[ch]pp
+  extract these classes to new namespace named Optimizer.
+
+* Refactoring Restrict.[ch]pp
+  Now name convention is not good.
+  Introduce two variable space such that
+  Normal space: original variables (i.e. x0, x1, x2, ..., xN)
+  Restricted space: restricted variables (i.e. x0 and ratio)
+  

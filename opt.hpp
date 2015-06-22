@@ -3,19 +3,22 @@
 
 #include <Eigen/Core>
 #include <boost/function.hpp>
-//#include <boost/any.hpp>
+#include "restrict.hpp"
 
 namespace {
+
   using std::string;
-  //  using std::map;
   using namespace Eigen;
   using boost::function;
-  //  using boost::any;
+
 }
 
 namespace opt_cbf_h {
 
-  // result of optimization
+  //-------- forward declaration ---------------
+  // template<class F> class IRestriction;
+  
+  // ========== result of optimization =============
   template<class F>
   class OptRes {
   public:
@@ -31,7 +34,7 @@ namespace opt_cbf_h {
     //    map<string, any> others_map;
   };
 
-  // interface for optimization class
+  // ========== interface for optimization class =====
   template<class F>
   class IOptimizer {
     typedef Matrix<F, Dynamic, 1>       VecF;
@@ -39,11 +42,11 @@ namespace opt_cbf_h {
     typedef function<void (const VecF&, F*, VecF*, MatF*)>
     FuncValGradHess;
   public:
-    virtual ~IOptimizer() {}
+    virtual ~IOptimizer();
     virtual OptRes<F> Optimize(FuncValGradHess f, VecF z0) = 0;
   };
 
-  // simple newton iteration
+  // =========== simple newton iteration ============
   template<class F>
   class OptimizerNewton : public IOptimizer<F> {
   private:
@@ -64,7 +67,7 @@ namespace opt_cbf_h {
     OptRes<F> Optimize(FuncValGradHess f, VecF z0);
   };
 
-  // simple newton method with restrictions
+  // =========== with restrictions ==================
   template<class F>
   class OptimizerRestricted : public IOptimizer<F> {
   private:
@@ -73,16 +76,21 @@ namespace opt_cbf_h {
     typedef Matrix<F, Dynamic, Dynamic> MatF;
     typedef function<void (const VecF&, F*, VecF*, MatF*)>
     FuncValGradHess;
-    
     // ------------ Field -------------------
     int max_iter_;
     double eps_;
+    IRestriction<F>* restriction_;
     int debug_level_;
+    // ------------ Uncopyable ---------------
+    OptimizerRestricted(const OptimizerRestricted<F>&);
     
   public:
+    // ------------ Constructors ------------
+    OptimizerRestricted(int, double, IRestriction<F>*);
+    OptimizerRestricted(int, double, IRestriction<F>*, int);
+    ~OptimizerRestricted();
+    
     // ------------ Method ------------------
-    OptimizerRestricted(int _max_iter, double _eps);
-    OptimizerRestricted(int _max_iter, double _eps, int _d);
     OptRes<F> Optimize(FuncValGradHess f, VecF z0);
   };
   

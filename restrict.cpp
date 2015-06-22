@@ -4,11 +4,17 @@
 namespace opt_cbf_h {
 
   template<class F>
-  EvenTemp<F>::EvenTemp() : num_(1), ratio_(1.0), x0_(1.0) {}
+  IRestriction<F>::~IRestriction() {}
+
+  template<class F>
+  EvenTemp<F>::EvenTemp() : num_(1), x0_(1.0), ratio_(1.0) {}
 
   template<class F>
   EvenTemp<F>::EvenTemp(int _num, F _r, F _x0): 
-    num_(_num), ratio_(_r), x0_(_x0) {}
+    num_(_num), x0_(_x0), ratio_(_r) {}
+
+  template<class F>
+  EvenTemp<F>::~EvenTemp() {}
 
   template<class F>
   void EvenTemp<F>::SetVars(const Matrix<F, Dynamic, 1>& xs) {
@@ -98,6 +104,12 @@ namespace opt_cbf_h {
     }
 
     return xs;
+  }
+
+  template<class F>
+  void EvenTemp<F>::Shift(const VecF& ys) {
+    x0_ += ys(0);
+    ratio_ += ys(1);
   }
 
   // ============ Explicit Instance ==================

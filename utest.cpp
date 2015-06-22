@@ -213,12 +213,38 @@ TEST(Optimizer, Newton) {
   EXPECT_NEAR(res.z(0,0), -1.3646556076560374, eps);
   EXPECT_NEAR(res.z(1,0), -0.5344287681232319, eps);
 }
+TEST(Optimizer, NewtonWithEventemp) {
+
+  IRestriction<double>* even_temp = 
+    new EvenTemp<double>(2, 1.1, 3.0);
+  IOptimizer<double>* opt = 
+    new OptimizerRestricted<double>
+    (100, 0.000001, even_temp);
+  
+  VectorXd x0 = VectorXd(2);
+  x0 << -1.3, -0.5;
+  
+  TwoDimFunc func;
+  OptRes<double> res = opt->Optimize
+    (bind(&TwoDimFunc::CalcGradHess, func, _1, _2, _3, _4), x0);
+  
+  delete opt;
+
+  double eps(0.000000001);
+  EXPECT_TRUE(res.convergence);
+  EXPECT_TRUE(res.iter_num < 50);
+  EXPECT_NEAR(res.z(0,0), -1.3646556076560374, eps);
+  EXPECT_NEAR(res.z(1,0), -0.5344287681232319, eps);  
+				     
+}
 TEST(Restriction, EvenTemp) {
   
   EvenTemp<double> even_temp;
   VectorXd xs(4);
   xs << 1.1, 2.2, 2.3, 2.4; 
   even_temp.SetVars(xs);
+
+  EXPECT_EQ(2, even_temp.size());
   
   EXPECT_DOUBLE_EQ(2.0, even_temp.ratio());
   EXPECT_DOUBLE_EQ(1.1, even_temp.x0());
@@ -258,6 +284,38 @@ TEST(Restriction, EvenTemp) {
   EXPECT_DOUBLE_EQ(5 * 1.1 * cos(4.4) - 10*4*1.1*1.1*sin(4.4),
 		   hess(1,1));
   
+}
+TEST(Restriction, InRestrictSpace) {
+  
+  EvenTemp<double> even_temp;
+  VectorXd xs0(4);
+  xs0 << 1.1, 2.2, 2.3, 2.4; 
+  even_temp.SetVars(xs0);
+
+  // now the sequence is 
+  // 1.1, 2.2, 4.4, 8.8
+  VectorXd xs1 = even_temp.Xs();
+
+  // shift 1.2 for x0 and 3 for ratio
+  VectorXd dx(2);
+  dx << 1.2, 3;
+  even_temp.Shift(dx);
+
+  // now the sequence is
+  // 2.3, 11.5, 57.5, ...
+  VectorXd xs2 = even_temp.Xs();
+  EXPECT_DOUBLE_EQ(2.3, xs2(0));
+  EXPECT_DOUBLE_EQ(2.3 * 5.0, xs2(1));
+  EXPECT_DOUBLE_EQ(2.3 * 5.0 * 5.0, xs2(2));
+
+}
+TEST(Restriction, Interface) {
+
+  IRestriction<double>* even_temp = 
+    new EvenTemp<double>(3, 1.1, 3.0);
+
+  EXPECT_EQ(2, even_temp->size());
+
 }
 TEST(Driv, Construct) {
 
