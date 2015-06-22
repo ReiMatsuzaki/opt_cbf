@@ -9,6 +9,7 @@ namespace {
 
 namespace opt_cbf_h {
 
+  // ============= Interface ================
   template<class F>
   class IRestriction {
     typedef Matrix<F, Dynamic, 1>       VecF;
@@ -29,6 +30,31 @@ namespace opt_cbf_h {
     virtual void Shift(const VecF&) = 0;
   };
 
+  // ============== No restriction ==========
+  template<class F>
+  class NoRestriction : public IRestriction<F> {
+  private:
+    // ------- Typedef ----------------------
+    typedef Matrix<F, Dynamic, 1>       VecF;
+    typedef Matrix<F, Dynamic, Dynamic> MatF;
+    // ------- Field ------------------------
+    VectorXd xs_;
+
+  public:
+    // ------- Constructors -----------------
+    NoRestriction(VectorXd _xs) : xs_(_xs) {}
+    ~NoRestriction() {}
+    // ------- Accessor --------------------
+    int size() const { return xs_.rows(); }
+    // ------- Methods ---------------------
+    void SetVars(const VecF& xs) {xs_ = xs; }
+    VecF Xs() const { return xs_; }
+    VecF Grad(const VecF& g) const { return g; }
+    MatF Hess(const VecF&, const MatF& h) const { return h; }
+    void Shift(const VecF& dx) { xs_ += dx; }
+  };
+
+  // ============== EvenTempered ============
   template<class F>
   class EvenTemp : public IRestriction<F> {
     // ------- Typedef ----------------------

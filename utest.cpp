@@ -237,6 +237,14 @@ TEST(Optimizer, NewtonWithEventemp) {
   EXPECT_NEAR(res.z(1,0), -0.5344287681232319, eps);  
 				     
 }
+TEST(Restriction, NoRestriction) {
+
+  VectorXd xs(4);
+  xs << 1.1, 2.2, 2.3, 2.4;   
+  IRestriction<double>* no_rest = new NoRestriction<double>(xs);
+  no_rest->SetVars(xs);
+  EXPECT_EQ(4, no_rest->size());
+}
 TEST(Restriction, EvenTemp) {
   
   EvenTemp<double> even_temp;
