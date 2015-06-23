@@ -134,7 +134,9 @@ void KeysValues::Add(const string& k, T t) {
 
   if(this->ExistKey(k)) {
     
-    if(dict_[k][0].type() != typeid(T) ) {
+    if(dict_[k].size() == 0) {
+      
+    } else if(dict_[k][0].type() != typeid(T) ) {
       string msg;
       SUB_LOCATION(msg);
       msg += "\ntype mismatch. Inserting value type is ";

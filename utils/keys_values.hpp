@@ -110,6 +110,10 @@ public:
   template<class T>
   bool SetIfNull(CS& key, T val);
   //
+  // if there is no key "key", add (key, null) pair
+  // if key "key" is not exist, no action.
+  bool SetNullIfNull(CS& key);
+  //
   // read line and add key and value as string data
   void ReadLine(CS& line);
   //
