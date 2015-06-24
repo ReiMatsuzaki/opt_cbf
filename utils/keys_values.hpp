@@ -51,7 +51,14 @@ tuple<T,U,V> ConvertData(CS& str, CS& sep);
 template<class T, class U, class V, class W>
 tuple<T,U,V,W> ConvertData(CS& str, CS& sep);
 
-// data
+// ============ check detail ===================
+class ValuesCheckDetail {
+public:
+  template<>
+  virtual void Check()
+}
+
+// ============ main class =====================
 class KeysValues {
 
 private:

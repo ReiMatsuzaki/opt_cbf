@@ -22,7 +22,6 @@ private:
     return 2;
   }
 };
-
 int CallHello(const Base& a ) {
   return a.Hello();
 }
@@ -69,6 +68,11 @@ TEST(Inherintance, TestHello) {
 
   EXPECT_EQ(1, CallHello(Base()));
   EXPECT_EQ(2, CallHello(Ext1()));
+
+}
+TEST(CheckDetail, Check) {
+  
+  EXPECT_TRUE();
 
 }
 TEST(TestKeysValues, Add) {
@@ -151,6 +155,29 @@ TEST(TestKeysValues, SetIfNull) {
   keys_values.SetIfNull<int>("b", 21);
 
   EXPECT_EQ(21, keys_values.Get<int>("b"));
+}
+TEST(TestKeysValues, Check) {
+
+  KeysValues keys_values(":", " ");
+
+  keys_values.Add<string>("a", "1.2");
+  keys_values.Add<string>("a", "2.2");
+  keys_values.Add<string>("a", "3.2");
+
+  keys_values.Add<string>("b", "(1.0,2.0)");
+  keys_values.Add<string>("b", "(1.1,2.0)");
+  keys_values.Add<string>("b", "2.0");
+
+  keys_values.Add<string>("cc", "abc 1.03 (1.1,2.0)");
+  keys_values.Add<string>("cc", "a 1.1 (1.0,8.0)");
+
+  keys_values.Add<string>("dd", "1 2 3 1.1");
+
+  EXPECT_TRUE(keys_values.Check<string>("a", NumberIs(3)));
+  EXPECT_TRUE(keys_values.Check<double>("a", AnyNumber()));
+  EXPECT_TRUE(keys_values.Check<int>("e", DefaultValue(3)));
+  
+  EXPECT_EQ(3, keys_values.Get<int>("e"));
 }
 TEST(TestKeysValues, ReadLine) {
 
