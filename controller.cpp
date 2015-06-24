@@ -42,30 +42,29 @@ namespace opt_cbf_h {
 
       BS default_val = make_tuple(false, "");
       keys_values_.SetIfNull<BS>(key, default_val);
-      keys_values_.ConvertValues<bool, string>(key);
+      keys_values_.Check<bool, string>(NumberIs(1), key);
 
     }
     void convertData() {
-
-      keys_values_.ConvertValues<string>("channel");
-      keys_values_.ConvertValues<string>("dipole");
-      keys_values_.ConvertValues<double>("energy");
+      
+      keys_values_.Check<string>(NumberIs(1), "channel");
+      keys_values_.Check<string>(NumberIs(1), "dipole");
+      keys_values_.Check<double>(NumberIs(1), "energy");
 
       keys_values_.Check<string>(NumberIs(1), "basis_type");
       keys_values_.Check<int,CD>(AnyNumber(), "opt_basis");
       keys_values_.Check<int,int,CD,CD>(AnyNumber(),
 					"opt_et_basis"); 
 					
-
       keys_values_.SetIfNull<int>("max_iter", 100);
-      keys_values_.ConvertValues<int>("max_iter");
+      keys_values_.Check<int>(NumberIs(1), "max_iter");
       keys_values_.SetIfNull<double>("eps", 0.0000001);
-      keys_values_.ConvertValues<double>("eps");
+      keys_values_.Check<double>(NumberIs(1), "eps");
 
       typedef tuple<double, double> DD;
       DD grid = make_tuple(10.0, 0.1);
       keys_values_.SetIfNull<DD>("grid", grid);
-      keys_values_.ConvertValues<double, double>("grid");
+      keys_values_.Check<double, double>(NumberIs(1), "grid");
 
       this->convertWriteOption("write_psi");
       this->convertWriteOption("write_hess");
