@@ -6,6 +6,27 @@
 #include "keys_values.hpp"
 #include "timer.hpp"
 
+class Base {
+public:
+  int Hello() const { 
+    return this->hello();
+  }
+private:
+  virtual int hello() const {
+    return 1;
+  }
+};
+class Ext1 : public Base {
+private:
+  int hello() const {
+    return 2;
+  }
+};
+
+int CallHello(const Base& a ) {
+  return a.Hello();
+}
+
 TEST(TestConvertData, Atomic) {
 
   EXPECT_EQ(1, ConvertData<int>("1"));
@@ -33,7 +54,7 @@ TEST(TestConvertData, Tuple) {
 		   get<1>(ConvertData<int,CD,double>
 			  ("2  (1.3,0.2) 5", " ")).real());
 }
-TEST(TestConvertData, bool) {
+TEST(TestConvertData, TrueOrFalse) {
   
   EXPECT_TRUE(ConvertData<bool>("true"));
   EXPECT_TRUE(ConvertData<bool>("TRUE"));
@@ -42,6 +63,13 @@ TEST(TestConvertData, bool) {
   EXPECT_FALSE(ConvertData<bool>("  f "));
   EXPECT_FALSE(ConvertData<bool>("  False "));
   EXPECT_ANY_THROW(ConvertData<bool>("123"));
+
+}
+TEST(Inherintance, TestHello) {
+
+  EXPECT_EQ(1, CallHello(Base()));
+  EXPECT_EQ(2, CallHello(Ext1()));
+
 }
 TEST(TestKeysValues, Add) {
   
