@@ -51,10 +51,11 @@ namespace opt_cbf_h {
       keys_values_.ConvertValues<string>("dipole");
       keys_values_.ConvertValues<double>("energy");
 
-      keys_values_.Check<string>("basis_type", NumberIs(1));
-      keys_values_.Check<int,CD>("opt_basis", AnyNumber());
-      keys_values_.Check<int,int,CD,CD>("opt_et_basis", 
-				       AnyNumber());
+      keys_values_.Check<string>(NumberIs(1), "basis_type");
+      keys_values_.Check<int,CD>(AnyNumber(), "opt_basis");
+      keys_values_.Check<int,int,CD,CD>(AnyNumber(),
+					"opt_et_basis"); 
+					
 
       keys_values_.SetIfNull<int>("max_iter", 100);
       keys_values_.ConvertValues<int>("max_iter");

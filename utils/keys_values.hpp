@@ -87,12 +87,7 @@ private:
 
 public:
   // --------- Constructor ----
-  KeysValues(CS& _sep_kv, CS& _sep_val) {
-
-    sep_kv_  = _sep_kv;
-    sep_val_ = _sep_val;
-    
-  }
+  KeysValues(CS& _sep_kv, CS& _sep_val);
   
   // --------- Getter ---------
   //
@@ -115,12 +110,13 @@ public:
   void CheckIndex(const string&, int) const;
   // 
   // Check
-  template<class T> void Check(CS&, CheckNum a);
-  template<class T, class U> void Check(CS&, CheckNum a);
+  template<class T> void Check(CheckNum, CS&);
+  template<class T, class U> void Check(CheckNum, CS&);
   template<class T, class U, class V>
-  void Check(CS&, CheckNum a);
+  void Check(CheckNum, CS&);
   template<class T, class U, class V, class W> 
-  void Check(CS&, CheckNum a);
+  void Check(CheckNum a, CS&);
+
   // --------- Setter ----------
   //
   // add key k with value t.
@@ -129,10 +125,6 @@ public:
   //
   // add key k with null if there is not exist k
   void AddNull(CS& k);
-  //
-  // [to be removed]
-  // add key k with value v. v is converted to some type.
-  //void AddAtomConverting(CS& k, CS& v);
   //
   // Convert data type whose key is k.
   template<class T> void ConvertValues(CS&);
@@ -145,11 +137,6 @@ public:
   // this will is use for default values
   template<class T>
   bool SetIfNull(CS& key, T val);
-  //
-  // [to be removed]
-  // if there is no key "key", add (key, null) pair
-  // if key "key" is not exist, no action.
-  // bool SetNullIfNull(CS& key);
   //
   // read line and add key and value as string data
   void ReadLine(CS& line);

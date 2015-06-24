@@ -21,52 +21,13 @@ bool IsNumber(const string& str) {
   return acc;
 }
 
-/*
-template<>
-double KeysValues::Get<double>(CS& key, int i) const {
-  CheckIndex(key, i);
-  any x = dict_.find(key)->second[i];
-  return any_cast<double>(x);
+KeysValues::KeysValues(CS& _sep_kv, CS& _sep_val) {
+
+  sep_kv_  = _sep_kv;
+  sep_val_ = _sep_val;
+    
 }
-template<>
-int KeysValues::Get<int>(CS& key, int i) const {
 
-  this->CheckIndex(key, i);
-  any x = dict_.find(key)->second[i];
-  return any_cast<int>(x);
-}
-template<>
-CD KeysValues::Get<CD>(CS& k, int i) const {
-
-  this->CheckIndex(k, i);
-  any x = dict_.find(k)->second[i];
-  return any_cast<CD>(x);
-}
-template<>
-string KeysValues::Get<string>(CS& key, int i) const {
-
-  this->CheckIndex(key, i);
-
-  any val = dict_.find(key)->second[i];
-  std::type_info const & t = val.type();
-  string res;
-
-  if(t == typeid(int))
-    res = lexical_cast<string>(any_cast<int>(val));
-  else if(t == typeid(double))
-    res = lexical_cast<string>(any_cast<double>(val));
-  else if(t == typeid(string))
-    res = any_cast<string>(val);
-  else
-    {
-      string msg;
-      msg += "Error: KeyVal::GetAsString\n";
-      msg += "invalid type.";
-      msg += "key is " + key;
-    }
-  return res;
-}
-*/
 int KeysValues::Count(CS& key) const {
   
   if(this->ExistKey(key))
@@ -101,6 +62,7 @@ void KeysValues::CheckIndex(CS& key, int i ) const {
   }
   
 }
+
 void KeysValues::AddNull(CS& k)  {
     
   if(not this->ExistKey(k)) {
@@ -108,36 +70,6 @@ void KeysValues::AddNull(CS& k)  {
     dict_[k] = ts;
   }
 }
-/* [to be removed] 
-void KeysValues::AddAtomConverting(CS& k, CS& v) {
-
-  if(IsInteger(v))
-    {
-      this->Add(k, lexical_cast<int>(v));
-    }
-  else if(IsNumber(v))
-    {
-      this->Add(k, lexical_cast<double>(v));
-    }
-  else
-    {
-      this->Add(k, v);
-    }
-}
-*/
-/* [to be removed]
-bool KeysValues::SetNullIfNull(CS& key) {
-  
-  if(this->ExistKey(key)) 
-    return false;
-
-  vector<any> ts;
-  dict_[key] = ts;
-
-  return true;
-
-}
-*/
 void KeysValues::ReadLine(CS& line) {
 
     // separate with sep_kv

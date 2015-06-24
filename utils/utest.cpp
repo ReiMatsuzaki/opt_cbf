@@ -91,38 +91,6 @@ TEST(TestKeysValues, Add) {
   EXPECT_ANY_THROW(keys_values.Add("c", 3));
   
 }
-/* TEST(TestKeysValues, AddAtom) {
-
-  KeysValues keys_values(":", " ");
-
-  keys_values.AddAtomConverting("a", "1.2");
-  keys_values.AddAtomConverting("a", "2.2");
-  keys_values.AddAtomConverting("a", "3.2");
-
-  EXPECT_DOUBLE_EQ(2.2, keys_values.Get<double>("a", 1));
-  EXPECT_ANY_THROW(keys_values.Get<int>("a", 2));
-  EXPECT_ANY_THROW(keys_values.Get<double>("a", 3));
-
-  keys_values.AddAtomConverting("bb", "3");
-  EXPECT_ANY_THROW(keys_values.AddAtomConverting("bb", "1.1"));
-}
-*/
-/* TEST(TestKeysValues, SetNullIfNull) {
-  
-
-  KeysValues keys_values(":", " ");
-  keys_values.SetNullIfNull("aa");
-  keys_values.Add("b", "123 abc");
-
-  EXPECT_EQ(0, keys_values.Count("aa"));
-
-  keys_values.Add("aa", "123");
-  keys_values.Add("aa", "8822");
-  EXPECT_EQ(2, keys_values.Count("aa"));
-  
-
-}
-  */
 TEST(TestKeysValues, ConvertData) {
 
   KeysValues keys_values(":", " ");
@@ -185,10 +153,11 @@ TEST(TestKeysValues, Check) {
 
   keys_values.Add<string>("dd", "1 2 3 1.1");
 
-  EXPECT_NO_THROW(keys_values.Check<string>("a", NumberIs(3)));
-  EXPECT_NO_THROW(keys_values.Check<double>("a", AnyNumber()));
-  EXPECT_NO_THROW(keys_values.Check<int>("e", ZeroOrOne()));
-  keys_values.Check<string,double,CD>("cc", AnyNumber());
+  EXPECT_NO_THROW
+    (keys_values.Check<string>( NumberIs(3),"a"));
+  EXPECT_NO_THROW(keys_values.Check<double>(AnyNumber(), "a"));
+  EXPECT_NO_THROW(keys_values.Check<int>(ZeroOrOne(), "e"));
+  keys_values.Check<string,double,CD>(AnyNumber(), "cc");
 }
 TEST(TestKeysValues, ReadLine) {
 

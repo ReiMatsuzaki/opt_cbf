@@ -129,28 +129,28 @@ T KeysValues::Get(const string& k) const {
 }
 
 template<class T>
-void KeysValues::Check(CS& k, CheckNum check) {
+void KeysValues::Check(CheckNum check, CS& k) {
   this->AddNull(k);
   int num =  dict_[k].size();
   check.Check(num);
   this->ConvertValues<T>(k);
 }
 template<class T, class U> 
-void KeysValues::Check(CS& k, CheckNum check) {
+void KeysValues::Check(CheckNum check, CS& k) {
   this->AddNull(k);
   int num =  dict_[k].size();
   check.Check(num);
   this->ConvertValues<T, U>(k);
 }
 template<class T, class U, class V> 
-void KeysValues::Check(CS& k, CheckNum check) {
+void KeysValues::Check(CheckNum check, CS& k) {
   this->AddNull(k);
   int num =  dict_[k].size();
   check.Check(num);
   this->ConvertValues<T, U, V>(k);
 }
 template<class T, class U, class V, class W> 
-void KeysValues::Check(CS& k, CheckNum check) {
+void KeysValues::Check(CheckNum check, CS& k) {
   this->AddNull(k);
   int num =  dict_[k].size();
   check.Check(num);
