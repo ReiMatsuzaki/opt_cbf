@@ -51,12 +51,30 @@ tuple<T,U,V> ConvertData(CS& str, CS& sep);
 template<class T, class U, class V, class W>
 tuple<T,U,V,W> ConvertData(CS& str, CS& sep);
 
-// ============ check detail ===================
-class ValuesCheckDetail {
+// ============ check number ===================
+class CheckNum {
 public:
-  template<>
-  virtual void Check()
-}
+  bool Check(int num) {
+    return this->check(num);
+  }
+private:
+  virtual bool check(int num) { return true; };
+};
+class NumberIs : public CheckNum {
+public:
+  NumberIs(int _num) : num_(_num) {}
+private:
+  int num_;
+  bool check(int n) { return n == num_; }
+};
+class AnyNumber : public CheckNum {
+private:
+  bool check(int n) { return true; }
+};
+class ZeroOrOne : public CheckNum {
+private:
+  bool check(int n) { return n == 0 || n == 1; }
+};
 
 // ============ main class =====================
 class KeysValues {
@@ -95,12 +113,31 @@ public:
   // exist, throw exception.
   void CheckExistKey(const string&) const;
   void CheckIndex(const string&, int) const;
-
+  // 
+  // Check
+  template<class T> void Check(CS&, CheckNum a);
+  /*
+  template<class T, class U> void Check(CS&, CheckNum);
+  template<class T, class U, class V>
+  void Check(CS&, CheckNum);
+  template<class T, class U, class V, class W> 
+  void Check(CS&, ChckNum);
+  */
   // --------- Setter ----------
   //
   // add key k with value t.
   template<class T>
   void Add(const string& k, T t);
+  //
+  // add key k with null if there is not exist k
+  void AddNull(CS& k) {
+    
+    if(not this->ExistKey(k)) {
+      vector<any> ts;
+      dict_[k] = ts;
+    }
+
+  }
   //
   // add key k with value v. v is converted to some type.
   void AddAtomConverting(CS& k, CS& v);

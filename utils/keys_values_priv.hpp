@@ -19,7 +19,6 @@ T ConvertData(const string& str) {
   }
   return res;
 }
-
 template<class T, class U>
 tuple<T, U> ConvertData(CS& str, CS& sep ) {
 
@@ -130,6 +129,24 @@ T KeysValues::Get(const string& k) const {
 }
 
 template<class T>
+void KeysValues::Check(CS& k, CheckNum check) {
+  
+  this->AddNull(k);
+  int num =  dict_[k].size();
+  check.Check(num);
+  this->ConvertValues<T>(k);
+
+}
+/*
+template<class T, class U> 
+void KeysValues::Check(CS& k, Check);
+template<class T, class U, class V> 
+void KeysValues::Check(CS&);
+template<class T, class U, class V, class W> 
+KeysValues::Check(CS&);
+*/
+
+template<class T>
 void KeysValues::Add(const string& k, T t) {
 
   if(this->ExistKey(k)) {
@@ -167,6 +184,9 @@ template<class T>
 void KeysValues::ConvertValues(CS& k) {
 
     this->CheckExistKey(k);
+
+    if(this->Count(k) == 0)
+      return;
 
     // check original is string type.
     // notice that every element of dict_[k] is same type.
@@ -219,6 +239,10 @@ template<class T, class U>
 void KeysValues::ConvertValues(CS& k) {
 
     this->CheckExistKey(k);
+
+    if(this->Count(k) == 0)
+      return;
+
     // check original is string type.
     // notice that every element of dict_[k] is same type.
     bool is_string = dict_[k][0].type() == typeid(string);
@@ -256,6 +280,9 @@ template<class T, class U, class V>
 void KeysValues::ConvertValues(CS& k) {
 
   this->CheckExistKey(k);
+
+  if(this->Count(k) == 0)
+    return;
 
   // check original is string type.
   // notice that every element of dict_[k] is same type.
@@ -295,6 +322,9 @@ template<class T, class U, class V, class W>
 void KeysValues::ConvertValues(CS& k) {
 
   this->CheckExistKey(k);
+
+  if(this->Count(k) == 0)
+    return;
   
   // check original is string type.
   // notice that every element of dict_[k] is same type.
