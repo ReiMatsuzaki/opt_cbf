@@ -101,6 +101,14 @@ void KeysValues::CheckIndex(CS& key, int i ) const {
   }
   
 }
+void KeysValues::AddNull(CS& k)  {
+    
+  if(not this->ExistKey(k)) {
+    vector<any> ts;
+    dict_[k] = ts;
+  }
+}
+/* [to be removed] 
 void KeysValues::AddAtomConverting(CS& k, CS& v) {
 
   if(IsInteger(v))
@@ -116,6 +124,8 @@ void KeysValues::AddAtomConverting(CS& k, CS& v) {
       this->Add(k, v);
     }
 }
+*/
+/* [to be removed]
 bool KeysValues::SetNullIfNull(CS& key) {
   
   if(this->ExistKey(key)) 
@@ -127,6 +137,7 @@ bool KeysValues::SetNullIfNull(CS& key) {
   return true;
 
 }
+*/
 void KeysValues::ReadLine(CS& line) {
 
     // separate with sep_kv

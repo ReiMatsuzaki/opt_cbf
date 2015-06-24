@@ -91,7 +91,7 @@ TEST(TestKeysValues, Add) {
   EXPECT_ANY_THROW(keys_values.Add("c", 3));
   
 }
-TEST(TestKeysValues, AddAtom) {
+/* TEST(TestKeysValues, AddAtom) {
 
   KeysValues keys_values(":", " ");
 
@@ -106,8 +106,10 @@ TEST(TestKeysValues, AddAtom) {
   keys_values.AddAtomConverting("bb", "3");
   EXPECT_ANY_THROW(keys_values.AddAtomConverting("bb", "1.1"));
 }
-TEST(TestKeysValues, SetNullIfNull) {
+*/
+/* TEST(TestKeysValues, SetNullIfNull) {
   
+
   KeysValues keys_values(":", " ");
   keys_values.SetNullIfNull("aa");
   keys_values.Add("b", "123 abc");
@@ -117,8 +119,10 @@ TEST(TestKeysValues, SetNullIfNull) {
   keys_values.Add("aa", "123");
   keys_values.Add("aa", "8822");
   EXPECT_EQ(2, keys_values.Count("aa"));
+  
 
 }
+  */
 TEST(TestKeysValues, ConvertData) {
 
   KeysValues keys_values(":", " ");

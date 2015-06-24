@@ -128,17 +128,11 @@ public:
   void Add(const string& k, T t);
   //
   // add key k with null if there is not exist k
-  void AddNull(CS& k) {
-    
-    if(not this->ExistKey(k)) {
-      vector<any> ts;
-      dict_[k] = ts;
-    }
-
-  }
+  void AddNull(CS& k);
   //
+  // [to be removed]
   // add key k with value v. v is converted to some type.
-  void AddAtomConverting(CS& k, CS& v);
+  //void AddAtomConverting(CS& k, CS& v);
   //
   // Convert data type whose key is k.
   template<class T> void ConvertValues(CS&);
@@ -152,9 +146,10 @@ public:
   template<class T>
   bool SetIfNull(CS& key, T val);
   //
+  // [to be removed]
   // if there is no key "key", add (key, null) pair
   // if key "key" is not exist, no action.
-  bool SetNullIfNull(CS& key);
+  // bool SetNullIfNull(CS& key);
   //
   // read line and add key and value as string data
   void ReadLine(CS& line);
