@@ -39,9 +39,11 @@ namespace opt_cbf_h {
 
     // ------- Read support ---------
     void convertWriteOption(const string& key) {
+
       BS default_val = make_tuple(false, "");
       keys_values_.SetIfNull<BS>(key, default_val);
       keys_values_.ConvertValues<bool, string>(key);
+
     }
     void convertData() {
 
@@ -50,16 +52,18 @@ namespace opt_cbf_h {
       keys_values_.ConvertValues<double>("energy");
 
       keys_values_.ConvertValues<string>("basis_type");
+      keys_values_.SetNullIfNull("opt_basis");
       keys_values_.ConvertValues<int, CD>("opt_basis");
+      keys_values_.SetNullIfNull("opt_et_basis");
       keys_values_.ConvertValues<int,int,CD,CD>("opt_et_basis");
-
       keys_values_.SetIfNull<int>("max_iter", 100);
       keys_values_.ConvertValues<int>("max_iter");
       keys_values_.SetIfNull<double>("eps", 0.0000001);
       keys_values_.ConvertValues<double>("eps");
 
       typedef tuple<double, double> DD;
-      keys_values_.SetIfNull<DD>("grid", make_tuple(10.0, 0.1));
+      DD grid = make_tuple(10.0, 0.1);
+      keys_values_.SetIfNull<DD>("grid", grid);
       keys_values_.ConvertValues<double, double>("grid");
 
       this->convertWriteOption("write_psi");

@@ -116,6 +116,17 @@ void KeysValues::AddAtomConverting(CS& k, CS& v) {
       this->Add(k, v);
     }
 }
+bool KeysValues::SetNullIfNull(CS& key) {
+  
+  if(this->ExistKey(key)) 
+    return false;
+
+  vector<any> ts;
+  dict_[key] = ts;
+
+  return true;
+
+}
 void KeysValues::ReadLine(CS& line) {
 
     // separate with sep_kv

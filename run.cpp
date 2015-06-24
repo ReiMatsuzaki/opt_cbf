@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     cout << "Error on reading file" << endl;
     cout << "Error message :" << endl;
     cout << e.what() << endl;
-    exit(1);
+    return 1;
   }
 
   try {
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     cout << "Error on computing " << endl;
     cout << "Error message : " << endl;
     cout << e.what() << endl;
-    exit(1);
+    return 1;
   }
 
   try {
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
     cout << "Error on writing file." << endl;
     cout << "Error message : " << endl;
     cout << e.what() << endl;
-    exit(1);
+    return 1;
   }
 }
 
