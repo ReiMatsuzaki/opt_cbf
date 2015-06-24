@@ -73,18 +73,58 @@ namespace opt_cbf_h {
     template<class Prim>
     void setBasis(vector<Prim>* basis_set) {
 
-      int num = keys_values_.Count("opt_basis");
-      basis_set->resize(num);
-      zs_ = VectorXcd::Zero(num);
+      // check number of basis 
+      int num_et = keys_values_.Count("opt_et_basis");
+      int num_opt= keys_values_.Count("opt_basis");
 
-      for(int i = 0; i < num; i++) {
+      // error 
+      if(num_et > 1) {
+	string msg = "Multiple ET basis is not supported";
+	throw runtime_error(msg);
+      }
+
+      if(num_et > 0 && num_opt > 0) {
+	string msg = "# of opt_et_basis > 0 and # of opt_basis are not supported now";
+	throw runtime_error(msg);
+      }
+
+      if(num_et == 1 && num_opt == 0) {
+	typedef tuple<int,int,CD,CD> IICC;
+	IICC val = keys_values_.Get<IICC>("opt_et_basis");
+	int n   = get<0>(val);
+	int num = get<1>(val);
+	CD  x0  = get<2>(val);
+	CD  r   = get<2>(val);
+
+	CD z = x0;
+	basis_set->resize(num);
+	for(int i = 0; i < n; i++) {
+	  z *= r;
+	  Prim prim(n, z, Normalized);
+	  (*basis_set)[i] = prim;
+	  zs_(i) = z;
+	}
+      } else if(num_et == 0 && num_opt != 0) {
+
+	int num = keys_values_.Count("opt_basis");
+	basis_set->resize(num);
+	zs_ = VectorXcd::Zero(num);
+
+	for(int i = 0; i < num; i++) {
 	
-	I_CD n_z = keys_values_.Get<I_CD>("opt_basis", i);
-	int n = get<0>(n_z);
-	CD  z = get<1>(n_z);
-	Prim prim(n, z, Normalized);
-	(*basis_set)[i] = prim;
-	zs_(i) = z;
+	  I_CD n_z = keys_values_.Get<I_CD>("opt_basis", i);
+	  int n = get<0>(n_z);
+	  CD  z = get<1>(n_z);
+	  Prim prim(n, z, Normalized);
+	  (*basis_set)[i] = prim;
+	  zs_(i) = z;
+	}
+      } else {
+	
+	string msg = "Unsupported combination for basis";
+	msg += " in Controller::setBasis\n";
+	throw runtime_error(msg);
+	
       }
 
     }
@@ -157,9 +197,30 @@ namespace opt_cbf_h {
 
       int max_iter = keys_values_.Get<int>("max_iter");
       double eps   = keys_values_.Get<double>("eps");
-      IOptimizer<CD>* ptr = new OptimizerNewton<CD>
-	(max_iter, eps, 0);
-      optimizer_ = shared_ptr<IOptimizer<CD> >(ptr);
+      IOptimizer<CD>* opt;
+
+      // check number of basis 
+      int num_et = keys_values_.Count("opt_et_basis");
+      int num_opt= keys_values_.Count("opt_basis");
+
+      if(num_et == 1 && num_opt == 0) {
+
+	IRestriction<CD>* et;
+	et = new EvenTemp<CD>();
+	opt = new OptimizerRestricted<CD>(max_iter, eps, et);
+
+      } else if(num_et == 0 && num_opt != 0) {
+
+	opt = new OptimizerNewton<CD>(max_iter, eps, 0);
+
+      } else {
+
+	string msg = "Unsupported combination for basis";
+	throw runtime_error(msg);
+
+      }
+
+      optimizer_ = shared_ptr<IOptimizer<CD> >(opt);
 
     }
 

@@ -215,8 +215,12 @@ TEST(Optimizer, Newton) {
 }
 TEST(Optimizer, NewtonWithEventemp) {
 
+  /*
   IRestriction<double>* even_temp = 
     new EvenTemp<double>(2, 1.1, 3.0);
+  */
+  IRestriction<double>* even_temp = 
+    new EvenTemp<double>();
   IOptimizer<double>* opt = 
     new OptimizerRestricted<double>
     (100, 0.000001, even_temp);
