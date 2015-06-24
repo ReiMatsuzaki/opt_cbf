@@ -116,13 +116,11 @@ public:
   // 
   // Check
   template<class T> void Check(CS&, CheckNum a);
-  /*
-  template<class T, class U> void Check(CS&, CheckNum);
+  template<class T, class U> void Check(CS&, CheckNum a);
   template<class T, class U, class V>
-  void Check(CS&, CheckNum);
+  void Check(CS&, CheckNum a);
   template<class T, class U, class V, class W> 
-  void Check(CS&, ChckNum);
-  */
+  void Check(CS&, CheckNum a);
   // --------- Setter ----------
   //
   // add key k with value t.

@@ -70,11 +70,6 @@ TEST(Inherintance, TestHello) {
   EXPECT_EQ(2, CallHello(Ext1()));
 
 }
-TEST(CheckDetail, Check) {
-  
-  //  EXPECT_TRUE();
-
-}
 TEST(TestKeysValues, Add) {
   
   KeysValues keys_values(":", " ");
@@ -176,8 +171,7 @@ TEST(TestKeysValues, Check) {
   EXPECT_NO_THROW(keys_values.Check<string>("a", NumberIs(3)));
   EXPECT_NO_THROW(keys_values.Check<double>("a", AnyNumber()));
   EXPECT_NO_THROW(keys_values.Check<int>("e", ZeroOrOne()));
-  
-  //EXPECT_EQ(3, keys_values.Get<int>("e"));
+  keys_values.Check<string,double,CD>("cc", AnyNumber());
 }
 TEST(TestKeysValues, ReadLine) {
 
