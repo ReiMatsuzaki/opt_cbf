@@ -70,7 +70,7 @@ namespace l2func {
     //    int m = Prim::exp_power;
     //    typename Prim::Field c = a.c();
     //typename Prim::Field z = a.z();
-    F c = a.c(); F z = a.z();
+    F c = a.c();
 
     if(m == 1) 
       os << (char *)"STO(" ;
@@ -79,6 +79,7 @@ namespace l2func {
     char* comma = (char*)", ";
     os << c;
     os << comma << a.n() << comma << a.z() << (char*)")";
+    return os;
   }
   template std::ostream& operator <<<CD,1> (std::ostream& os, const CSTO& a);
   template std::ostream& operator <<<double,1> (std::ostream& os, const RSTO& a);

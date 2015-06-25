@@ -70,16 +70,13 @@ TEST(math, real) {
   
 }
 TEST(math, complex) {
-  
-  CD x, y, y_expect;
+  CD y;
   ErfcCalcData calc_data;
   double eps = 10.0 * machine_eps();
 
-  x.real() = 1;
-  x.imag() = -1;
-
-  y_expect.real() = -0.31615128169794764488027108024367;
-  y_expect.imag() = +0.190453469237834686284108861969162;
+  CD x(1, -1);
+  CD y_expect( -0.31615128169794764488027108024367,
+	       +0.190453469237834686284108861969162);
 
   Erfc(x, y, calc_data);
 
@@ -88,21 +85,21 @@ TEST(math, complex) {
   EXPECT_DOUBLE_EQ(y.imag(), y_expect.imag());
   EXPECT_NEAR(y.imag(), y_expect.imag(), eps);
 
+  x = CD(0.0157073173118206757532953533099,
+	 0.9998766324816605986389071277312);
+  y_expect = CD(0.95184545524179913420177473658805,
+		-1.64929108965086517748934245403332);
 
-  x.real() = 0.0157073173118206757532953533099;
-  x.imag() = 0.9998766324816605986389071277312;
-  
-  y_expect.real() = 0.95184545524179913420177473658805;
-  y_expect.imag() =-1.64929108965086517748934245403332;
   Erfc(x, y, calc_data);
   EXPECT_TRUE(calc_data.convergence);
   EXPECT_NEAR(     y.real(), y_expect.real(), eps);
   EXPECT_NEAR(     y.imag(), y_expect.imag(), eps);
 
-  x.real() = 0.001564344650402308690101053194671668923139;
-  x.imag() = 0.009876883405951377261900402476934372607584;
-  y_expect.real() = 0.9982346553205423153337357292658472915601;
-  y_expect.imag() =-0.0111452046101524188315708507537751407281;
+  x = CD(0.001564344650402308690101053194671668923139,
+	 0.009876883405951377261900402476934372607584);
+  y_expect = CD(0.9982346553205423153337357292658472915601,
+		-0.0111452046101524188315708507537751407281);
+
   Erfc(x, y, calc_data);
   EXPECT_TRUE(calc_data.convergence);
   EXPECT_NEAR(y.real(), y_expect.real(), eps);
