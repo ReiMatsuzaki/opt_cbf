@@ -17,7 +17,7 @@ namespace opt_cbf_h {
    * build basis set 
    */
   template<class Prim>
-  void BasisSet(const KeysValues&, vector<Prim>*);
+  void BuildBasisSet(const KeysValues&, vector<Prim>*);
   
   /**
    * build driven term

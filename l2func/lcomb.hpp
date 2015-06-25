@@ -9,8 +9,8 @@ namespace{
   using std::vector;
   using std::pair;
   using std::make_pair;
-using boost::function;
-using boost::bind;
+  using boost::function;
+  using boost::bind;
 }
 
 namespace l2func {

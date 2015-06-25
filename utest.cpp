@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 #include <Eigen/Core>
 #include <l2func.hpp>
+#include <keys_values.hpp>
 #include "l_algebra.hpp"
 #include "restrict.hpp"
 #include "opt.hpp"
@@ -464,6 +465,21 @@ TEST_F(TestOptSTO, optimization) {
   EXPECT_NEAR(-0.0600633, opt_res.z(0).imag(), 0.0000001);
   EXPECT_NEAR(0.664185, opt_res.z(1).real(), 0.000001);
   EXPECT_NEAR(-1.11116, opt_res.z(1).imag(), 0.00001);
+}
+TEST(TEST_FromKV, BasisSet) {
+  
+  vector<CSTO> csto_set;
+  KeysValues kv;
+  kv.Add("opt_basis", make_tuple(1, 1.2));
+  kv.Add("opt_basis", make_tuple(2, 3.4));
+  kv.Add("opt_basis", make_tuple(2, 1.4));
+  
+  BuildBasisSet(kv, &csto_set);
+
+  EXPECT_EQ(3, csto_set.size());
+  EXPECT_EQ(2, csto_set[1].n());
+  EXPECT_DOUBLE(1.4, csto_set[2].z().real());
+  
 }
 
 

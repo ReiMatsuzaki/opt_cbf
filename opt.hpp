@@ -3,7 +3,6 @@
 
 #include <Eigen/Core>
 #include <boost/function.hpp>
-// #include "restrict.hpp"
 
 namespace {
 
@@ -39,8 +38,8 @@ namespace opt_cbf_h {
   class IOptimizer {
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef function<void (const VecF&, F*, VecF*, MatF*)>
-    FuncValGradHess;
+    typedef function<void (const VecF&, F*, VecF*, MatF*)>    FuncValGradHess;
+
   public:
     virtual ~IOptimizer();
     virtual OptRes<F> Optimize(FuncValGradHess f, VecF z0) = 0;
