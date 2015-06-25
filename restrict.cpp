@@ -113,6 +113,11 @@ namespace opt_cbf_h {
   }
 
   // ============ Explicit Instance ==================
+  typedef std::complex<double> CD;
+  template class IRestriction<double>;
+  template class IRestriction<CD>;
+  template class NoRestriction<double>;
+  template class NoRestriction<CD>;
   template class EvenTemp<double>;
-  template class EvenTemp<std::complex<double> >;
+  template class EvenTemp<CD>;
 }

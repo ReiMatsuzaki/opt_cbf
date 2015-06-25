@@ -42,7 +42,7 @@ namespace opt_cbf_h {
 
   public:
     // ------- Constructors -----------------
-    NoRestriction(VectorXd _xs) : xs_(_xs) {}
+    NoRestriction(VecF _xs) : xs_(_xs) {}
     NoRestriction() {}
     ~NoRestriction() {}
     // ------- Accessor --------------------
