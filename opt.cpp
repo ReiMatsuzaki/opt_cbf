@@ -2,6 +2,7 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include "opt.hpp"
+#include "restrict.hpp"
 
 namespace {
   using namespace Eigen;

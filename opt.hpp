@@ -3,7 +3,7 @@
 
 #include <Eigen/Core>
 #include <boost/function.hpp>
-#include "restrict.hpp"
+// #include "restrict.hpp"
 
 namespace {
 
@@ -16,7 +16,7 @@ namespace {
 namespace opt_cbf_h {
 
   //-------- forward declaration ---------------
-  // template<class F> class IRestriction;
+  template<class F> class IRestriction;
   
   // ========== result of optimization =============
   template<class F>
