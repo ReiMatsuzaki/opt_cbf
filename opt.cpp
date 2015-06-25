@@ -36,16 +36,6 @@ namespace opt_cbf_h {
   void PrintDebug(OptRes<F> opt_res) {
     cout << opt_res.z << endl;
     cout << opt_res.grad << endl;
-    /*    
-    for(int i = 0; i < num; i++) {
-      cout << res.z(i) << ", ";
-      cout << "; ";
-    }
-    for(int i = 0; i < num; i++) {
-      cout << res.grad(i) << ", ";
-      cout << endl;
-    }
-    */
   }
   template<class F>
   OptRes<F> OptimizerRestricted<F>::Optimize
@@ -108,13 +98,14 @@ namespace opt_cbf_h {
   // ============= Simple Newton ====================
   template<class F>
   OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps) {
-    IRestriction* no_rist = new NoRestriction();
-    optimizer_ = new OptimizerRestricted(_max_iter, _eps, no_rist);
+    IRestriction<F>* no_rist = new NoRestriction<F>();
+    optimizer_ = new OptimizerRestricted<F>(_max_iter, _eps, no_rist);
   }
   template<class F>
-  OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps, int _d_lvl) {
-    IRestriction* no_rist = new NoRestriction();
-    optimizer_ = new OptimizerRestricted(_max_iter, _eps, no_rist, _d_lvl);    
+  OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps,
+				      int _d_lvl) {
+    IRestriction<F>* no_rist = new NoRestriction<F>();
+    optimizer_ = new OptimizerRestricted<F>(_max_iter, _eps, no_rist, _d_lvl);    
   }
   template<class F>
   OptimizerNewton<F>::~OptimizerNewton() {
@@ -131,7 +122,7 @@ namespace opt_cbf_h {
   template class OptimizerNewton<CD>;
   template class OptimizerRestricted<double>;
   template class OptimizerRestricted<CD>;
-
+  
 }
 
 

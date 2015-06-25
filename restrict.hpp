@@ -38,16 +38,19 @@ namespace opt_cbf_h {
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
     // ------- Field ------------------------
-    VectorXd xs_;
+    VecF xs_;
 
   public:
     // ------- Constructors -----------------
     NoRestriction(VectorXd _xs) : xs_(_xs) {}
+    NoRestriction() {}
     ~NoRestriction() {}
     // ------- Accessor --------------------
     int size() const { return xs_.rows(); }
     // ------- Methods ---------------------
-    void SetVars(const VecF& xs) {xs_ = xs; }
+    void SetVars(const VecF& xs) {
+      xs_ = VecF::Zero(xs.rows());
+      xs_ = xs; }
     VecF Xs() const { return xs_; }
     VecF Grad(const VecF& g) const { return g; }
     MatF Hess(const VecF&, const MatF& h) const { return h; }

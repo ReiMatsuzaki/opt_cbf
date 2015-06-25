@@ -84,7 +84,7 @@ namespace opt_cbf_h {
     FuncValGradHess;
 
     // ------------- Field -----------------
-    OptimizerRestricted* optimizer_;
+    OptimizerRestricted<F>* optimizer_;
 
     // ------------ Uncopyable -------------
     OptimizerNewton(const OptimizerNewton&);
