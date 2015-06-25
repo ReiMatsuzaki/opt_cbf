@@ -49,7 +49,10 @@ int main(int argc, char* argv[]) {
 
   OptCBFController controller;
   char* in_file = argv[1];
-  char* out_file= argv[2];  
+  char* out_file= argv[2];
+
+  cout << "Reading file" << endl;
+  
   try {
     controller.Read(in_file);
   } catch (exception& e) {
@@ -59,6 +62,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  cout << "Computing" << endl;  
+
   try {
     controller.Compute();
   } catch (exception& e) {
@@ -67,6 +72,8 @@ int main(int argc, char* argv[]) {
     cout << e.what() << endl;
     return 1;
   }
+
+  cout << "Writing" << endl;  
 
   try {
     controller.Write(out_file);

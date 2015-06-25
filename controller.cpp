@@ -95,7 +95,8 @@ namespace opt_cbf_h {
 	int n   = get<0>(val);
 	int num = get<1>(val);
 	CD  x0  = get<2>(val);
-	CD  r   = get<2>(val);
+	CD  r   = get<3>(val);
+	zs_ = VectorXcd::Zero(num);
 
 	CD z = x0;
 	basis_set->resize(num);
@@ -105,6 +106,7 @@ namespace opt_cbf_h {
 	  (*basis_set)[i] = prim;
 	  zs_(i) = z;
 	}
+	cout << "end setBasis, building ET" << endl;
       } else if(num_et == 0 && num_opt != 0) {
 
 	int num = keys_values_.Count("opt_basis");
@@ -172,6 +174,7 @@ namespace opt_cbf_h {
 	keys_values_.Get<string>("basis_type");
       IOptTarget* ptr;
 
+      cout << "entering setBasis" << endl;
       if(basis_type == "STO") {
 	vector<CSTO> basis_set;
 	this->setBasis<CSTO>(&basis_set);
@@ -281,9 +284,9 @@ namespace opt_cbf_h {
 	msg += filename;
 	throw runtime_error(msg);
       }
-      
-      keys_values_.Read(ifs);
 
+      keys_values_.Read(ifs);
+      
       try {
 	this->convertData();
       } catch (exception& e) {
@@ -292,10 +295,9 @@ namespace opt_cbf_h {
 	msg += e.what();
 	throw runtime_error(msg);
       }
+      
       this->setOptTarget();
       this->setOptimizer();
-
-      timer_.End("read");
     }
     void Compute() {
 
