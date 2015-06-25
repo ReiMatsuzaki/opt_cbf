@@ -27,7 +27,7 @@ namespace l2func {
     LinearComb<Prim> OperateHamiltonian(const Prim& o);
 
     template<class Prim>
-    function<LinearComb<Prim>(const Prim&)> Hamiltonian();
+    boost::function<LinearComb<Prim>(const Prim&)> Hamiltonian();
 
     // -------- state vector -------
     STOs EigenState();

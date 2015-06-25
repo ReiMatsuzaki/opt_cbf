@@ -1,18 +1,30 @@
 #ifndef FROM_KV_HPP
 #define FROM_KV_HPP
 
+#include <complex>
+#include <vector>
+
+namespace {
+  using std::vector;
+  typedef std::complex<double> CD;
+}
+
 /**
  * This file contains functions which calculate various objects
  * necessary in opt_cbf program from KeysValues.
  */
 
+// --------- forward declaration ----------
+class KeysValues;
+namespace l2func {
+  template<class Prim> class LinearComb;
+}
 namespace opt_cbf_h {
-
-  // --------- forward declaration ----------
-  class KeysValues;
-  template<class F> class HLikeAtom<F>;
-  template<class Prim> class LinearComb<Prim>;
-
+  template<class F> class HAtomPI;
+  template<class F> class IOptimizer;
+}
+namespace opt_cbf_h {
+  
   /**
    * build basis set 
    */
@@ -23,12 +35,13 @@ namespace opt_cbf_h {
    * build driven term
    */
   template<class Prim>
-  void BuildHAtom(const KeysValues&, HAtomPi<Prim>*);
+  void BuildHAtom(const KeysValues&, HAtomPI<Prim>*);
 
   /**
    * build optimizer
    */
-  void BuildOptimizer(const KeysValues&, IOptimizer*);
+  void BuildOptimizer(const KeysValues&, 
+		      IOptimizer<CD>);
 }
 
 #endif

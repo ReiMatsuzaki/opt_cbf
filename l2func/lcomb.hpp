@@ -92,7 +92,7 @@ namespace l2func {
   }
 
   template<class Prim>
-  LinearComb<Prim> Op(function<Prim(const Prim&)> op,
+  LinearComb<Prim> Op(boost::function<Prim(const Prim&)> op,
 		      const Prim& f) {
     typedef typename Prim::Field F;
     LinearComb<Prim> res;
@@ -101,12 +101,12 @@ namespace l2func {
   }
   template<class Prim>
   LinearComb<Prim> Op
-  (function<LinearComb<Prim>(const Prim&)> op,
+  (boost::function<LinearComb<Prim>(const Prim&)> op,
    const Prim& f) {
     return op(f);
   }
   template<class Prim>
-  LinearComb<Prim> Op(function<Prim(const Prim&)> op,
+  LinearComb<Prim> Op(boost::function<Prim(const Prim&)> op,
 		      const LinearComb<Prim>& f) {
     
     LinearComb<Prim> res;
@@ -125,7 +125,7 @@ namespace l2func {
   }
   template<class Prim>
   LinearComb<Prim> Op
-  (function<LinearComb<Prim>(const Prim&)> op,
+  (boost::function<LinearComb<Prim>(const Prim&)> op,
 		      const LinearComb<Prim>& f) {
     IsPrimitive<Prim>();
     LinearComb<Prim> g;
@@ -168,7 +168,7 @@ namespace l2func {
 			    Prim::exp_power>(f);
   }
   template<class Prim>
-  function<LinearComb<Prim>(const Prim&)> OpDDr() {
+  boost::function<LinearComb<Prim>(const Prim&)> OpDDr() {
     return bind(OperateDDr<Prim>, _1);
   }
 
@@ -179,7 +179,7 @@ namespace l2func {
     return ddf;
   }
   template<class Prim>
-  function<LinearComb<Prim>(const Prim&)> OpDDr2() {
+  boost::function<LinearComb<Prim>(const Prim&)> OpDDr2() {
     return bind(OperateDDr2<Prim>, _1);
   }
 

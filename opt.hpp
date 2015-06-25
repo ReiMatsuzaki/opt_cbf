@@ -30,7 +30,7 @@ namespace opt_cbf_h {
     Matrix<F, Dynamic, Dynamic> hess;
 
     int iter_num;
-    //    map<string, any> others_map;
+
   };
 
   // ========== interface for optimization class =====
@@ -38,7 +38,7 @@ namespace opt_cbf_h {
   class IOptimizer {
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef function<void (const VecF&, F*, VecF*, MatF*)>    FuncValGradHess;
+    typedef boost::function<void (const VecF&, F*, VecF*, MatF*)>    FuncValGradHess;
 
   public:
     virtual ~IOptimizer();
@@ -52,7 +52,7 @@ namespace opt_cbf_h {
     // ------------ Type --------------------
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef function<void (const VecF&, F*, VecF*, MatF*)>
+    typedef boost::function<void (const VecF&, F*, VecF*, MatF*)>
     FuncValGradHess;
     // ------------ Field -------------------
     int max_iter_;
@@ -79,7 +79,7 @@ namespace opt_cbf_h {
     // --------------- type ----------------
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef function<void (const VecF&, F*, VecF*, MatF*)>
+    typedef boost::function<void (const VecF&, F*, VecF*, MatF*)>
     FuncValGradHess;
 
     // ------------- Field -----------------

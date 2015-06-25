@@ -10,8 +10,8 @@ namespace {
   using std::string;
   using std::ostream;
   typedef std::complex<double> CD;
-using boost::function;
-using boost::bind;  
+  using boost::function;
+  using boost::bind;  
 }
 
 namespace l2func {
@@ -114,11 +114,11 @@ namespace l2func {
     return Prim(f.c() * c, f.n(), f.z());
   }
   template<class Prim>
-  function<Prim(const Prim&)> OpRm(int m) {
+  boost::function<Prim(const Prim&)> OpRm(int m) {
     return bind(OperateRm<Prim>, m, _1);
   }
   template<class Prim>
-  function<Prim(const Prim&)> OpCst(typename Prim::Field c) {
+  boost::function<Prim(const Prim&)> OpCst(typename Prim::Field c) {
     return bind(OperateCst<Prim>, c, _1);
   }  
 }

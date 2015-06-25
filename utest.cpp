@@ -12,6 +12,7 @@
 #include "opt.hpp"
 #include "driv.hpp"
 #include "opt_cbf.hpp"
+#include "from_kv.hpp"
 
 using namespace Eigen;
 using namespace opt_cbf_h;
@@ -332,12 +333,12 @@ TEST(Restriction, Interface) {
 
 }
 TEST(Driv, Construct) {
-
+  
   LinearComb<RSTO> mu_phi;
   mu_phi += 1.0 * RSTO(1.0, 2, 1.0);
 
   IDrivSystem<RSTO>* hatom = new HAtomPI<RSTO>(1, 1.0, 0.5, mu_phi);
-  // HAtomPI<double>* hatom = new HAtomPI<double>(1, 1.0, 0.5, mu_phi);
+
   RSTO s1(1.1, 2, 1.2);
   RSTO s2(2.1, 2, 1.3);
   double h01 = hatom->OpEle(s1, s2);
@@ -469,7 +470,7 @@ TEST_F(TestOptSTO, optimization) {
 TEST(TEST_FromKV, BasisSet) {
   
   vector<CSTO> csto_set;
-  KeysValues kv;
+  KeysValues kv(":", " ");
   kv.Add("opt_basis", make_tuple(1, 1.2));
   kv.Add("opt_basis", make_tuple(2, 3.4));
   kv.Add("opt_basis", make_tuple(2, 1.4));
@@ -478,7 +479,7 @@ TEST(TEST_FromKV, BasisSet) {
 
   EXPECT_EQ(3, csto_set.size());
   EXPECT_EQ(2, csto_set[1].n());
-  EXPECT_DOUBLE(1.4, csto_set[2].z().real());
+  EXPECT_DOUBLE_EQ(1.4, csto_set[2].z().real());
   
 }
 

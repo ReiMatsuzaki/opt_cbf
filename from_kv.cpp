@@ -1,19 +1,23 @@
 
 #include "from_kv.hpp"
 #include <keys_values.hpp>
+#include <l2func.hpp>
 #include <macros.hpp>
+
+using namespace l2func;
 
 namespace opt_cbf_h {
 
   // --------- Basis Set -------------------
-  void extractOptEtBasis(const KeysValues& kv, int* n, int num*, CD* z0, CD* r) {
+  void extractOptEtBasis(const KeysValues& kv, int* n, 
+			 int* num, CD* z0, CD* r) {
     
     typedef tuple<int,int,CD,CD> IICC;
-    IICC val = keys_values_.Get<IICC>("opt_et_basis");
-    n*   = get<0>(val);
-    num* = get<1>(val);
-    x0*  = get<2>(val);
-    r*   = get<3>(val);
+    IICC val = kv.Get<IICC>("opt_et_basis");
+    *n   = get<0>(val);
+    *num = get<1>(val);
+    *z0  = get<2>(val);
+    *r   = get<3>(val);
   }
   void errChk_BasisSet(int num_et, int num_opt) {
 
@@ -35,8 +39,8 @@ namespace opt_cbf_h {
   template<class Prim>
   void BasisSet(const KeysValues& kv, vector<Prim>* basis_set) {
     
-    int num_et = keys_values_.Count("opt_et_basis");
-    int num_opt= keys_values_.Count("opt_basis");
+    int num_et = kv.Count("opt_et_basis");
+    int num_opt= kv.Count("opt_basis");
 
     errChk_BasisSet(num_et, num_opt);
     
@@ -56,6 +60,7 @@ namespace opt_cbf_h {
     } else if (num_et == 0 && num_opt != 0) {
       num = kv.Count("opt_basis");
       nz_list.resize(num);
+      typedef tuple<int, CD> I_CD;
       for(int i = 0; i < num; i++) 
 	nz_list[i] = kv.Get<I_CD>("opt_basis", i);
     } else 
@@ -72,13 +77,15 @@ namespace opt_cbf_h {
 
   /**
    * build driven term
-   */
+
   template<class Prim>
-  void BuildHAtom(const KeysValues&, HAtomPi<Prim>*);
+  void BuildHAtom(const KeysValues&, HAtomPI<Prim>*);
+   */
 
   /**
    * build optimizer
-   */
+
   void BuildOptimizer(const KeysValues&, IOptimizer*);
+  */
 
 }

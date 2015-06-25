@@ -1,8 +1,8 @@
 include local.mk
 DEBUGS=-g -Wall
 OPTS=-O3
-CXXFLAGS=${LIBPATH} ${DEBUGS}
-OPT_CBF_OBJS= opt_cbf.o driv.o opt.o restrict.o l_algebra.o
+CXXFLAGS=${LIBPATH} ${OPTS}
+OPT_CBF_OBJS= from_kv.o opt_cbf.o driv.o opt.o restrict.o l_algebra.o
 RUN_OBJS=run.o controller.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${L2_DIR}/l2.a
 
 ${UTILS_DIR}/keys_values.o :
