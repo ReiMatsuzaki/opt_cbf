@@ -67,6 +67,7 @@ namespace opt_cbf_h {
     } else 
       err_BasisSet();
 
+    basis_set->resize(num);
     for(int i = 0; i < num; i++) {
       int n = get<0>(nz_list[i]);
       CD  z = get<1>(nz_list[i]);

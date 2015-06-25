@@ -471,9 +471,9 @@ TEST(TEST_FromKV, BasisSet) {
   
   vector<CSTO> csto_set;
   KeysValues kv(":", " ");
-  kv.Add("opt_basis", make_tuple(1, 1.2));
-  kv.Add("opt_basis", make_tuple(2, 3.4));
-  kv.Add("opt_basis", make_tuple(2, 1.4));
+  kv.Add("opt_basis", make_tuple(1, CD(1.2, 0.0)));
+  kv.Add("opt_basis", make_tuple(2, CD(3.4, 0.0)));
+  kv.Add("opt_basis", make_tuple(2, CD(1.4, 0.0)));
   
   BuildBasisSet(kv, &csto_set);
 
