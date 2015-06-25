@@ -46,27 +46,6 @@ namespace opt_cbf_h {
     virtual OptRes<F> Optimize(FuncValGradHess f, VecF z0) = 0;
   };
 
-  // =========== simple newton iteration ============
-  template<class F>
-  class OptimizerNewton : public IOptimizer<F> {
-  private:
-    // --------------- type ----------------
-    typedef Matrix<F, Dynamic, 1>       VecF;
-    typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef function<void (const VecF&, F*, VecF*, MatF*)>
-    FuncValGradHess;
-
-    // ------------- Field -----------------
-    int max_iter_;
-    double eps_;
-    int debug_level_;
-
-  public:
-    OptimizerNewton(int _max_iter, double _eps);
-    OptimizerNewton(int _max_iter, double _eps, int _d_lvl);
-    OptRes<F> Optimize(FuncValGradHess f, VecF z0);
-  };
-
   // =========== with restrictions ==================
   template<class F>
   class OptimizerRestricted : public IOptimizer<F> {
@@ -93,11 +72,10 @@ namespace opt_cbf_h {
     // ------------ Method ------------------
     OptRes<F> Optimize(FuncValGradHess f, VecF z0);
   };
-  
-  /*
-  // Decorator pattern
+
+  // =========== simple newton iteration ============
   template<class F>
-  class Decorator : public IOptimizer<F> {
+  class OptimizerNewton : public IOptimizer<F> {
   private:
     // --------------- type ----------------
     typedef Matrix<F, Dynamic, 1>       VecF;
@@ -105,10 +83,19 @@ namespace opt_cbf_h {
     typedef function<void (const VecF&, F*, VecF*, MatF*)>
     FuncValGradHess;
 
-    // --------------- Field ---------------
-    IOptimizer* optimizer_;
+    // ------------- Field -----------------
+    OptimizerRestricted* optimizer_;
+
+    // ------------ Uncopyable -------------
+    OptimizerNewton(const OptimizerNewton&);
+
+  public:
+    // ------------ Constructors ------------
+    OptimizerNewton(int _max_iter, double _eps);
+    OptimizerNewton(int _max_iter, double _eps, int _d_lvl);
+    ~OptimizerNewton();
+    OptRes<F> Optimize(FuncValGradHess f, VecF z0);
   };
-  */
 }
 
 #endif

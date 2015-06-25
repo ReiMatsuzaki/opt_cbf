@@ -16,3 +16,4 @@
   by some technique in meta programming.
   
 * Impl. simple Newton method using Restriction class
+* remove "include restrict.hpp" in opt.hpp
