@@ -1,5 +1,5 @@
 include ../local.mk
-CXXFLAGS=${LIBPATH}
+CXXFLAGS=${LIBPATH} -O3
 
 OBJS=hatom.o lcomb.o prim.o erfc.o fact.o
 

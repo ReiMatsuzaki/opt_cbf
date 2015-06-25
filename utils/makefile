@@ -1,7 +1,7 @@
 
 include ../local.mk
 
-CXXFLAGS=${LIBPATH} -Wall
+CXXFLAGS=${LIBPATH} -O3
 OBJS=keys_values.o timer.o
 
 utest: utest.o ${OBJS}

@@ -106,7 +106,6 @@ namespace opt_cbf_h {
 	  (*basis_set)[i] = prim;
 	  zs_(i) = z;
 	}
-	cout << "end setBasis, building ET" << endl;
       } else if(num_et == 0 && num_opt != 0) {
 
 	int num = keys_values_.Count("opt_basis");
@@ -174,7 +173,6 @@ namespace opt_cbf_h {
 	keys_values_.Get<string>("basis_type");
       IOptTarget* ptr;
 
-      cout << "entering setBasis" << endl;
       if(basis_type == "STO") {
 	vector<CSTO> basis_set;
 	this->setBasis<CSTO>(&basis_set);
@@ -270,6 +268,35 @@ namespace opt_cbf_h {
 	ofs << opt_res_.hess << endl;
       }
     }
+    void writeBasis(ofstream& ofs) {
+      
+      int num_et = keys_values_.Count("opt_et_basis");
+      int num_opt= keys_values_.Count("opt_basis");
+
+      if(num_et == 0) {
+	for(int i = 0; i < opt_res_.z.rows(); i++) {
+	  ofs << "opt_basis: ";
+	  ofs << get<0>(keys_values_.Get<I_CD>
+			("opt_basis", i));
+	  ofs << " " << opt_res_.z(i) << endl;
+	}	
+      }
+      
+      if(num_et == 1 && num_opt == 0) {
+	typedef tuple<int,int,CD,CD> IICC;
+	IICC val = keys_values_.Get<IICC>("opt_et_basis");
+	int n   = get<0>(val);
+	int num = get<1>(val);
+	CD  x0  = get<2>(val);
+	CD  r   = get<3>(val);
+	CD z = x0;
+	for(int i = 0; i < num; i++) {
+	  ofs << "opt_basis: ";
+	  ofs << n << " " << z << endl;
+	  z *= r;
+	}
+      }
+    }
     
     // -------- Method --------------
     void Read(const char* filename) {
@@ -298,6 +325,8 @@ namespace opt_cbf_h {
       
       this->setOptTarget();
       this->setOptimizer();
+
+      timer_.End("read");
     }
     void Compute() {
 
@@ -326,12 +355,8 @@ namespace opt_cbf_h {
       ofs << (opt_res_.convergence ? "true" : "false") << endl;
       ofs << "iter_num: " << opt_res_.iter_num << endl;
 
-      for(int i = 0; i < opt_res_.z.rows(); i++) {
-	ofs << "opt_basis: ";
-	ofs << get<0>(keys_values_.Get<I_CD>
-		      ("opt_basis", i));
-	ofs << " " << opt_res_.z(i) << endl;
-      }
+      this->writeBasis(ofs);
+      
       VectorXcd cs = opt_target_->GetCoefs();
       for(int i = 0; i < cs.rows(); i++) {
 	ofs << "coef: ";
