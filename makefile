@@ -1,5 +1,7 @@
 include local.mk
-CXXFLAGS=${LIBPATH} -g -Wall
+DEBUGS=-g -Wall
+OPTS=-O3
+CXXFLAGS=${LIBPATH} ${DEBUGS}
 OPT_CBF_OBJS= opt_cbf.o driv.o opt.o restrict.o l_algebra.o
 RUN_OBJS=run.o controller.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${L2_DIR}/l2.a
 
@@ -30,6 +32,14 @@ clean:
 	rm -f *.o
 	rm -f *.a
 	rm -f utest
+
+cleanall:
+	cd utils
+	make clean
+	cd ..
+	cd l2func
+	make clean
+	cd ..
 
 install: opt_cbf
 	cp opt_cbf ${INSTALL_PATH}

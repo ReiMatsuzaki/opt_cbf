@@ -8,6 +8,7 @@
 
 class Base {
 public:
+  virtual ~Base() {}
   int Hello() const { 
     return this->hello();
   }

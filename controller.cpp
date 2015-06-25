@@ -7,6 +7,7 @@
 #include "controller.hpp"
 #include "opt_cbf.hpp"
 #include "driv.hpp"
+#include "restrict.hpp"
 #include "opt.hpp"
 
 namespace {

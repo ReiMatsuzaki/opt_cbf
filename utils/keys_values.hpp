@@ -54,6 +54,7 @@ tuple<T,U,V,W> ConvertData(CS& str, CS& sep);
 // ============ check number ===================
 class CheckNum {
 public:
+  virtual ~CheckNum() {};
   bool Check(int num) {
     return this->check(num);
   }
