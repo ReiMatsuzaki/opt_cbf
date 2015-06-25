@@ -20,8 +20,8 @@ ${L2_DIR}/l2.a:
 	make l2.a \
 	cd ..
 
-utest: utest.o ${OPT_CBF_OBJS}
-	${CXX} -o utest ${CXXFLAGS} utest.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${LIBGTEST}
+utest: utest.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o
+	${CXX} -o utest ${CXXFLAGS} utest.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${UTILS_DIR}/keys_values.o ${LIBGTEST}
 	./utest
 
 opt_cbf: ${RUN_OBJS}

@@ -41,7 +41,7 @@ namespace opt_cbf_h {
    * build optimizer
    */
   void BuildOptimizer(const KeysValues&, 
-		      IOptimizer<CD>);
+		      IOptimizer<CD>*);
 }
 
 #endif

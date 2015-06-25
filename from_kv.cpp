@@ -37,7 +37,8 @@ namespace opt_cbf_h {
       throw runtime_error(msg);
   }
   template<class Prim>
-  void BasisSet(const KeysValues& kv, vector<Prim>* basis_set) {
+  void BuildBasisSet(const KeysValues& kv, 
+		     vector<Prim>* basis_set) {
     
     int num_et = kv.Count("opt_et_basis");
     int num_opt= kv.Count("opt_basis");
@@ -87,5 +88,11 @@ namespace opt_cbf_h {
 
   void BuildOptimizer(const KeysValues&, IOptimizer*);
   */
+  
 
+  // ---------- Explicit Instance --------------
+  template void 
+  BuildBasisSet<CSTO>(const KeysValues&, vector<CSTO>*);
+  template void
+  BuildBasisSet<CGTO>(const KeysValues&, vector<CGTO>*);
 }
