@@ -3,10 +3,11 @@ CXXFLAGS=${LIBPATH} -Wall
 
 OBJS=hatom.o lcomb.o prim.o erfc.o fact.o
 
-# this command run correctly in rcclsc
+# this command run correctly on rcclsc
 #l2.a: ${OBJS}
 #	ar -cr -o $@ ${OBJS}
 
+# this command run correctly on mac
 l2.a: ${OBJS}
 	ar r $@ ${OBJS}
 
