@@ -14,18 +14,22 @@ namespace opt_cbf_h {
   // ============= Interface ========================
   template<class F>
   IOptimizer<F>::~IOptimizer() {}
+
+  template<class F>
+  IOptimizer<F>::IOptimizer(int m, double e) :
+    max_iter_(m), eps_(e) {}
   
   // ============= Newton with Restriction ==========
   template<class F>
   OptimizerRestricted<F>::OptimizerRestricted
   (int _max_iter, double _eps, IRestriction<F>* ptr) :
-    max_iter_(_max_iter), eps_(_eps), 
+    IOptimizer<F>(_max_iter, _eps),
     restriction_(ptr), debug_level_(0) {}
 
   template<class F>
   OptimizerRestricted<F>::OptimizerRestricted
   (int _max_iter, double _eps, IRestriction<F>* ptr, int _d) :
-    max_iter_(_max_iter), eps_(_eps), 
+    IOptimizer<F>(_max_iter, _eps),
     restriction_(ptr), debug_level_(_d) {}
 
   template<class F>
@@ -59,7 +63,7 @@ namespace opt_cbf_h {
     VecF dz(n1);
 
     // start loop
-    for(int i = 0; i < max_iter_; i++) {
+    for(int i = 0; i < IOptimizer<F>::max_iter_; i++) {
 
       // compute grad and hess
       f(res.z, &res.value, &res.grad, &res.hess);
@@ -83,9 +87,9 @@ namespace opt_cbf_h {
 
       // check convergence
       double dz_norm = std::abs(dz.norm());
-      bool check1 = dz_norm < eps_;
+      bool check1 = dz_norm < IOptimizer<F>::eps_;
       double max_grad = res.grad.array().abs().maxCoeff();
-      bool check2 =  max_grad < eps_;
+      bool check2 =  max_grad < IOptimizer<F>::eps_;
       if( check1 && check2) {
 	res.convergence = true;
 	break;
@@ -98,13 +102,15 @@ namespace opt_cbf_h {
   
   // ============= Simple Newton ====================
   template<class F>
-  OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps) {
+  OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps) :
+    IOptimizer<F>(_max_iter, _eps) {
     IRestriction<F>* no_rist = new NoRestriction<F>();
     optimizer_ = new OptimizerRestricted<F>(_max_iter, _eps, no_rist);
   }
   template<class F>
-  OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps,
-				      int _d_lvl) {
+  OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps, int _d_lvl) :
+    IOptimizer<F>(_max_iter, _eps) {
+				      
     IRestriction<F>* no_rist = new NoRestriction<F>();
     optimizer_ = new OptimizerRestricted<F>(_max_iter, _eps, no_rist, _d_lvl);    
   }
@@ -119,6 +125,8 @@ namespace opt_cbf_h {
 
   // ============== explicit instance ===============
   typedef std::complex<double> CD;
+  template class IOptimizer<double>;
+  template class IOptimizer<CD>;
   template class OptimizerNewton<double>;
   template class OptimizerNewton<CD>;
   template class OptimizerRestricted<double>;
