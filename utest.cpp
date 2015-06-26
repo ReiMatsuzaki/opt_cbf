@@ -205,6 +205,9 @@ TEST(Optimizer, Newton) {
   
   OptRes<double> res = opt->Optimize
     (bind(&TwoDimFunc::CalcGradHess, func, _1, _2, _3, _4), x0);
+
+  EXPECT_EQ(100, opt->max_iter());
+  EXPECT_DOUBLE_EQ(0.0000001, opt->eps());
   
   delete opt;
   double eps(0.000000001);
@@ -481,6 +484,21 @@ TEST(TEST_FromKV, BasisSet) {
   EXPECT_EQ(2, csto_set[1].n());
   EXPECT_DOUBLE_EQ(1.4, csto_set[2].z().real());
   
+}
+TEST(TEST_BuildOptimizer, first) {
+
+  KeysValues kv(":", " ");
+  kv.Add("opt_basis", make_tuple(1, 1.2));
+  kv.Add("opt_basis", make_tuple(2, 3.4));
+  kv.Add("opt_basis", make_tuple(2, 1.4));
+  kv.Add("max_iter", 100);
+  kv.Add("eps", 0.00000001);
+
+  IOptimizer<CD>* opt;
+  BuildOptimizer(kv, opt);
+  EXPECT_TRUE(typeid(opt) == typeid(OptimizerNewton));
+  EXPECT_EQ(100, opt->max_iter());
+  EXPECT_DOUBLE_EQ(0.00000001, opt->eps());
 }
 
 
