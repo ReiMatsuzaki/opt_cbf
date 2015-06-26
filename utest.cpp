@@ -263,7 +263,7 @@ TEST(Restriction, EvenTemp) {
   xs << 1.1, 2.2, 2.3, 2.4; 
   even_temp.SetVars(xs);
 
-  EXPECT_EQ(2, even_temp.size());
+  EXPECT_EQ(4, even_temp.size());
   
   EXPECT_DOUBLE_EQ(2.0, even_temp.ratio());
   EXPECT_DOUBLE_EQ(1.1, even_temp.x0());
@@ -333,7 +333,7 @@ TEST(Restriction, Interface) {
   IRestriction<double>* even_temp = 
     new EvenTemp<double>();
 
-  VectorXd xs(3);
+  VectorXd xs = VectorXd::Zero(3);
   xs << 1.1, 2.2, 2.3;
   even_temp->SetVars(xs);
 
@@ -491,6 +491,7 @@ TEST(FromKV_BasisSet, OptBasis) {
   
 }
 TEST(FromKV_BasisSet, EtBasis) {
+
   vector<CGTO> cgto_set;
   KeysValues kv(":", " ");
   kv.Add("opt_et_basis", make_tuple(1,5,
@@ -535,8 +536,8 @@ TEST(TEST_BuildOptimizer, opt_basis) {
 
   IOptimizer<CD>* opt;
   BuildOptimizer(kv, &opt);
-
-  EXPECT_TRUE(typeid(opt) == typeid(OptimizerNewton<CD>));
+  
+  EXPECT_TRUE(typeid(*opt) == typeid(OptimizerNewton<CD>));
   EXPECT_EQ(100, opt->max_iter());
   EXPECT_DOUBLE_EQ(0.00000001, opt->eps());
 }
@@ -550,7 +551,7 @@ TEST(TEST_BuildOptimizer, opt_et_basis) {
   IOptimizer<CD>* opt;
   BuildOptimizer(kv, &opt);
 
-  EXPECT_TRUE(typeid(opt) == typeid(OptimizerRestricted<CD>));
+  EXPECT_TRUE(typeid(*opt) == typeid(OptimizerRestricted<CD>));
   EXPECT_EQ(99, opt->max_iter());
   EXPECT_DOUBLE_EQ(0.00000001, opt->eps());  
 
@@ -564,7 +565,7 @@ TEST(BuildHAtomPI, Construct) {
   kv.Add("energy", 0.5);
 
   HAtomPI<CSTO>* hatom;
-  BuildHAtomPI(kv, hatom);
+  BuildHAtomPI(kv, &hatom);
 
   RSTO s1(1.1, 2, 1.2);
   RSTO s2(2.1, 2, 1.3);

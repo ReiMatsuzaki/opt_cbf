@@ -74,7 +74,7 @@ namespace opt_cbf_h {
     // EvenTemp(int _num, F _r, F _x0);
     ~EvenTemp();
     // ------- Accessor ---------------------
-    int size() const { return 2; }
+    int size() const { return num_; }
     F ratio() const { return ratio_; }
     F x0()    const { return x0_; }
     // ------- Methods ----------------------

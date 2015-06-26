@@ -56,7 +56,7 @@ namespace opt_cbf_h {
       extractOptEtBasis(kv, &n, &num, &z0, &r);
       nz_list.resize(num);
       CD z = z0;
-      for(int i = 0; i < n; i++) {
+      for(int i = 0; i < num; i++) {
 	nz_list[i] = make_tuple(n, z);
 	z *= r;
       } 
@@ -84,8 +84,7 @@ namespace opt_cbf_h {
    * build driven term
    */
   template<class Prim>
-  void BuildHAtomPI(const KeysValues&, HAtomPI<Prim>*) {
-
+  void BuildHAtomPI(const KeysValues&, HAtomPI<Prim>**) {
   }
 
   /**
@@ -118,6 +117,8 @@ namespace opt_cbf_h {
       throw runtime_error(msg);
 
     }
+
+
   }
 
   // ---------- Explicit Instance --------------
@@ -125,4 +126,8 @@ namespace opt_cbf_h {
   BuildBasisSet<CSTO>(const KeysValues&, vector<CSTO>*);
   template void
   BuildBasisSet<CGTO>(const KeysValues&, vector<CGTO>*);
+  template void
+  BuildHAtomPI<CSTO>(const KeysValues&, HAtomPI<CSTO>**);
+  template void
+  BuildHAtomPI<CGTO>(const KeysValues&, HAtomPI<CGTO>**);
 }

@@ -1,5 +1,7 @@
+#include <iostream>
 #include <Eigen/Core>
 #include "restrict.hpp"
+
 
 namespace opt_cbf_h {
 
