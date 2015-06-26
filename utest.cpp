@@ -205,6 +205,9 @@ TEST(Optimizer, Newton) {
   
   OptRes<double> res = opt->Optimize
     (bind(&TwoDimFunc::CalcGradHess, func, _1, _2, _3, _4), x0);
+
+  EXPECT_EQ(100, opt->max_iter());
+  EXPECT_DOUBLE_EQ(0.0000001, opt->eps());
   
   delete opt;
   double eps(0.000000001);
@@ -520,6 +523,37 @@ TEST(FromKV_BasisSet, Exception) {
   // exists simultouneously.
   vector<CSTO> us;
   EXPECT_ANY_THROW(BuildBasisSet(kv, &us));
+}
+TEST(TEST_BuildOptimizer, opt_basis) {
+
+  KeysValues kv(":", " ");
+  kv.Add("opt_basis", make_tuple(1, 1.2));
+  kv.Add("opt_basis", make_tuple(2, 3.4));
+  kv.Add("opt_basis", make_tuple(2, 1.4));
+  kv.Add("max_iter", 100);
+  kv.Add("eps", 0.00000001);
+
+  IOptimizer<CD>* opt;
+  BuildOptimizer(kv, &opt);
+
+  EXPECT_TRUE(typeid(opt) == typeid(OptimizerNewton<CD>));
+  EXPECT_EQ(100, opt->max_iter());
+  EXPECT_DOUBLE_EQ(0.00000001, opt->eps());
+}
+TEST(TEST_BuildOptimizer, opt_et_basis) {
+
+  KeysValues kv(":", " ");
+  kv.Add("opt_et_basis", make_tuple(2, 3, 1.4, 1.5));
+  kv.Add("max_iter", 99);
+  kv.Add("eps", 0.00000001);
+  
+  IOptimizer<CD>* opt;
+  BuildOptimizer(kv, &opt);
+
+  EXPECT_TRUE(typeid(opt) == typeid(OptimizerRestricted<CD>));
+  EXPECT_EQ(99, opt->max_iter());
+  EXPECT_DOUBLE_EQ(0.00000001, opt->eps());  
+
 }
 TEST(BuildHAtomPI, Construct) {
 

@@ -1,4 +1,5 @@
-
+#include "opt.hpp"
+#include "restrict.hpp"
 #include "from_kv.hpp"
 #include "opt.hpp"
 #include <keys_values.hpp>
@@ -75,6 +76,7 @@ namespace opt_cbf_h {
       Prim prim(n, z, Normalized);
       (*basis_set)[i] = prim;
     }
+
   }
   // ----------------------------------------
 
@@ -89,8 +91,33 @@ namespace opt_cbf_h {
   /**
    * build optimizer
    */
-  void BuildOptimizer(const KeysValues&, IOptimizer<CD>*) {
+  void BuildOptimizer(const KeysValues& kv, 
+		      IOptimizer<CD>** opt) {
 
+    int max_iter = kv.Get<int>("max_iter");
+    double eps   = kv.Get<double>("eps");
+
+    // check number of basis 
+    int num_et = kv.Count("opt_et_basis");
+    int num_opt= kv.Count("opt_basis");
+
+    if(num_et == 1 && num_opt == 0) {
+      
+      IRestriction<CD>* et;
+      et = new EvenTemp<CD>();
+      *opt = new OptimizerRestricted<CD>
+	(max_iter, eps, et);
+
+    } else if(num_et == 0 && num_opt != 0) {
+
+      *opt = new OptimizerNewton<CD>(max_iter, eps, 0);
+
+    } else {
+      
+      string msg = "Unsupported combination for basis";
+      throw runtime_error(msg);
+
+    }
   }
 
   // ---------- Explicit Instance --------------

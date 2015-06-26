@@ -40,9 +40,20 @@ namespace opt_cbf_h {
     typedef Matrix<F, Dynamic, Dynamic> MatF;
     typedef boost::function<void (const VecF&, F*, VecF*, MatF*)>    FuncValGradHess;
 
+  protected:
+    // ------------ Field -----------------
+    int max_iter_;
+    double eps_;
   public:
+    // ------------ Constructors ----------
     virtual ~IOptimizer();
+    IOptimizer(int m, double e);
+
+    // ------------ Method ----------------
     virtual OptRes<F> Optimize(FuncValGradHess f, VecF z0) = 0;
+    // ------------ Accessors --------------
+    int max_iter() const { return max_iter_; }
+    double eps() const { return eps_; }
   };
 
   // =========== with restrictions ==================
@@ -55,8 +66,6 @@ namespace opt_cbf_h {
     typedef boost::function<void (const VecF&, F*, VecF*, MatF*)>
     FuncValGradHess;
     // ------------ Field -------------------
-    int max_iter_;
-    double eps_;
     IRestriction<F>* restriction_;
     int debug_level_;
     // ------------ Uncopyable ---------------
