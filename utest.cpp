@@ -485,7 +485,7 @@ TEST(TEST_FromKV, BasisSet) {
   EXPECT_DOUBLE_EQ(1.4, csto_set[2].z().real());
   
 }
-TEST(TEST_BuildOptimizer, first) {
+TEST(TEST_BuildOptimizer, opt_basis) {
 
   KeysValues kv(":", " ");
   kv.Add("opt_basis", make_tuple(1, 1.2));
@@ -495,13 +495,26 @@ TEST(TEST_BuildOptimizer, first) {
   kv.Add("eps", 0.00000001);
 
   IOptimizer<CD>* opt;
-  cout << "abc" << endl;
-  BuildOptimizer(kv, opt);
-  //EXPECT_TRUE(typeid(opt) == typeid(OptimizerNewton<CD>));
-  cout << "def" << endl;
-  cout << opt->max_iter();
+  BuildOptimizer(kv, &opt);
+
+  EXPECT_TRUE(typeid(opt) == typeid(OptimizerNewton<CD>));
   EXPECT_EQ(100, opt->max_iter());
   EXPECT_DOUBLE_EQ(0.00000001, opt->eps());
+}
+TEST(TEST_BuildOptimizer, opt_et_basis) {
+
+  KeysValues kv(":", " ");
+  kv.Add("opt_et_basis", make_tuple(2, 3, 1.4, 1.5));
+  kv.Add("max_iter", 99);
+  kv.Add("eps", 0.00000001);
+  
+  IOptimizer<CD>* opt;
+  BuildOptimizer(kv, &opt);
+
+  EXPECT_TRUE(typeid(opt) == typeid(OptimizerRestricted<CD>));
+  EXPECT_EQ(99, opt->max_iter());
+  EXPECT_DOUBLE_EQ(0.00000001, opt->eps());  
+
 }
 
 

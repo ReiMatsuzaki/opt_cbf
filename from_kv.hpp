@@ -35,13 +35,13 @@ namespace opt_cbf_h {
    * build driven term
    */
   template<class Prim>
-  void BuildHAtom(const KeysValues&, HAtomPI<Prim>*);
+  void BuildHAtom(const KeysValues&, HAtomPI<Prim>**);
 
   /**
    * build optimizer
    */
   void BuildOptimizer(const KeysValues&, 
-		      IOptimizer<CD>*);
+		      IOptimizer<CD>**);
 }
 
 #endif

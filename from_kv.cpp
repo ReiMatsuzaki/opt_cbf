@@ -89,7 +89,7 @@ namespace opt_cbf_h {
    * build optimizer
    */
   void BuildOptimizer(const KeysValues& kv, 
-		      IOptimizer<CD>* opt) {
+		      IOptimizer<CD>** opt) {
 
     int max_iter = kv.Get<int>("max_iter");
     double eps   = kv.Get<double>("eps");
@@ -102,12 +102,12 @@ namespace opt_cbf_h {
       
       IRestriction<CD>* et;
       et = new EvenTemp<CD>();
-      opt = new OptimizerRestricted<CD>
+      *opt = new OptimizerRestricted<CD>
 	(max_iter, eps, et);
 
     } else if(num_et == 0 && num_opt != 0) {
 
-      opt = new OptimizerNewton<CD>(max_iter, eps, 0);
+      *opt = new OptimizerNewton<CD>(max_iter, eps, 0);
 
     } else {
       
