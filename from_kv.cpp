@@ -79,17 +79,18 @@ namespace opt_cbf_h {
 
   /**
    * build driven term
-
-  template<class Prim>
-  void BuildHAtom(const KeysValues&, HAtomPI<Prim>*);
    */
+  template<class Prim>
+  void BuildHAtomPI(const KeysValues&, HAtomPI<Prim>*) {
+
+  }
 
   /**
    * build optimizer
+   */
+  void BuildOptimizer(const KeysValues&, IOptimizer*) {
 
-  void BuildOptimizer(const KeysValues&, IOptimizer*);
-  */
-  
+  }
 
   // ---------- Explicit Instance --------------
   template void 

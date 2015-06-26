@@ -467,7 +467,7 @@ TEST_F(TestOptSTO, optimization) {
   EXPECT_NEAR(0.664185, opt_res.z(1).real(), 0.000001);
   EXPECT_NEAR(-1.11116, opt_res.z(1).imag(), 0.00001);
 }
-TEST(TEST_FromKV, BasisSet) {
+TEST(FromKV_BasisSet, OptBasis) {
   
   vector<CSTO> csto_set;
   KeysValues kv(":", " ");
@@ -482,7 +482,56 @@ TEST(TEST_FromKV, BasisSet) {
   EXPECT_DOUBLE_EQ(1.4, csto_set[2].z().real());
   
 }
+TEST(FromKV_BasisSet, EtBasis) {
+  vector<CGTO> cgto_set;
+  KeysValues kv(":", " ");
+  kv.Add("opt_et_basis", make_tuple(1,5,
+				    CD(1.2,0.0),CD(1.3,0.0)));
+  
+  BuildBasisSet(kv, &cgto_set);
 
+  EXPECT_EQ(5, cgto_set.size());
+  EXPECT_EQ(1, cgto_set[0].n());
+  EXPECT_DOUBLE_EQ(1.2, cgto_set[0].z().real());
+  EXPECT_DOUBLE_EQ(1.2 * 1.3, cgto_set[1].z().real());
+  EXPECT_DOUBLE_EQ(1.2 * 1.3 * 1.3, 
+		   cgto_set[2].z().real());
+}
+TEST(FromKV_BasisSet, Exception) {
+  
+  KeysValues kv(":", " ");
+
+  // check throw exception when there does not exist
+  // any basis functions data.
+  EXPECT_ANY_THROW(BuildBasisSet(kv, us));
+
+  kv.Add("opt_basis", make_tuple(1, CD(1.2, 0.0)));
+  kv.Add("opt_basis", make_tuple(2, CD(3.4, 0.0)));
+  kv.Add("opt_et_basis", make_tuple(1,5,
+				    CD(1.2,0.0),CD(1.3,0.0)));
+
+  // check throw exception when both opt_basis and opt_et_basis
+  // exists simultouneously.
+  vector<CSTO> us;
+  EXPECT_ANY_THROW(BuildBasisSet(kv, us));
+}
+TEST(BuildHAtomPI, Construct) {
+
+  KeysValues kv(":", " ");
+  kv.Add("channel", "1s->kp");
+  kv.Add("dipole", "length");
+  kv.Add("basis_type", "STO");
+  kv.Add("energy", 0.5);
+
+  HAtomPI<STO>* hatom;
+  BuildHAtomPI(kv, hatom);
+
+  RSTO s1(1.1, 2, 1.2);
+  RSTO s2(2.1, 2, 1.3);
+  EXPECT_NEAR(-0.195858432000038, 
+	      hatom->OpEle(s1, s2),
+	      +0.0000000000001);  
+}
 
 
 
