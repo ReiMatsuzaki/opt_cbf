@@ -9,9 +9,9 @@ namespace opt_cbf_h {
   template<class F>
   EvenTemp<F>::EvenTemp() : num_(1), x0_(1.0), ratio_(1.0) {}
 
-  template<class F>
-  EvenTemp<F>::EvenTemp(int _num, F _r, F _x0): 
-    num_(_num), x0_(_x0), ratio_(_r) {}
+  //  template<class F>
+  //  EvenTemp<F>::EvenTemp(int _num, F _r, F _x0): 
+  //    num_(_num), x0_(_x0), ratio_(_r) {}
 
   template<class F>
   EvenTemp<F>::~EvenTemp() {}

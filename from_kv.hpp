@@ -23,6 +23,7 @@ namespace opt_cbf_h {
   template<class F> class HAtomPI;
   template<class F> class IOptimizer;
 }
+
 namespace opt_cbf_h {
   
   /**
@@ -35,7 +36,7 @@ namespace opt_cbf_h {
    * build driven term
    */
   template<class Prim>
-  void BuildHAtom(const KeysValues&, HAtomPI<Prim>*);
+  void BuildHAtomPI(const KeysValues&, HAtomPI<Prim>*);
 
   /**
    * build optimizer

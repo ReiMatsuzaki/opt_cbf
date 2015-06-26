@@ -247,7 +247,8 @@ TEST(Restriction, NoRestriction) {
 
   VectorXd xs(4);
   xs << 1.1, 2.2, 2.3, 2.4;   
-  IRestriction<double>* no_rest = new NoRestriction<double>(xs);
+  //IRestriction<double>* no_rest = new NoRestriction<double>(xs);
+  IRestriction<double>* no_rest = new NoRestriction<double>();
   no_rest->SetVars(xs);
   EXPECT_EQ(4, no_rest->size());
 
@@ -327,9 +328,13 @@ TEST(Restriction, InRestrictSpace) {
 TEST(Restriction, Interface) {
 
   IRestriction<double>* even_temp = 
-    new EvenTemp<double>(3, 1.1, 3.0);
+    new EvenTemp<double>();
 
-  EXPECT_EQ(2, even_temp->size());
+  VectorXd xs(3);
+  xs << 1.1, 2.2, 2.3;
+  even_temp->SetVars(xs);
+
+  EXPECT_EQ(3, even_temp->size());
 
 }
 TEST(Driv, Construct) {
@@ -503,7 +508,8 @@ TEST(FromKV_BasisSet, Exception) {
 
   // check throw exception when there does not exist
   // any basis functions data.
-  EXPECT_ANY_THROW(BuildBasisSet(kv, us));
+  vector<CSTO> vs;
+  EXPECT_ANY_THROW(BuildBasisSet(kv, &vs));
 
   kv.Add("opt_basis", make_tuple(1, CD(1.2, 0.0)));
   kv.Add("opt_basis", make_tuple(2, CD(3.4, 0.0)));
@@ -513,7 +519,7 @@ TEST(FromKV_BasisSet, Exception) {
   // check throw exception when both opt_basis and opt_et_basis
   // exists simultouneously.
   vector<CSTO> us;
-  EXPECT_ANY_THROW(BuildBasisSet(kv, us));
+  EXPECT_ANY_THROW(BuildBasisSet(kv, &us));
 }
 TEST(BuildHAtomPI, Construct) {
 
@@ -523,13 +529,13 @@ TEST(BuildHAtomPI, Construct) {
   kv.Add("basis_type", "STO");
   kv.Add("energy", 0.5);
 
-  HAtomPI<STO>* hatom;
+  HAtomPI<CSTO>* hatom;
   BuildHAtomPI(kv, hatom);
 
   RSTO s1(1.1, 2, 1.2);
   RSTO s2(2.1, 2, 1.3);
   EXPECT_NEAR(-0.195858432000038, 
-	      hatom->OpEle(s1, s2),
+	      hatom->OpEle(s1, s2).real(),
 	      +0.0000000000001);  
 }
 

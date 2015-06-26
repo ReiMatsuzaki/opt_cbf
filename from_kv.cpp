@@ -1,5 +1,6 @@
 
 #include "from_kv.hpp"
+#include "opt.hpp"
 #include <keys_values.hpp>
 #include <l2func.hpp>
 #include <macros.hpp>
@@ -88,7 +89,7 @@ namespace opt_cbf_h {
   /**
    * build optimizer
    */
-  void BuildOptimizer(const KeysValues&, IOptimizer*) {
+  void BuildOptimizer(const KeysValues&, IOptimizer<CD>*) {
 
   }
 

@@ -42,7 +42,7 @@ namespace opt_cbf_h {
 
   public:
     // ------- Constructors -----------------
-    NoRestriction(VecF _xs) : xs_(_xs) {}
+    // NoRestriction(VecF _xs) : xs_(_xs) {}
     NoRestriction() {}
     ~NoRestriction() {}
     // ------- Accessor --------------------
@@ -71,7 +71,7 @@ namespace opt_cbf_h {
   public:
     // ------- Constructors -----------------
     EvenTemp();
-    EvenTemp(int _num, F _r, F _x0);
+    // EvenTemp(int _num, F _r, F _x0);
     ~EvenTemp();
     // ------- Accessor ---------------------
     int size() const { return 2; }
