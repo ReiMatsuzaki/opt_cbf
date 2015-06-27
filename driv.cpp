@@ -80,6 +80,7 @@ namespace opt_cbf_h {
 
   template<class Basis>
   HAtomPI<Basis>::HAtomPI(int _l, F _z, F _ene, STOs _driv) :
+    IDrivSystem<Basis>(),
     impl_(new typename HAtomPI<Basis>::Impl(_l, _z, _ene, _driv)) {}
   template<class Basis>
   HAtomPI<Basis>::~HAtomPI() { 

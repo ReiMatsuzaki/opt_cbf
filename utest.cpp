@@ -559,19 +559,20 @@ TEST(TEST_BuildOptimizer, opt_et_basis) {
 TEST(BuildHAtomPI, Construct) {
 
   KeysValues kv(":", " ");
-  kv.Add("channel", "1s->kp");
-  kv.Add("dipole", "length");
-  kv.Add("basis_type", "STO");
-  kv.Add("energy", 0.5);
+  kv.Add<string>("channel", "1s->kp");
+  kv.Add<string>("dipole", "length");
+  kv.Add<string>("basis_type", "STO");
+  kv.Add<double>("energy", 0.5);
 
   HAtomPI<CSTO>* hatom;
   BuildHAtomPI(kv, &hatom);
 
-  RSTO s1(1.1, 2, 1.2);
-  RSTO s2(2.1, 2, 1.3);
+  CSTO s1(1.1, 2, 1.2);
+  CSTO s2(2.1, 2, 1.3);
   EXPECT_NEAR(-0.195858432000038, 
 	      hatom->OpEle(s1, s2).real(),
 	      +0.0000000000001);  
+  delete hatom;
 }
 
 

@@ -2,6 +2,7 @@
 #include "restrict.hpp"
 #include "from_kv.hpp"
 #include "opt.hpp"
+#include "driv.hpp"
 #include <keys_values.hpp>
 #include <l2func.hpp>
 #include <macros.hpp>
@@ -48,7 +49,7 @@ namespace opt_cbf_h {
     errChk_BasisSet(num_et, num_opt);
     
     vector<tuple<int, CD> > nz_list;
-    int num;
+    int num = 0;
 
     if(num_et == 1 && num_opt == 0) {
       int n;
@@ -67,6 +68,9 @@ namespace opt_cbf_h {
       for(int i = 0; i < num; i++) 
 	nz_list[i] = kv.Get<I_CD>("opt_basis", i);
     } else 
+      err_BasisSet();
+
+    if(num == 0)
       err_BasisSet();
 
     basis_set->resize(num);
@@ -103,8 +107,17 @@ namespace opt_cbf_h {
     throw runtime_error(msg);
   }
   template<class Prim>
-  void BuildHAtomPI1(const KeysValues& kv, 
-		     HAtomPI<Prim>** hatom) {
+  void BuildHAtomPI(const KeysValues& kv, 
+		    HAtomPI<Prim>** h_pi) {
+    
+    // check basis type
+    string basis_type = kv.Get<string>("basis_type");
+    if(typeid(Prim) == typeid(CSTO) && 
+       basis_type == "GTO")
+      err_BuildHAtomPI3(basis_type);
+    if(typeid(Prim) == typeid(CGTO) &&
+       basis_type == "STO") 
+      err_BuildHAtomPI3(basis_type);    
 
     // Hydrogen atom
     string ch = kv.Get<string>("channel");
@@ -120,34 +133,26 @@ namespace opt_cbf_h {
       l0 = 2; l1 = 1; n0 = 3;
     } else if(ch == "3d->kf") {
       l0 = 2; l1 = 3; n0 = 3;
-    } else 
+    } else {
+      l0 = -1; l1 = -1; n0 = -1;
       err_BuildHAtomPI1(ch);
-      
-    double energy = kv.Get<double>("energy");
+    }
+
+    // driven term
     HLikeAtom<CD> hatom(n0, 1.0, l0);
     LinearComb<CSTO> mu_phi;
-
     if(di == "length")
       mu_phi = hatom.DipoleInitLength(l1);
     else if (di == "velocity")
       mu_phi = hatom.DipoleInitVelocity(l1);
     else 
       err_BuildHAtomPI2(di);
-     
-    string basis_type = 
-      kv.Get<string>("basis_type");
-    IOptTarget* ptr;
 
-    if(basis_type == "STO") {
-      vector<CSTO> basis_set;
-      this->setBasis<CSTO>(&basis_set);
-      *hatom = new HAtomPI<CSTO>(l1, 1.0, energy, mu_phi);
-    } else if (basis_type == "GTO") {
-      vector<CGTO> basis_set;
-      this->setBasis<CGTO>(&basis_set);
-      *hatom = new HAtomPI<CGTO>(l1, 1.0, energy, mu_phi);
-    } else 
-      err_BuildHAtomPI3();
+    // energy 
+    double ene = kv.Get<double>("energy");
+
+    // create HAtomPI object
+    *h_pi = new HAtomPI<Prim>(l1, 1.0, ene, mu_phi);
 
   }
   // ---------------------------------------------

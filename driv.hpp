@@ -9,14 +9,21 @@ namespace l2func {
 
 namespace opt_cbf_h {
 
-  // express driven type equation for hydrogen problem
-  // (H-E)\psi = \phi
+  /**
+   * express driven type equation for hydrogen problem
+   * (H-E)\psi = \phi
+   */
   template<class Basis>
   class IDrivSystem {
   private:
     typedef typename Basis::Field F;
+
+    // -------- uncopyable -------
+    IDrivSystem(const IDrivSystem<Basis>&);
+    IDrivSystem& operator= (const IDrivSystem<Basis>&);
     
   public:
+    IDrivSystem() {}
     virtual ~IDrivSystem() {}
     virtual F OpEle(const Basis& a, const Basis& b) = 0;
     virtual F DrivEle(const Basis& a) = 0;
