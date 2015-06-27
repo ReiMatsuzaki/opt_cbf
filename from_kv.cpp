@@ -80,16 +80,79 @@ namespace opt_cbf_h {
   }
   // ----------------------------------------
 
-  /**
-   * build driven term
-   */
-  template<class Prim>
-  void BuildHAtomPI(const KeysValues&, HAtomPI<Prim>**) {
+  // --------- HAtom Photoionization -----------
+  void err_BuildHAtomPI1(string ch) {
+    string msg;
+    msg = "unsupported channel\n";
+    msg+= "channel: ";
+    msg+= ch;
+    throw runtime_error(msg);
   }
+  void err_BuildHAtomPI2(string di) {
+    string msg;
+    msg = "unsupported dipole operator.\n";
+    msg += "dipole : ";
+    msg += di;
+    throw runtime_error(msg);
+  }
+  void err_BuildHAtomPI3(string basis_type) {
+    string msg;
+    msg =  "invalid basis type\n";
+    msg+= "basis_type: ";
+    msg+= basis_type;
+    throw runtime_error(msg);
+  }
+  template<class Prim>
+  void BuildHAtomPI1(const KeysValues& kv, 
+		     HAtomPI<Prim>** hatom) {
 
-  /**
-   * build optimizer
-   */
+    // Hydrogen atom
+    string ch = kv.Get<string>("channel");
+    string di = kv.Get<string>("dipole");
+    int l0, l1, n0;
+    if(ch == "1s->kp") {
+      l0 = 0; l1 = 1; n0 = 1;
+    } else if(ch == "2p->ks") {
+      l0 = 1; l1 = 0; n0 = 2;
+    } else if(ch == "2p->kd") {
+      l0 = 1; l1 = 2; n0 = 2;
+    } else if(ch == "3d->kp") {
+      l0 = 2; l1 = 1; n0 = 3;
+    } else if(ch == "3d->kf") {
+      l0 = 2; l1 = 3; n0 = 3;
+    } else 
+      err_BuildHAtomPI1(ch);
+      
+    double energy = kv.Get<double>("energy");
+    HLikeAtom<CD> hatom(n0, 1.0, l0);
+    LinearComb<CSTO> mu_phi;
+
+    if(di == "length")
+      mu_phi = hatom.DipoleInitLength(l1);
+    else if (di == "velocity")
+      mu_phi = hatom.DipoleInitVelocity(l1);
+    else 
+      err_BuildHAtomPI2(di);
+     
+    string basis_type = 
+      kv.Get<string>("basis_type");
+    IOptTarget* ptr;
+
+    if(basis_type == "STO") {
+      vector<CSTO> basis_set;
+      this->setBasis<CSTO>(&basis_set);
+      *hatom = new HAtomPI<CSTO>(l1, 1.0, energy, mu_phi);
+    } else if (basis_type == "GTO") {
+      vector<CGTO> basis_set;
+      this->setBasis<CGTO>(&basis_set);
+      *hatom = new HAtomPI<CGTO>(l1, 1.0, energy, mu_phi);
+    } else 
+      err_BuildHAtomPI3();
+
+  }
+  // ---------------------------------------------
+
+  // ----------- Optimizer --------------------
   void BuildOptimizer(const KeysValues& kv, 
 		      IOptimizer<CD>** opt) {
 

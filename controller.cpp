@@ -18,7 +18,6 @@ namespace {
   using boost::shared_ptr;
   using namespace l2func;
 }
-
 namespace opt_cbf_h {
 
   class OptCBFController::Impl {
