@@ -9,6 +9,7 @@
 #include "driv.hpp"
 #include "restrict.hpp"
 #include "opt.hpp"
+#include "from_kv.hpp"
 
 namespace {
   using std::cout;
@@ -28,15 +29,26 @@ namespace opt_cbf_h {
 
     // -------- Member Field ---------
     KeysValues keys_values_;
-    shared_ptr<IOptTarget> opt_target_;
-    shared_ptr<IOptimizer<CD> > optimizer_;
     Timer      timer_;
+    int debug_lvl_;
+    boost::shared_ptr<IOptTarget> opt_target_;
+    boost::shared_ptr<IOptimizer<CD> > optimizer_;
     VectorXcd  zs_;
     OptRes<CD> opt_res_;
 
     // -------- Constructor ---------
-    Impl() : keys_values_(":", " ") {}
+    Impl() : 
+      keys_values_(":", " "), 
+      timer_(),
+      debug_lvl_(1)
+    {}
 
+    // ------- General support ------
+    void PrintInDebug(string msg) {
+      if(debug_lvl_ > 0)
+	cout << msg << endl;
+    }
+    
     // ------- Read support ---------
     void convertWriteOption(const string& key) {
 
@@ -70,159 +82,36 @@ namespace opt_cbf_h {
       this->convertWriteOption("write_hess");
       this->convertWriteOption("write_grad");
     }
-    template<class Prim>
-    void setBasis(vector<Prim>* basis_set) {
-
-      // check number of basis 
-      int num_et = keys_values_.Count("opt_et_basis");
-      int num_opt= keys_values_.Count("opt_basis");
-
-      // error 
-      if(num_et > 1) {
-	string msg = "Multiple ET basis is not supported";
-	throw runtime_error(msg);
-      }
-
-      if(num_et > 0 && num_opt > 0) {
-	string msg = "# of opt_et_basis > 0 and # of opt_basis are not supported now";
-	throw runtime_error(msg);
-      }
-
-      if(num_et == 1 && num_opt == 0) {
-	typedef tuple<int,int,CD,CD> IICC;
-	IICC val = keys_values_.Get<IICC>("opt_et_basis");
-	int n   = get<0>(val);
-	int num = get<1>(val);
-	CD  x0  = get<2>(val);
-	CD  r   = get<3>(val);
-	zs_ = VectorXcd::Zero(num);
-
-	CD z = x0;
-	basis_set->resize(num);
-	for(int i = 0; i < n; i++) {
-	  z *= r;
-	  Prim prim(n, z, Normalized);
-	  (*basis_set)[i] = prim;
-	  zs_(i) = z;
-	}
-      } else if(num_et == 0 && num_opt != 0) {
-
-	int num = keys_values_.Count("opt_basis");
-	basis_set->resize(num);
-	zs_ = VectorXcd::Zero(num);
-
-	for(int i = 0; i < num; i++) {
-	
-	  I_CD n_z = keys_values_.Get<I_CD>("opt_basis", i);
-	  int n = get<0>(n_z);
-	  CD  z = get<1>(n_z);
-	  Prim prim(n, z, Normalized);
-	  (*basis_set)[i] = prim;
-	  zs_(i) = z;
-	}
-      } else {
-	
-	string msg = "Unsupported combination for basis";
-	msg += " in Controller::setBasis\n";
-	throw runtime_error(msg);
-	
-      }
-
-    }
     void setOptTarget() {
 
-      // Hydrogen atom
-      string ch = keys_values_.Get<string>("channel");
-      string di = keys_values_.Get<string>("dipole");
-      int l0, l1, n0;
-      if(ch == "1s->kp") {
-	l0 = 0; l1 = 1; n0 = 1;
-      } else if(ch == "2p->ks") {
-	l0 = 1; l1 = 0; n0 = 2;
-      } else if(ch == "2p->kd") {
-	l0 = 1; l1 = 2; n0 = 2;
-      } else if(ch == "3d->kp") {
-	l0 = 2; l1 = 1; n0 = 3;
-      } else if(ch == "3d->kf") {
-	l0 = 2; l1 = 3; n0 = 3;
-      } else {
-	string msg;
-	msg = "unsupported channel\n";
-	msg+= "channel: ";
-	msg+= ch;
-	throw runtime_error(msg);
-      }
-      double energy = keys_values_.Get<double>("energy");
-      HLikeAtom<CD> hatom(n0, 1.0, l0);
-      LinearComb<CSTO> mu_phi;
-
-      if(di == "length")
-	mu_phi = hatom.DipoleInitLength(l1);
-      else if (di == "velocity")
-	mu_phi = hatom.DipoleInitVelocity(l1);
-      else {
-	string msg;
-	msg = "unsupported dipole operator.\n";
-	msg += "dipole : ";
-	msg += di;
-	throw runtime_error(msg);
-      }
-     
-      string basis_type = 
-	keys_values_.Get<string>("basis_type");
       IOptTarget* ptr;
-
-      if(basis_type == "STO") {
-	vector<CSTO> basis_set;
-	this->setBasis<CSTO>(&basis_set);
-	HAtomPI<CSTO>* h_pi = 
-	  new HAtomPI<CSTO>(l1, 1.0, energy, mu_phi);
-	ptr = new OptCBF<CSTO>(basis_set, h_pi);
-      } else if (basis_type == "GTO") {
-	vector<CGTO> basis_set;
-	this->setBasis<CGTO>(&basis_set);
-	HAtomPI<CGTO>* h_pi = 
-	  new HAtomPI<CGTO>(l1, 1.0, energy, mu_phi);
-	ptr = new OptCBF<CGTO>(basis_set, h_pi);
-      } else {
-	string msg;
-	msg =  "invalid basis type\n";
-	msg+= "basis_type: ";
-	msg+= basis_type;
-	throw runtime_error(msg);
-      }
-      opt_target_ = shared_ptr<IOptTarget>(ptr);
+      BuildOptTarget(keys_values_, &ptr, &zs_);
+      opt_target_ = boost::shared_ptr<IOptTarget>(ptr);
 
     }
     void setOptimizer() {
+      
+      IOptimizer<CD>* ptr;
+      BuildOptimizer(keys_values_, &ptr);
+      optimizer_ = boost::shared_ptr<IOptimizer<CD> >(ptr);
 
-      int max_iter = keys_values_.Get<int>("max_iter");
-      double eps   = keys_values_.Get<double>("eps");
-      IOptimizer<CD>* opt;
+    }
 
-      // check number of basis 
-      int num_et = keys_values_.Count("opt_et_basis");
-      int num_opt= keys_values_.Count("opt_basis");
-
-      if(num_et == 1 && num_opt == 0) {
-
-	IRestriction<CD>* et;
-	et = new EvenTemp<CD>();
-	opt = new OptimizerRestricted<CD>(max_iter, eps, et);
-
-      } else if(num_et == 0 && num_opt != 0) {
-
-	opt = new OptimizerNewton<CD>(max_iter, eps, 0);
-
-      } else {
-
-	string msg = "Unsupported combination for basis";
-	throw runtime_error(msg);
-
-      }
-
-      optimizer_ = shared_ptr<IOptimizer<CD> >(opt);
-
+    // ------- Compute support --------
+    void err_OptimizerNull() {
+      string msg;
+      msg = "Optimizer is null\n";
+      throw runtime_error(msg);
+    }
+    void err_OptTargetNull() {
+      string msg;
+      msg = "OptTarget is null\n";
+      throw runtime_error(msg);
+    }
+    void err_zsNull() {
+      string msg;
+      msg = "zs is null\n";
+      throw runtime_error(msg);
     }
 
     // -------- Write support --------
@@ -311,8 +200,12 @@ namespace opt_cbf_h {
 	throw runtime_error(msg);
       }
 
+      if(debug_lvl_ > 0) 
+	cout << "keys_values read data" << endl;
       keys_values_.Read(ifs);
       
+      if(debug_lvl_ > 0) 
+	cout << "check data type" << endl;
       try {
 	this->convertData();
       } catch (exception& e) {
@@ -322,19 +215,44 @@ namespace opt_cbf_h {
 	throw runtime_error(msg);
       }
       
+      PrintInDebug("setting opt target");
       this->setOptTarget();
+      PrintInDebug("setting optimizer");
       this->setOptimizer();
-
+          
       timer_.End("read");
     }
     void Compute() {
 
       timer_.Start("calc");
 
-      opt_res_ = optimizer_->Optimize
-	(bind(&IOptTarget::Compute, opt_target_,
-	      _1, _2, _3, _4),
-	 zs_);
+      if(optimizer_.use_count() == 0)
+	err_OptimizerNull();
+
+      if(opt_target_.use_count() == 0)
+	err_OptTargetNull();
+
+      if(zs_.rows() == 0) 
+	err_zsNull();
+
+      cout << "Printing objects" << endl;
+      optimizer_->Print();
+      cout << "opt_target.use_count: " <<
+	opt_target_.use_count() << endl;
+      opt_target_->Display();
+      
+      cout << "zs.rows: " << zs_.rows() << endl;
+
+      try {
+	IOptimizer<CD>::Func func = 
+	  bind(&IOptTarget::Compute, opt_target_,
+	       _1, _2, _3, _4);
+	opt_res_ = optimizer_->Optimize(func, zs_);
+
+      } catch (exception& e) {
+	cout << "Error on computing ";
+	cout << e.what() << endl;
+      }
       
       timer_.End("calc");
 

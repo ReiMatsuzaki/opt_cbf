@@ -2,6 +2,7 @@
 #include "restrict.hpp"
 #include "from_kv.hpp"
 #include "opt.hpp"
+#include "opt_cbf.hpp"
 #include "driv.hpp"
 #include <keys_values.hpp>
 #include <l2func.hpp>
@@ -156,6 +157,47 @@ namespace opt_cbf_h {
 
   }
   // ---------------------------------------------
+
+  // ---------- Optimize Target --------------
+  template<class Prim>
+  void buildOptTarget(const KeysValues& kv, 
+		      IOptTarget** opt, 
+		      VectorXcd* zs) {
+    vector<Prim>   basis_set;
+    HAtomPI<Prim>* h_pi;
+    BuildBasisSet<Prim>(kv, &basis_set);
+    BuildHAtomPI<Prim>(kv, &h_pi);
+    *opt = new OptCBF<Prim>(basis_set, h_pi);
+
+    // copy orbital exponents to vector
+    *zs = VectorXcd(basis_set.size());
+    typedef typename vector<Prim>::iterator IT;
+    int i = 0;
+    for(IT it = basis_set.begin(),
+	  it_end = basis_set.end(); 
+	it != it_end; ++it, ++i) {
+      (*zs)(i) = it->z();
+    }
+
+  }
+  void BuildOptTarget(const KeysValues& kv, 
+		      IOptTarget** opt,
+		      VectorXcd* zs) {
+    string basis_type = kv.Get<string>("basis_type");
+
+    IOptTarget* ptr;
+    if(basis_type == "STO") 
+      buildOptTarget<CSTO>(kv, &ptr, zs);
+    else if(basis_type == "GTO")
+      buildOptTarget<CGTO>(kv, &ptr, zs);
+    else {
+      string msg;
+      msg =  "invalid basis type\n";
+      msg+= "basis_type: ";
+      msg+= basis_type;
+      throw runtime_error(msg);
+    }
+  }
 
   // ----------- Optimizer --------------------
   void BuildOptimizer(const KeysValues& kv, 

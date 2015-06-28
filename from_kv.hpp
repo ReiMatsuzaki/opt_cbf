@@ -22,6 +22,7 @@ namespace l2func {
 namespace opt_cbf_h {
   template<class F> class HAtomPI;
   template<class F> class IOptimizer;
+  class IOptTarget;
 }
 
 namespace opt_cbf_h {
@@ -37,6 +38,12 @@ namespace opt_cbf_h {
    */
   template<class Prim>
   void BuildHAtomPI(const KeysValues&, HAtomPI<Prim>**);
+
+  /**
+   * build optimization target
+   */
+  void BuildOptTarget(const KeysValues&, IOptTarget**, 
+		      VectorXcd*);
 
   /**
    * build optimizer

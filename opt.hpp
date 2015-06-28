@@ -36,9 +36,11 @@ namespace opt_cbf_h {
   // ========== interface for optimization class =====
   template<class F>
   class IOptimizer {
+  public:
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef boost::function<void (const VecF&, F*, VecF*, MatF*)>    FuncValGradHess;
+    typedef boost::function
+    <void (const VecF&, F*, VecF*, MatF*)> Func;
 
   protected:
     // ------------ Field -----------------
@@ -50,7 +52,10 @@ namespace opt_cbf_h {
     IOptimizer(int m, double e);
 
     // ------------ Method ----------------
-    virtual OptRes<F> Optimize(FuncValGradHess f, VecF z0) = 0;
+    virtual OptRes<F> Optimize(Func f, VecF z0) = 0;
+			       
+    virtual void Print() const = 0;
+
     // ------------ Accessors --------------
     int max_iter() const { return max_iter_; }
     double eps() const { return eps_; }
@@ -59,12 +64,12 @@ namespace opt_cbf_h {
   // =========== with restrictions ==================
   template<class F>
   class OptimizerRestricted : public IOptimizer<F> {
-  private:
+  public:
     // ------------ Type --------------------
-    typedef Matrix<F, Dynamic, 1>       VecF;
-    typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef boost::function<void (const VecF&, F*, VecF*, MatF*)>
-    FuncValGradHess;
+    typedef typename IOptimizer<F>::VecF VecF;
+    typedef typename IOptimizer<F>::MatF MatF;
+    typedef typename IOptimizer<F>::Func Func;
+  private:
     // ------------ Field -------------------
     IRestriction<F>* restriction_;
     int debug_level_;
@@ -78,18 +83,18 @@ namespace opt_cbf_h {
     ~OptimizerRestricted();
     
     // ------------ Method ------------------
-    OptRes<F> Optimize(FuncValGradHess f, VecF z0);
+    OptRes<F> Optimize(Func f, VecF z0);
+    void Print() const;
   };
 
   // =========== simple newton iteration ============
   template<class F>
   class OptimizerNewton : public IOptimizer<F> {
-  private:
+  public:
     // --------------- type ----------------
-    typedef Matrix<F, Dynamic, 1>       VecF;
-    typedef Matrix<F, Dynamic, Dynamic> MatF;
-    typedef boost::function<void (const VecF&, F*, VecF*, MatF*)>
-    FuncValGradHess;
+    typedef typename IOptimizer<F>::VecF VecF;
+    typedef typename IOptimizer<F>::MatF MatF;
+    typedef typename IOptimizer<F>::Func Func;
 
     // ------------- Field -----------------
     OptimizerRestricted<F>* optimizer_;
@@ -102,7 +107,10 @@ namespace opt_cbf_h {
     OptimizerNewton(int _max_iter, double _eps);
     OptimizerNewton(int _max_iter, double _eps, int _d_lvl);
     ~OptimizerNewton();
-    OptRes<F> Optimize(FuncValGradHess f, VecF z0);
+
+    // ------------ Method -----------------
+    OptRes<F> Optimize(Func f, VecF z0);
+    void Print() const;
   };
 }
 

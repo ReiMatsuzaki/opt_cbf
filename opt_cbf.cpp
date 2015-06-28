@@ -226,6 +226,7 @@ namespace opt_cbf_h {
     }
     void Display() {
       cout << "OptCBF_Display" << endl;
+      cout << "# of basis:" << basis_set_.size() << endl;
       h_atom_pi_->Display();
     }
     LinearComb<Prim> WaveFunc() const {

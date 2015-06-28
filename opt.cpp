@@ -28,7 +28,8 @@ namespace opt_cbf_h {
 
   template<class F>
   OptimizerRestricted<F>::OptimizerRestricted
-  (int _max_iter, double _eps, IRestriction<F>* ptr, int _d) :
+  (int _max_iter, double _eps, IRestriction<F>* ptr, 
+   int _d) :
     IOptimizer<F>(_max_iter, _eps),
     restriction_(ptr), debug_level_(_d) {}
 
@@ -42,9 +43,9 @@ namespace opt_cbf_h {
     cout << opt_res.z << endl;
     cout << opt_res.grad << endl;
   }
+
   template<class F>
-  OptRes<F> OptimizerRestricted<F>::Optimize
-  (FuncValGradHess f, VecF z0){
+  OptRes<F> OptimizerRestricted<F>::Optimize(Func f, VecF z0){
 
     int num = z0.rows();
 
@@ -57,6 +58,7 @@ namespace opt_cbf_h {
     res.grad = VecF::Zero(num);
     VecF dz_full   = VecF::Zero(num);
 
+    restriction_->SetVars(z0);
     int n1 = restriction_->size();
     VecF grad(n1);
     MatF hess(n1, n1);
@@ -100,27 +102,46 @@ namespace opt_cbf_h {
     
   }
   
+
+  template<class F> void
+  OptimizerRestricted<F>::Print() const {
+    cout << "OptimizerRestricted" << endl;
+    cout << "max_iter: " << IOptimizer<F>::max_iter_ << endl;
+    cout << "eps: " << IOptimizer<F>::eps_ << endl;
+  }
+  
   // ============= Simple Newton ====================
   template<class F>
   OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps) :
     IOptimizer<F>(_max_iter, _eps) {
     IRestriction<F>* no_rist = new NoRestriction<F>();
-    optimizer_ = new OptimizerRestricted<F>(_max_iter, _eps, no_rist);
+    optimizer_ = new 
+      OptimizerRestricted<F>(_max_iter, _eps, no_rist);
   }
   template<class F>
   OptimizerNewton<F>::OptimizerNewton(int _max_iter, double _eps, int _d_lvl) :
     IOptimizer<F>(_max_iter, _eps) {
 				      
     IRestriction<F>* no_rist = new NoRestriction<F>();
-    optimizer_ = new OptimizerRestricted<F>(_max_iter, _eps, no_rist, _d_lvl);    
+    optimizer_ = new OptimizerRestricted<F>
+      (_max_iter, _eps, no_rist, _d_lvl);    
   }
   template<class F>
   OptimizerNewton<F>::~OptimizerNewton() {
     delete optimizer_;
   }
   template<class F>
-  OptRes<F> OptimizerNewton<F>::Optimize(FuncValGradHess f,VecF z0) {
+  OptRes<F> OptimizerNewton<F>::Optimize
+  (Func f,VecF z0) {
     return optimizer_->Optimize(f, z0);
+  }
+  
+  template<class F>
+  void OptimizerNewton<F>::Print() const {
+    cout << "---------OptimizerNewton--------" << endl;
+    cout << "max_iter: " << IOptimizer<F>::max_iter_ << endl;
+    cout << "eps: " << IOptimizer<F>::eps_ << endl;    
+    cout << "-------------------------------" << endl;
   }
 
   // ============== explicit instance ===============
