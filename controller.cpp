@@ -40,7 +40,7 @@ namespace opt_cbf_h {
     Impl() : 
       keys_values_(":", " "), 
       timer_(),
-      debug_lvl_(1)
+      debug_lvl_(0)
     {}
 
     // ------- General support ------
@@ -84,14 +84,14 @@ namespace opt_cbf_h {
     }
     void setOptTarget() {
 
-      IOptTarget* ptr;
+      IOptTarget* ptr = nullptr;
       BuildOptTarget(keys_values_, &ptr, &zs_);
       opt_target_ = boost::shared_ptr<IOptTarget>(ptr);
 
     }
     void setOptimizer() {
       
-      IOptimizer<CD>* ptr;
+      IOptimizer<CD>* ptr = nullptr;
       BuildOptimizer(keys_values_, &ptr);
       optimizer_ = boost::shared_ptr<IOptimizer<CD> >(ptr);
 
@@ -155,6 +155,7 @@ namespace opt_cbf_h {
 	}
 	ofs << opt_res_.hess << endl;
       }
+
     }
     void writeBasis(ofstream& ofs) {
       
@@ -226,22 +227,21 @@ namespace opt_cbf_h {
 
       timer_.Start("calc");
 
-      if(optimizer_.use_count() == 0)
+      if(optimizer_.get()){}else
 	err_OptimizerNull();
 
-      if(opt_target_.use_count() == 0)
+      if(opt_target_.get()){}else
 	err_OptTargetNull();
 
       if(zs_.rows() == 0) 
 	err_zsNull();
 
-      cout << "Printing objects" << endl;
-      optimizer_->Print();
-      cout << "opt_target.use_count: " <<
-	opt_target_.use_count() << endl;
-      opt_target_->Display();
-      
-      cout << "zs.rows: " << zs_.rows() << endl;
+      PrintInDebug("Prints objects");
+      if(debug_lvl_ > 0) {
+	optimizer_->Print();
+	opt_target_->Display();
+	cout << "zs.rows: " << zs_.rows() << endl;
+      }
 
       try {
 	IOptimizer<CD>::Func func = 

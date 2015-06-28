@@ -185,11 +185,10 @@ namespace opt_cbf_h {
 		      VectorXcd* zs) {
     string basis_type = kv.Get<string>("basis_type");
 
-    IOptTarget* ptr;
     if(basis_type == "STO") 
-      buildOptTarget<CSTO>(kv, &ptr, zs);
+      buildOptTarget<CSTO>(kv, opt, zs);
     else if(basis_type == "GTO")
-      buildOptTarget<CGTO>(kv, &ptr, zs);
+      buildOptTarget<CGTO>(kv, opt, zs);
     else {
       string msg;
       msg =  "invalid basis type\n";

@@ -574,6 +574,23 @@ TEST(BuildHAtomPI, Construct) {
 	      +0.0000000000001);  
   delete hatom;
 }
+TEST(BuildHAtomPI, OptTarget) {
+KeysValues kv(":", " ");
+  kv.Add<string>("channel", "1s->kp");
+  kv.Add<string>("dipole", "length");
+  kv.Add<string>("basis_type", "STO");
+  kv.Add<double>("energy", 0.5);
+  kv.Add("opt_basis", make_tuple(1, CD(1.2, 0.0)));
+  kv.Add("opt_basis", make_tuple(2, CD(3.4, 0.0)));
+  kv.Add("opt_basis", make_tuple(2, CD(1.4, 0.0)));
+
+  IOptTarget* ptr = nullptr;
+  VectorXcd zs;
+  BuildOptTarget(kv, &ptr, &zs);
+
+  if(ptr == nullptr)
+    EXPECT_TRUE(false);
+}
 
 
 
