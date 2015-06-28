@@ -176,14 +176,14 @@ namespace opt_cbf_h {
 	IICC val = keys_values_.Get<IICC>("opt_et_basis");
 	int n   = get<0>(val);
 	int num = get<1>(val);
-	CD  x0  = get<2>(val);
-	CD  r   = get<3>(val);
-	CD z = x0;
-	for(int i = 0; i < num; i++) {
-	  ofs << "opt_basis: ";
-	  ofs << n << " " << z << endl;
-	  z *= r;
-	}
+	CD  x0  = opt_res_.z(0);
+	CD  r   = opt_res_.z(1) / x0;
+
+	ofs << "opt_et_basis: "
+	    << n   << " " 
+	    << num << " "
+	    << x0 << " "
+	    << r << endl;
       }
     }
     

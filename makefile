@@ -1,7 +1,7 @@
 include local.mk
 DEBUGS=-g3 -Wall -O0
 OPTS=-O3 -Wall
-CXXFLAGS=${LIBPATH} ${DEBUGS}
+CXXFLAGS=${LIBPATH} ${OPTS}
 OPT_CBF_OBJS= from_kv.o opt_cbf.o driv.o opt.o restrict.o l_algebra.o
 RUN_OBJS=run.o controller.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${L2_DIR}/l2.a
 
@@ -26,8 +26,8 @@ utest: utest.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o
 
 opt_cbf: ${RUN_OBJS}
 	${CXX} -o opt_cbf ${CXXFLAGS} ${RUN_OBJS}
-	./opt_cbf supply/sample.in supply/sample.out
-	cat supply/sample.out
+	./opt_cbf samples/2sto/sample.in samples/2sto/sample.out
+	cat samples/2sto/sample.out
 clean:
 	rm -f *.o
 	rm -f *.a
