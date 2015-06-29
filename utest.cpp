@@ -380,7 +380,7 @@ public:
 
     // idxs represents the number of sequence for each 
     // even-tempered numbers.
-    vector<int> idxs(3);
+    vector<int> idxs(2);
     idxs[0] = 2; idxs[1] = 3;
 
     et = new MultiEvenTemp<double>(idxs);
@@ -394,13 +394,17 @@ TEST_F(TEST_MultiET, construct) {
   et->SetVars(xsTest);
    
   EXPECT_EQ(5, et->size());
-  EXPECT_DOUBLE_EQ(0.5, et->x0_r(0).first);
-  EXPECT_DOUBLE_EQ(1.8, et->x0_r(0).second);
-  EXPECT_DOUBLE_EQ(2.2, et->x0_r(1).first);
-  EXPECT_DOUBLE_EQ(0.7, et->x0_r(1).second);
+  
+  EXPECT_EQ(2, get<0>(et->num_x0_r(0)));
+  EXPECT_DOUBLE_EQ(1.0, get<1>(et->num_x0_r(0)));
+  EXPECT_DOUBLE_EQ(2.0, get<2>(et->num_x0_r(0)));
 
-  EXPECT_ANY_THROW(et->x0_r(-1));
-  EXPECT_ANY_THROW(et->x0_r(2));
+  EXPECT_EQ(3, get<0>(et->num_x0_r(1)));  
+  EXPECT_DOUBLE_EQ(2.0, get<1>(et->num_x0_r(1)));
+  EXPECT_DOUBLE_EQ(3.0, get<2>(et->num_x0_r(1)));
+
+  EXPECT_ANY_THROW(et->num_x0_r(-1));
+  EXPECT_ANY_THROW(et->num_x0_r(2));
 }
 TEST_F(TEST_MultiET, Gradient) {
   

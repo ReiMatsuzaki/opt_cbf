@@ -1,6 +1,16 @@
 #include <iostream>
+#include <stdexcept>
+#include <boost/lexical_cast.hpp>
 #include <Eigen/Core>
+#include <macros.hpp>
+
 #include "restrict.hpp"
+
+namespace {
+  using boost::get;
+  using std::string;
+  using boost::lexical_cast;
+}
 
 namespace opt_cbf_h {
 
@@ -107,17 +117,50 @@ namespace opt_cbf_h {
 
   // ============ Multi Even Temp ====================
   template<class F>
-  MultiEvenTemp<F>::MultiEvenTemp(const vector<int>& is) {
-    
+  MultiEvenTemp<F>::MultiEvenTemp
+  (const vector<int>& is) {
+   
+    int num = is.size();
+    num_x0_r_list_.resize(num);
+
+    for(int n = 0; n < num; n++) 
+      num_x0_r_list_[n] = make_tuple(is[n], F(0), F(0));
+
   }
   template<class F>
   MultiEvenTemp<F>::~MultiEvenTemp() {}
   template<class F>
-  pair<F,F> MultiEvenTemp<F>::x0_r(int i) const {
-    return make_pair(0.1, 0.2);
+  typename MultiEvenTemp<F>::IFF
+  MultiEvenTemp<F>::num_x0_r(int i) const {
+    
+    if(i >= num_x0_r_list_.size()) {
+      std::string msg; SUB_LOCATION(msg);
+      msg += "\n index exceed size of vector\n";
+      throw std::runtime_error(msg);
+    }
+
+    return num_x0_r_list_[i];
   }
   template<class F>
   void MultiEvenTemp<F>::SetVars(const VecF& xs) {
+
+    int acc(0);
+    for(IT it = num_x0_r_list_.begin(),
+	  it_end = num_x0_r_list_.end();
+	it != it_end; ++it) {
+
+      if(acc+1 >= xs.size() ) {
+	std::string msg; SUB_LOCATION(msg);
+	msg += "\n acc exceed xs.size \n";
+	throw std::runtime_error(msg);
+      }
+
+      int num = get<0>(*it);
+      F   x0  = xs(acc);
+      F   r   = xs(acc + 1) / xs(acc);
+      acc += num;
+      *it = make_tuple(num, x0, r);
+    }
   }
   template<class F> typename MultiEvenTemp<F>::VecF 
   MultiEvenTemp<F>::Xs() const {
@@ -126,16 +169,55 @@ namespace opt_cbf_h {
   }
 
   template<class F>
-  int MultiEvenTemp<F>::size() const { return 1; }
+  int MultiEvenTemp<F>::size() const { 
+
+    int acc(0);
+    for(CIT it = num_x0_r_list_.begin(),
+	  it_end = num_x0_r_list_.end(); 
+	it != it_end; ++it) {
+      acc += get<0>(*it);
+    }
+    return acc;
+  }
   template<class F>
   typename MultiEvenTemp<F>::VecF
   MultiEvenTemp<F>::Grad(const VecF& g) const {
-    return VecF::Zero(1);
+
+    if(g.rows() != this->size()) {
+      std::string msg; SUB_LOCATION(msg);
+      msg += "\nsize is invalid\n";
+      msg += boost::lexical_cast<string>(g.rows());
+      msg += " ";
+      msg += boost::lexical_cast<string>(this->size());
+    }
+
+    int num_rest = num_x0_r_list_.size();
+    VecF grad(num_rest * 2);
+
+    int n0(0);
+    for(int i = 0; i < num_rest; i++) {
+
+      F df_da(0);
+      F df_dr(0);
+      int num = get<0>(num_x0_r_list_[i]);
+      F   x0  = get<1>(num_x0_r_list_[i]);
+      F    r  = get<2>(num_x0_r_list_[i]);
+      for(int n = 0; n < num; n++) {
+	df_da += pow(r, n) * g(n0 + n);
+	df_dr += x0 * F(n) * pow(r, n-1) * g(n0 + n);
+      }
+      grad(2*i)   = df_da;
+      grad(2*i+1) = df_dr;
+	
+      n0 += num;
+    }
+
+    return grad;
   }
   template<class F>
   typename MultiEvenTemp<F>::MatF  MultiEvenTemp<F>::Hess
   (const VecF& g, const MatF& h) const {
-    return MatF::Zero(1, 1);
+    return MatF(h);
   }
   template<class F>
   void MultiEvenTemp<F>::Shift(const VecF& dz)  { }

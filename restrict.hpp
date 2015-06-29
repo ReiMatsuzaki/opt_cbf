@@ -3,13 +3,13 @@
 
 #include <Eigen/Core>
 #include <vector>
-#include <map>
+#include <boost/tuple/tuple.hpp>
 
 namespace {
   using namespace Eigen;
   using std::vector;
-  using std::pair;
-  using std::make_pair;
+  using boost::tuple;
+  using boost::make_tuple;
 }
 
 namespace opt_cbf_h {
@@ -103,13 +103,25 @@ namespace opt_cbf_h {
     // -------- typedef -----------
     typedef typename IRestriction<F>::VecF VecF;
     typedef typename IRestriction<F>::MatF MatF;
-    
+    typedef tuple<int,F,F> IFF;
+    typedef typename vector<IFF>::iterator IT;
+    typedef typename vector<IFF>::const_iterator CIT;
+  
+  private:
+    // -------- Field Member ------
+    // num_list_ = [(2,a,r), (3,b,s), (3,c,t)] means that
+    // x0=a, x1=ar
+    // x2=b, x3=bs, x4=bss
+    // x5=c, x6=ct, x7=ctt
+    vector<IFF> num_x0_r_list_;
+
+  public:
     // -------- Constructors ------
     MultiEvenTemp(const vector<int>& index_list);
     ~MultiEvenTemp();
 
     // ------- Accessor -----------
-    pair<F,F> x0_r(int i) const;
+    IFF num_x0_r(int i) const;
 
     // -------- Methods -----------
     void SetVars(const VecF& xs);
