@@ -249,14 +249,14 @@ TEST(Optimizer, NewtonWithEventemp) {
 TEST(Optimizer, MultiET) {
 
 
-    xs0.resize(5);
+  //xs0.resize(5);
     // in this test, the initial guess is choosen as
     // (a,r,b,s) = (0.5, 1.8, 2.2, 0.7)
     // but IRestriction class only support setting by 
     // original sequences.
-    VectorXd xs(5);
-    xs << 0.5, 0.5*1.8, 2.2, 2.2*0.7, 2.2*0.7*0.7;
-    EXPECT_TRUE(1  == 0);
+  VectorXd xs(5);
+  xs << 0.5, 0.5*1.8, 2.2, 2.2*0.7, 2.2*0.7*0.7;
+  EXPECT_TRUE(1  == 0);
 
 }
 TEST(Restriction, NoRestriction) {
@@ -353,7 +353,7 @@ TEST(Restriction, Interface) {
   EXPECT_EQ(3, even_temp->size());
 
 }
-class TEST_MultiET : public ::test::Test {
+class TEST_MultiET : public ::testing::Test {
 public:  
 
   // this test is based on caluculation in 
@@ -383,33 +383,33 @@ public:
     vector<int> idxs(3);
     idxs[0] = 2; idxs[1] = 3;
 
-    even_temp = new MultiEvenTemp<double>(idxs);
+    et = new MultiEvenTemp<double>(idxs);
 
   }
 
 };
 TEST_F(TEST_MultiET, construct) {
  
- // IRestriction object must set vars before any use.
-  even_temp->SetVars(xsTest);
+  // IRestriction object must set vars before any use.
+  et->SetVars(xsTest);
    
-  EXPECT_EQ(5, even_temp.size());
-  EXPECT_DOUBLE_EQ(0.5, even_temp.x0_r(0).first);
-  EXPECT_DOUBLE_EQ(1.8, even_temp.x0_r(0).second);
-  EXPECT_DOUBLE_EQ(2.2, even_temp.x0_r(1).first);
-  EXPECT_DOUBLE_EQ(0.7, even_temp.x0_r(1).second);
+  EXPECT_EQ(5, et->size());
+  EXPECT_DOUBLE_EQ(0.5, et->x0_r(0).first);
+  EXPECT_DOUBLE_EQ(1.8, et->x0_r(0).second);
+  EXPECT_DOUBLE_EQ(2.2, et->x0_r(1).first);
+  EXPECT_DOUBLE_EQ(0.7, et->x0_r(1).second);
 
-  EXPECT_ANY_THROW(even_temp.x0_r(-1));
-  EXPECT_ANY_THROW(even_temp.x0_r(2));
+  EXPECT_ANY_THROW(et->x0_r(-1));
+  EXPECT_ANY_THROW(et->x0_r(2));
 }
 TEST_F(TEST_MultiET, Gradient) {
-
-  even_temp->SetVars(xsTest);
+  
+  et->SetVars(xsTest);
 
   // this gradient is calculated in python notebook
   VectorXd grad_normal(5);
   grad_normal << 0, 0, -2, 4, 10;
-  VectorXd grad = even_temp.Grad(grad_normal);
+  VectorXd grad = et->Grad(grad_normal);
 
   EXPECT_DOUBLE_EQ(0.0, grad(0));
   EXPECT_DOUBLE_EQ(0.0, grad(1));
@@ -419,9 +419,11 @@ TEST_F(TEST_MultiET, Gradient) {
 }
 TEST_F(TEST_MultiET, Hess) {
 
-  even_temp->SetVars(xsTest);
+  et->SetVars(xsTest);
 
-  // this hessian is calculated in python notebook
+  // this hess and grad are calculated in python notebook
+  VectorXd grad_normal(5);
+  grad_normal << 0, 0, -2, 4, 10;
   MatrixXd hess_normal(5, 5);
   hess_normal << 
     2, 0, 0, 0, 0,
@@ -429,7 +431,7 @@ TEST_F(TEST_MultiET, Hess) {
     0, 0, 2, -2, 0,
     0, 0, -2, 4, 0,
     0, 0, 0, 0, 2;
-  MatrixXd hess = even_temp.Hess(hess_normal);
+  MatrixXd hess = et->Hess(grad_normal, hess_normal);
 
   EXPECT_DOUBLE_EQ(10.0, hess(0,0));
   EXPECT_DOUBLE_EQ(4.0,  hess(1,0));

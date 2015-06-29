@@ -2,22 +2,18 @@
 #include <Eigen/Core>
 #include "restrict.hpp"
 
-
 namespace opt_cbf_h {
+
+  // ========== Interface =================
 
   template<class F>
   IRestriction<F>::~IRestriction() {}
 
+  // ========== EvenTemp =================
   template<class F>
   EvenTemp<F>::EvenTemp() : num_(1), x0_(1.0), ratio_(1.0) {}
-
-  //  template<class F>
-  //  EvenTemp<F>::EvenTemp(int _num, F _r, F _x0): 
-  //    num_(_num), x0_(_x0), ratio_(_r) {}
-
   template<class F>
   EvenTemp<F>::~EvenTemp() {}
-
   template<class F>
   void EvenTemp<F>::SetVars(const Matrix<F, Dynamic, 1>& xs) {
 
@@ -26,7 +22,6 @@ namespace opt_cbf_h {
     ratio_ = xs(1) / xs(0);
 
   }
-
   /**
    * represent eventempered sequence
    * x_n = a r^n (n = 0, ..., N-1)
@@ -53,8 +48,6 @@ namespace opt_cbf_h {
     return grad;
 
   }
-
-
   /**
    * represent even-tempered sequence
    * x_n = a r^n (n=0,...,N-1)
@@ -94,7 +87,6 @@ namespace opt_cbf_h {
       d2f_dadr, d2f_drdr;
     return hess;
   }
-
   template<class F>
   Matrix<F, Dynamic, 1> EvenTemp<F>::Xs() const {
 
@@ -107,12 +99,46 @@ namespace opt_cbf_h {
 
     return xs;
   }
-
   template<class F>
   void EvenTemp<F>::Shift(const VecF& ys) {
     x0_ += ys(0);
     ratio_ += ys(1);
   }
+
+  // ============ Multi Even Temp ====================
+  template<class F>
+  MultiEvenTemp<F>::MultiEvenTemp(const vector<int>& is) {
+    
+  }
+  template<class F>
+  MultiEvenTemp<F>::~MultiEvenTemp() {}
+  template<class F>
+  pair<F,F> MultiEvenTemp<F>::x0_r(int i) const {
+    return make_pair(0.1, 0.2);
+  }
+  template<class F>
+  void MultiEvenTemp<F>::SetVars(const VecF& xs) {
+  }
+  template<class F> typename MultiEvenTemp<F>::VecF 
+  MultiEvenTemp<F>::Xs() const {
+    VecF xs(1);
+    return xs;
+  }
+
+  template<class F>
+  int MultiEvenTemp<F>::size() const { return 1; }
+  template<class F>
+  typename MultiEvenTemp<F>::VecF
+  MultiEvenTemp<F>::Grad(const VecF& g) const {
+    return VecF::Zero(1);
+  }
+  template<class F>
+  typename MultiEvenTemp<F>::MatF  MultiEvenTemp<F>::Hess
+  (const VecF& g, const MatF& h) const {
+    return MatF::Zero(1, 1);
+  }
+  template<class F>
+  void MultiEvenTemp<F>::Shift(const VecF& dz)  { }
 
   // ============ Explicit Instance ==================
   typedef std::complex<double> CD;
@@ -122,4 +148,7 @@ namespace opt_cbf_h {
   template class NoRestriction<CD>;
   template class EvenTemp<double>;
   template class EvenTemp<CD>;
+  template class MultiEvenTemp<double>;
+  template class MultiEvenTemp<CD>;
+  
 }

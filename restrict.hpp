@@ -2,9 +2,14 @@
 #define RESTRICT_HPP
 
 #include <Eigen/Core>
+#include <vector>
+#include <map>
 
 namespace {
   using namespace Eigen;
+  using std::vector;
+  using std::pair;
+  using std::make_pair;
 }
 
 namespace opt_cbf_h {
@@ -12,9 +17,13 @@ namespace opt_cbf_h {
   // ============= Interface ================
   template<class F>
   class IRestriction {
+  public:
+    // --------- type -------------------
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
+
   public:
+    // ---------- methods ---------------
     virtual ~IRestriction();
     // from variables in normal space, set variables in rest.
     virtual void SetVars(const VecF& xs) = 0;
@@ -33,10 +42,12 @@ namespace opt_cbf_h {
   // ============== No restriction ==========
   template<class F>
   class NoRestriction : public IRestriction<F> {
-  private:
+  public:
     // ------- Typedef ----------------------
     typedef Matrix<F, Dynamic, 1>       VecF;
     typedef Matrix<F, Dynamic, Dynamic> MatF;
+
+  private:
     // ------- Field ------------------------
     VecF xs_;
 
@@ -83,6 +94,31 @@ namespace opt_cbf_h {
     VecF Grad(const VecF&) const;
     MatF Hess(const VecF&, const MatF&) const;    
     void Shift(const VecF&);
+  };
+
+  // ============== Multiple ET =============
+  template<class F>
+  class MultiEvenTemp : public IRestriction<F> {
+  public:
+    // -------- typedef -----------
+    typedef typename IRestriction<F>::VecF VecF;
+    typedef typename IRestriction<F>::MatF MatF;
+    
+    // -------- Constructors ------
+    MultiEvenTemp(const vector<int>& index_list);
+    ~MultiEvenTemp();
+
+    // ------- Accessor -----------
+    pair<F,F> x0_r(int i) const;
+
+    // -------- Methods -----------
+    void SetVars(const VecF& xs);
+    VecF Xs() const;
+    int size() const;
+    VecF Grad(const VecF&) const;
+    MatF Hess(const VecF&, const MatF&) const;
+    void Shift(const VecF&);
+    
   };
 }
 
