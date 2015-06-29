@@ -246,6 +246,19 @@ TEST(Optimizer, NewtonWithEventemp) {
   EXPECT_NEAR(res.z(1,0), -0.5344287681232319, eps);  
 				     
 }
+TEST(Optimizer, MultiET) {
+
+
+    xs0.resize(5);
+    // in this test, the initial guess is choosen as
+    // (a,r,b,s) = (0.5, 1.8, 2.2, 0.7)
+    // but IRestriction class only support setting by 
+    // original sequences.
+    VectorXd xs(5);
+    xs << 0.5, 0.5*1.8, 2.2, 2.2*0.7, 2.2*0.7*0.7;
+    EXPECT_TRUE(1  == 0);
+
+}
 TEST(Restriction, NoRestriction) {
 
   VectorXd xs(4);
@@ -338,6 +351,105 @@ TEST(Restriction, Interface) {
   even_temp->SetVars(xs);
 
   EXPECT_EQ(3, even_temp->size());
+
+}
+class TEST_MultiET : public ::test::Test {
+public:  
+
+  // this test is based on caluculation in 
+  // supply/opt_func.ipynb written in python
+  // f(x) : 5 variable function(x=x0,x1,...,x7)
+  // f(x) = (x0-1)^2 + (x1-2)^2 + (x2-x3)^2 
+  //        (x3-3)^2 x4^2
+  // the stationary point for f is 
+  // (1,2,3,3,0)
+  // 
+  // I restricted variable as follows
+  // x0 = a, x1 = ar,
+  // x2 = b, x3 = bs, x4 = bss
+  // the restricted optimization points are
+  // (a,r,b,s) = (1,2,2.48028369537265,0.724491959000516)
+
+  // xsTest is location for test (see python notebook)
+  VectorXd xsTest;  
+  MultiEvenTemp<double>* et;
+  virtual void SetUp() {
+    
+    xsTest.resize(5);
+    xsTest << 1,2,2,6,18;
+
+    // idxs represents the number of sequence for each 
+    // even-tempered numbers.
+    vector<int> idxs(3);
+    idxs[0] = 2; idxs[1] = 3;
+
+    even_temp = new MultiEvenTemp<double>(idxs);
+
+  }
+
+};
+TEST_F(TEST_MultiET, construct) {
+ 
+ // IRestriction object must set vars before any use.
+  even_temp->SetVars(xsTest);
+   
+  EXPECT_EQ(5, even_temp.size());
+  EXPECT_DOUBLE_EQ(0.5, even_temp.x0_r(0).first);
+  EXPECT_DOUBLE_EQ(1.8, even_temp.x0_r(0).second);
+  EXPECT_DOUBLE_EQ(2.2, even_temp.x0_r(1).first);
+  EXPECT_DOUBLE_EQ(0.7, even_temp.x0_r(1).second);
+
+  EXPECT_ANY_THROW(even_temp.x0_r(-1));
+  EXPECT_ANY_THROW(even_temp.x0_r(2));
+}
+TEST_F(TEST_MultiET, Gradient) {
+
+  even_temp->SetVars(xsTest);
+
+  // this gradient is calculated in python notebook
+  VectorXd grad_normal(5);
+  grad_normal << 0, 0, -2, 4, 10;
+  VectorXd grad = even_temp.Grad(grad_normal);
+
+  EXPECT_DOUBLE_EQ(0.0, grad(0));
+  EXPECT_DOUBLE_EQ(0.0, grad(1));
+  EXPECT_DOUBLE_EQ(358.0, grad(2));
+  EXPECT_DOUBLE_EQ(460.0, grad(3));
+  
+}
+TEST_F(TEST_MultiET, Hess) {
+
+  even_temp->SetVars(xsTest);
+
+  // this hessian is calculated in python notebook
+  MatrixXd hess_normal(5, 5);
+  hess_normal << 
+    2, 0, 0, 0, 0,
+    0, 2, 0, 0, 0,
+    0, 0, 2, -2, 0,
+    0, 0, -2, 4, 0,
+    0, 0, 0, 0, 2;
+  MatrixXd hess = even_temp.Hess(hess_normal);
+
+  EXPECT_DOUBLE_EQ(10.0, hess(0,0));
+  EXPECT_DOUBLE_EQ(4.0,  hess(1,0));
+  EXPECT_DOUBLE_EQ( 0.0, hess(2,0));
+  EXPECT_DOUBLE_EQ( 0.0, hess(3,0));
+
+  EXPECT_DOUBLE_EQ(4.0, hess(0,1));
+  EXPECT_DOUBLE_EQ(2.0, hess(1,1));
+  EXPECT_DOUBLE_EQ(0.0, hess(2,1));
+  EXPECT_DOUBLE_EQ(0.0, hess(3,1));
+
+  EXPECT_DOUBLE_EQ(0.0, hess(0,2));
+  EXPECT_DOUBLE_EQ(0.0,  hess(1,2));
+  EXPECT_DOUBLE_EQ(188.0, hess(2,2));
+  EXPECT_DOUBLE_EQ(366.0, hess(3,2));
+
+  EXPECT_DOUBLE_EQ(0.0,   hess(0,3));
+  EXPECT_DOUBLE_EQ(0.0,   hess(1,3));
+  EXPECT_DOUBLE_EQ(466.0, hess(2,3));
+  EXPECT_DOUBLE_EQ(338.0, hess(3,3));
 
 }
 TEST(Driv, Construct) {
