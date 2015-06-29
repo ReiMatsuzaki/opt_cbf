@@ -84,14 +84,14 @@ namespace opt_cbf_h {
     }
     void setOptTarget() {
 
-      IOptTarget* ptr = nullptr;
+      IOptTarget* ptr = NULL;
       BuildOptTarget(keys_values_, &ptr, &zs_);
       opt_target_ = boost::shared_ptr<IOptTarget>(ptr);
 
     }
     void setOptimizer() {
       
-      IOptimizer<CD>* ptr = nullptr;
+      IOptimizer<CD>* ptr = NULL;
       BuildOptimizer(keys_values_, &ptr);
       optimizer_ = boost::shared_ptr<IOptimizer<CD> >(ptr);
 

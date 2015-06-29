@@ -584,11 +584,11 @@ KeysValues kv(":", " ");
   kv.Add("opt_basis", make_tuple(2, CD(3.4, 0.0)));
   kv.Add("opt_basis", make_tuple(2, CD(1.4, 0.0)));
 
-  IOptTarget* ptr = nullptr;
+  IOptTarget* ptr = NULL;
   VectorXcd zs;
   BuildOptTarget(kv, &ptr, &zs);
 
-  if(ptr == nullptr)
+  if(ptr == NULL)
     EXPECT_TRUE(false);
 }
 
