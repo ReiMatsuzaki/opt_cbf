@@ -82,20 +82,22 @@ namespace opt_cbf_h {
       // update vector in restriction space
       dz = -hess.fullPivLu().solve(grad);
 
-      // update in normal space
-      restriction_->Shift(dz);
-      res.z = restriction_->Xs();
-      res.iter_num = i + 1;
-
-      // check convergence
+      // check convergence in restricted space
       double dz_norm = std::abs(dz.norm());
       bool check1 = dz_norm < IOptimizer<F>::eps_;
-      double max_grad = res.grad.array().abs().maxCoeff();
+      double max_grad = grad.array().abs().maxCoeff();
       bool check2 =  max_grad < IOptimizer<F>::eps_;
       if( check1 && check2) {
 	res.convergence = true;
 	break;
       }
+
+      // update in normal space
+      restriction_->Shift(dz);
+      res.z = restriction_->Xs();
+      res.iter_num = i + 1;
+
+
     }
     
     return res;
