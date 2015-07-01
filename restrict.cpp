@@ -168,6 +168,23 @@ namespace opt_cbf_h {
   template<class F> typename MultiEvenTemp<F>::VecF 
   MultiEvenTemp<F>::Xs() const {
     VecF xs = VecF::Zero(this->size());
+
+    int ni_m1(0);
+    for(CIT it = num_x0_r_list_.begin(),
+	  it_end = num_x0_r_list_.end();
+	it != it_end; ++it) {
+      
+      int ni = ni_m1 + get<0>(*it);
+      F   a   = get<1>(*it);
+      F   r   = get<2>(*it);
+
+      for(int k = ni_m1; k < ni; k++) {
+	xs(k) = a * pow(r, k - ni_m1);
+      }
+
+      ni_m1 = ni;
+    }
+
     return xs;
   }
   template<class F>
