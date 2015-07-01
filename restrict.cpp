@@ -296,8 +296,22 @@ namespace opt_cbf_h {
   template<class F>
   void MultiEvenTemp<F>::Shift(const VecF& dz)  { 
     
-    
+    if(num_x0_r_list_.size() * 2 != dz.rows()) {
+      string msg; SUB_LOCATION(msg);
+      msg += "\ninvalid size\n";
+      throw std::runtime_error(msg);
+    }
 
+    int i(0);
+    for(IT it = num_x0_r_list_.begin(),
+	  it_end = num_x0_r_list_.end();
+	it != it_end; ++it) {
+      int m = get<0>(*it);
+      F   a = get<1>(*it);
+      F   r = get<2>(*it);
+      *it = make_tuple(m, a + dz(2*i), r + dz(2*i+1));
+      i++;
+    }
   }
 
   // ============ Explicit Instance ==================
