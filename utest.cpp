@@ -46,7 +46,28 @@ public:
     (*h)(0,1)  = -4 * x;
     (*h)(1,1)  = 8; 
   }
+
 };
+void CalcFuncTest(VectorXd xs, double* a, VectorXd* g,MatrixXd* h) {
+  *a = pow(xs(0) - 1.0, 2) + pow(xs(1) -2.0, 2) + 
+    pow(xs(2)-xs(3), 2) + pow(xs(3) - 3.0, 2) + pow(xs(4), 2);
+
+  *g = VectorXd::Zero(5);
+  (*g) << 
+    2 * (xs(0) - 1), 
+    2 * (xs(1) - 2),
+    2 * (xs(2) - xs(3)),
+    -2* (xs(2) - xs(3)) + 2 * (xs(3) -3),
+    2 * xs(4);
+
+  *h = MatrixXd::Zero(5, 5);
+  *h << 
+    2, 0, 0, 0, 0,
+    0, 2, 0, 0, 0,
+    0, 0, 2,-2, 0,
+    0, 0, -2,4, 0,
+    0, 0, 0, 0, 2;
+}
 
 TEST(first, first) {
   EXPECT_EQ(2, 1 + 1);
@@ -248,6 +269,11 @@ TEST(Optimizer, NewtonWithEventemp) {
 }
 TEST(Optimizer, MultiET) {
 
+  vector<int> idxs(2);
+  idxs[0] = 2; idxs[1] = 3;
+  IRestriction<double>* et = new MultiEvenTemp<double>(idxs);
+  IOptimizer<double>* opt = 
+    new OptimizerRestricted<double>(100, 0.00001, et);
 
   //xs0.resize(5);
     // in this test, the initial guess is choosen as
@@ -256,8 +282,20 @@ TEST(Optimizer, MultiET) {
     // original sequences.
   VectorXd xs(5);
   xs << 0.5, 0.5*1.8, 2.2, 2.2*0.7, 2.2*0.7*0.7;
-  EXPECT_TRUE(1  == 0);
+  
+  OptRes<double> res = opt->Optimize(CalcFuncTest, xs);
 
+  // optimized points are
+  // (a,r,b,s) = (1,2,2.48028369537265,0.724491959000516)
+  double eps(0.0000001);
+  double b0(2.48028369537265);
+  double s0(0.724491959000516);
+  EXPECT_TRUE(res.convergence);
+  EXPECT_NEAR(1.0, res.z(0), eps);
+  EXPECT_NEAR(2.0, res.z(1), eps);
+  EXPECT_NEAR(b0, res.z(2), eps);
+  EXPECT_NEAR(b0*s0, res.z(3), eps);
+  EXPECT_NEAR(b0*s0*s0, res.z(4), eps);
 }
 TEST(Restriction, NoRestriction) {
 
