@@ -412,9 +412,12 @@ TEST_F(TEST_MultiET, Gradient) {
 
   // this gradient is calculated in python notebook
   VectorXd grad_normal(5);
-  grad_normal << 0, 0, -2, 4, 10;
+  grad_normal << 0, 0, -8, 14, 36;
   VectorXd grad = et->Grad(grad_normal);
 
+  //
+  // df_db = 3^0 * (-2) + 3^1*(4) + 3^2*10 
+  //       = -2 + 12 + 90 = 100
   EXPECT_DOUBLE_EQ(0.0, grad(0));
   EXPECT_DOUBLE_EQ(0.0, grad(1));
   EXPECT_DOUBLE_EQ(358.0, grad(2));
@@ -427,7 +430,7 @@ TEST_F(TEST_MultiET, Hess) {
 
   // this hess and grad are calculated in python notebook
   VectorXd grad_normal(5);
-  grad_normal << 0, 0, -2, 4, 10;
+  grad_normal << 0, 0, -8, 14, 36;
   MatrixXd hess_normal(5, 5);
   hess_normal << 
     2, 0, 0, 0, 0,
@@ -450,13 +453,41 @@ TEST_F(TEST_MultiET, Hess) {
   EXPECT_DOUBLE_EQ(0.0, hess(0,2));
   EXPECT_DOUBLE_EQ(0.0,  hess(1,2));
   EXPECT_DOUBLE_EQ(188.0, hess(2,2));
-  EXPECT_DOUBLE_EQ(366.0, hess(3,2));
+  EXPECT_DOUBLE_EQ(466.0, hess(3,2));
 
   EXPECT_DOUBLE_EQ(0.0,   hess(0,3));
   EXPECT_DOUBLE_EQ(0.0,   hess(1,3));
   EXPECT_DOUBLE_EQ(466.0, hess(2,3));
-  EXPECT_DOUBLE_EQ(338.0, hess(3,3));
+  EXPECT_DOUBLE_EQ(448.0, hess(3,3));
 
+}
+TEST_F(TEST_MultiET, Xs) {
+
+  VectorXd xs(5);
+  xs << 1,2,2,6,6;
+
+  et->SetVars(xs);
+  EXPECT_DOUBLE_EQ (18.0,  et->Xs()(4));
+
+}
+TEST_F(TEST_MultiET, Shift) {
+  
+  // set xs = (1,2,2,6,18)
+  et->SetVars(xsTest);
+  // (a0, r0, a1, r1) = (1,2,2,3)
+
+  // shift (1, 2, 3, -1);
+  VectorXd dx(4);
+  dx << 1.0, 2.0, 3.0, -1.0;
+  et->Shift(dx);
+
+  // (a0, r0, a1, r1) = (2, 4, 5, 2)
+  // xs = (2, 8, 5, 10, 20)
+  EXPECT_DOUBLE_EQ(2.0, et->Xs()(0));
+  EXPECT_DOUBLE_EQ(8.0, et->Xs()(1));
+  EXPECT_DOUBLE_EQ(5.0, et->Xs()(2));
+  EXPECT_DOUBLE_EQ(10.0, et->Xs()(3));
+  EXPECT_DOUBLE_EQ(20.0, et->Xs()(4));
 }
 TEST(Driv, Construct) {
   

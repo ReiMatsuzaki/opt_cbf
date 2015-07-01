@@ -7,6 +7,8 @@
 #include "restrict.hpp"
 
 namespace {
+  using std::cout;
+  using std::endl;
   using boost::get;
   using std::string;
   using boost::lexical_cast;
@@ -161,13 +163,13 @@ namespace opt_cbf_h {
       acc += num;
       *it = make_tuple(num, x0, r);
     }
+
   }
   template<class F> typename MultiEvenTemp<F>::VecF 
   MultiEvenTemp<F>::Xs() const {
-    VecF xs(1);
+    VecF xs = VecF::Zero(this->size());
     return xs;
   }
-
   template<class F>
   int MultiEvenTemp<F>::size() const { 
 
@@ -194,33 +196,92 @@ namespace opt_cbf_h {
     int num_rest = num_x0_r_list_.size();
     VecF grad(num_rest * 2);
 
-    int n0(0);
+    // see ipython notebook for variable notations
+    int ni_m1(0); // represent n_{i-1}
     for(int i = 0; i < num_rest; i++) {
 
-      F df_da(0);
-      F df_dr(0);
-      int num = get<0>(num_x0_r_list_[i]);
-      F   x0  = get<1>(num_x0_r_list_[i]);
-      F    r  = get<2>(num_x0_r_list_[i]);
-      for(int n = 0; n < num; n++) {
-	df_da += pow(r, n) * g(n0 + n);
-	df_dr += x0 * F(n) * pow(r, n-1) * g(n0 + n);
+      F df_da(0), df_dr(0);
+      int ki_max = get<0>(num_x0_r_list_[i]);
+      F   ai     = get<1>(num_x0_r_list_[i]);
+      F   ri     = get<2>(num_x0_r_list_[i]);
+      int ni = ni_m1 + ki_max;
+      for(int k = ni_m1; k < ni; k++) {
+	df_da += g(k) * pow(ri, k - ni_m1);
+	df_dr += g(k) * ai * F(k-ni_m1) * pow(ri, k-ni_m1-1);
       }
       grad(2*i)   = df_da;
       grad(2*i+1) = df_dr;
-	
-      n0 += num;
+      ni_m1 = ni;
     }
-
+    
     return grad;
   }
   template<class F>
   typename MultiEvenTemp<F>::MatF  MultiEvenTemp<F>::Hess
   (const VecF& g, const MatF& h) const {
-    return MatF(h);
+
+    if(g.rows() != this->size() ||
+       g.rows() != h.rows() ||
+       g.rows() != h.cols() ) {
+      std::string msg; SUB_LOCATION(msg);
+      msg += "\nsize is invalid\n"; 
+      throw std::runtime_error(msg);
+    }
+
+    int num_rest = num_x0_r_list_.size();
+    MatF hess(num_rest * 2, num_rest * 2);
+
+    int ni_m1(0);
+    for(int i = 0; i < num_rest; i++) {
+
+      int ki_max = get<0>(num_x0_r_list_[i]);
+      F   ai     = get<1>(num_x0_r_list_[i]);
+      F   ri     = get<2>(num_x0_r_list_[i]);
+      int ni = ni_m1 + ki_max;
+
+      int nj_m1(0);
+      for(int j = 0; j < num_rest; j++) {
+
+	int kj_max = get<0>(num_x0_r_list_[j]);
+	F   aj     = get<1>(num_x0_r_list_[j]);
+	F   rj     = get<2>(num_x0_r_list_[j]);
+	int nj     = nj_m1 + kj_max;
+	
+	F d2f_dada(0), d2f_dadr(0), d2f_drdr(0);
+	for(int k = ni_m1; k < ni; k++) {
+	  if(i == j) {
+	    F gk = g(k);
+	    d2f_dadr += gk * F(k-ni_m1) * pow(ri, k-ni_m1-1);
+	    d2f_drdr += gk * ai * F((k-ni_m1)*(k-ni_m1-1)) * pow(ri, k-ni_m1-2);
+	  }
+	  for(int l = nj_m1; l < nj; l++) {
+	    F hkl = h(k, l);
+	    d2f_dada += hkl * pow(ri, k - ni_m1) * pow(rj, l - nj_m1);
+	    d2f_dadr += hkl * pow(ri, k - ni_m1) * 
+	      aj * F(l-nj_m1) * pow(rj, l-nj_m1-1);
+	    d2f_drdr += hkl * 
+	      ai * F(k-ni_m1) * pow(ri, k-ni_m1-1) * 
+	      aj * F(l-nj_m1) * pow(rj, l-nj_m1-1);
+	  }
+	}
+	nj_m1 = nj;
+
+	hess(2*i,   2*j  ) = d2f_dada;
+	hess(2*i+1, 2*j  ) = d2f_dadr;
+	hess(2*i,   2*j+1) = d2f_dadr;
+	hess(2*i+1, 2*j+1) = d2f_drdr;
+      }
+      ni_m1 = ni;
+    }
+
+    return hess;
   }
   template<class F>
-  void MultiEvenTemp<F>::Shift(const VecF& dz)  { }
+  void MultiEvenTemp<F>::Shift(const VecF& dz)  { 
+    
+    
+
+  }
 
   // ============ Explicit Instance ==================
   typedef std::complex<double> CD;
