@@ -206,7 +206,9 @@ TEST(LinearAlgebra, real_sto) {
 
   VectorXd aAia;
   Calc_a_Aj_b(m, A10, m, &aAia);
-  EXPECT_NEAR( m.transpose() * A_d0 * m, aAia(0, 0), 0.01);
+  double expe =  m.transpose() * A_d0 * m;
+  double calc = aAia(0, 0);
+  EXPECT_NEAR(0.0, (calc - expe)/expe, 0.001);
   EXPECT_NEAR( m.transpose() * A_d1 * m, aAia(1, 0), 0.0001);
 
   /*
@@ -681,17 +683,21 @@ TEST(FromKV_BasisSet, EtBasis) {
 
   vector<CGTO> cgto_set;
   KeysValues kv(":", " ");
-  kv.Add("opt_et_basis", make_tuple(1,5,
-				    CD(1.2,0.0),CD(1.3,0.0)));
+  kv.Add("opt_et_basis", make_tuple(1,5, CD(1.2,0.0),CD(1.3,0.0)));
+  kv.Add("opt_et_basis", make_tuple(2,4, CD(1.1,0.0),CD(2.1,0.0)));
   
   BuildBasisSet(kv, &cgto_set);
 
-  EXPECT_EQ(5, cgto_set.size());
+  EXPECT_EQ(5 + 4, cgto_set.size());
   EXPECT_EQ(1, cgto_set[0].n());
+  EXPECT_EQ(2, cgto_set[6].n());
   EXPECT_DOUBLE_EQ(1.2, cgto_set[0].z().real());
   EXPECT_DOUBLE_EQ(1.2 * 1.3, cgto_set[1].z().real());
-  EXPECT_DOUBLE_EQ(1.2 * 1.3 * 1.3, 
-		   cgto_set[2].z().real());
+  EXPECT_DOUBLE_EQ(1.2 * 1.3 * 1.3, cgto_set[2].z().real());
+  EXPECT_DOUBLE_EQ(1.1, cgto_set[5].z().real());
+  EXPECT_DOUBLE_EQ(1.1*2.1, cgto_set[6].z().real());
+  EXPECT_DOUBLE_EQ(1.1*2.1*2.1, cgto_set[7].z().real());
+		   
 }
 TEST(FromKV_BasisSet, Exception) {
   

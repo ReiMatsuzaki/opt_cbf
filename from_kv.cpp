@@ -13,26 +13,15 @@ using namespace l2func;
 namespace opt_cbf_h {
 
   // --------- Basis Set -------------------
-  void extractOptEtBasis(const KeysValues& kv, int* n, 
-			 int* num, CD* z0, CD* r) {
+  void extractOptEtBasis(const KeysValues& kv, int* n, int* num, 
+			 CD* z0, CD* r, int idx) {
     
     typedef tuple<int,int,CD,CD> IICC;
-    IICC val = kv.Get<IICC>("opt_et_basis");
+    IICC val = kv.Get<IICC>("opt_et_basis", idx);
     *n   = get<0>(val);
     *num = get<1>(val);
     *z0  = get<2>(val);
     *r   = get<3>(val);
-  }
-  void errChk_BasisSet(int num_et, int num_opt) {
-
-    if(num_et > 1) {
-      string msg = "Multiple ET basis is not supported";
-      throw runtime_error(msg);
-    }
-    if(num_et > 0 && num_opt > 0) {
-      string msg = "# of opt_et_basis > 0 and # of opt_basis are not supported now";
-      throw runtime_error(msg);
-    }    
 
   }
   void err_BasisSet() {
@@ -41,38 +30,44 @@ namespace opt_cbf_h {
       throw runtime_error(msg);
   }
   template<class Prim>
-  void BuildBasisSet(const KeysValues& kv, 
-		     vector<Prim>* basis_set) {
+  void BuildBasisSet(const KeysValues& kv, vector<Prim>* basis_set) {
     
     int num_et = kv.Count("opt_et_basis");
     int num_opt= kv.Count("opt_basis");
 
-    errChk_BasisSet(num_et, num_opt);
-    
     vector<tuple<int, CD> > nz_list;
     int num = 0;
-
-    if(num_et == 1 && num_opt == 0) {
-      int n;
-      CD  z0, r;
-      extractOptEtBasis(kv, &n, &num, &z0, &r);
-      nz_list.resize(num);
-      CD z = z0;
-      for(int i = 0; i < num; i++) {
-	nz_list[i] = make_tuple(n, z);
-	z *= r;
-      } 
+    if(num_et != 0 && num_opt == 0) {
+      for(int idx = 0; idx < num_et; idx++) {
+	
+	int n;
+	CD  z0, r;
+	int num_i;
+	extractOptEtBasis(kv, &n, &num_i, &z0, &r, idx);
+	CD z = z0;
+	for(int i = 0; i < num_i; i++) {
+	  num++;
+	  nz_list.push_back(make_tuple(n, z));
+	  z *= r;
+	}
+      }
     } else if (num_et == 0 && num_opt != 0) {
       num = kv.Count("opt_basis");
       nz_list.resize(num);
       typedef tuple<int, CD> I_CD;
       for(int i = 0; i < num; i++) 
 	nz_list[i] = kv.Get<I_CD>("opt_basis", i);
-    } else 
-      err_BasisSet();
+    } else {
+      std::string msg; SUB_LOCATION(msg);
+      msg += "\n# of opt_et_basis = 0 or # of opt_basis = 0\n";
+      throw runtime_error(msg);
+    }
 
-    if(num == 0)
-      err_BasisSet();
+    if(num == 0) {
+      string msg; SUB_LOCATION(msg); 
+      msg += "\nnumber of basis is zero\n";
+      throw runtime_error(msg);
+    }
 
     basis_set->resize(num);
     for(int i = 0; i < num; i++) {
@@ -107,9 +102,8 @@ namespace opt_cbf_h {
     msg+= basis_type;
     throw runtime_error(msg);
   }
-  template<class Prim>
-  void BuildHAtomPI(const KeysValues& kv, 
-		    HAtomPI<Prim>** h_pi) {
+  template<class Prim> 
+  void BuildHAtomPI(const KeysValues& kv, HAtomPI<Prim>** h_pi) {  
     
     // check basis type
     string basis_type = kv.Get<string>("basis_type");
@@ -160,9 +154,8 @@ namespace opt_cbf_h {
 
   // ---------- Optimize Target --------------
   template<class Prim>
-  void buildOptTarget(const KeysValues& kv, 
-		      IOptTarget** opt, 
-		      VectorXcd* zs) {
+  void buildOptTarget(const KeysValues& kv, IOptTarget** opt, VectorXcd* zs) {
+		      
     vector<Prim>   basis_set;
     HAtomPI<Prim>* h_pi;
     BuildBasisSet<Prim>(kv, &basis_set);
@@ -180,9 +173,9 @@ namespace opt_cbf_h {
     }
 
   }
-  void BuildOptTarget(const KeysValues& kv, 
-		      IOptTarget** opt,
-		      VectorXcd* zs) {
+  void BuildOptTarget(const KeysValues& kv, IOptTarget** opt, VectorXcd* zs) {
+		      
+		      
     string basis_type = kv.Get<string>("basis_type");
 
     if(basis_type == "STO") 
@@ -199,8 +192,7 @@ namespace opt_cbf_h {
   }
 
   // ----------- Optimizer --------------------
-  void BuildOptimizer(const KeysValues& kv, 
-		      IOptimizer<CD>** opt) {
+  void BuildOptimizer(const KeysValues& kv, IOptimizer<CD>** opt) {
 
     int max_iter = kv.Get<int>("max_iter");
     double eps   = kv.Get<double>("eps");
@@ -213,8 +205,19 @@ namespace opt_cbf_h {
       
       IRestriction<CD>* et;
       et = new EvenTemp<CD>();
-      *opt = new OptimizerRestricted<CD>
-	(max_iter, eps, et);
+      *opt = new OptimizerRestricted<CD>(max_iter, eps, et);
+	
+    } else if(num_et != 0 && num_opt == 0) {
+
+      vector<int> num_list;
+      for(int idx = 0; idx < num_et; idx++) {
+	int n, num_i;
+	CD  z0, r;
+	extractOptEtBasis(kv, &n, &num_i, &z0, &r, idx);
+	num_list.push_back(num_i);
+      }
+      IRestriction<CD>* et = new MultiEvenTemp<CD>(num_list);
+      *opt = new OptimizerRestricted<CD>(max_iter, eps, et);
 
     } else if(num_et == 0 && num_opt != 0) {
 
@@ -231,12 +234,8 @@ namespace opt_cbf_h {
   }
 
   // ---------- Explicit Instance --------------
-  template void 
-  BuildBasisSet<CSTO>(const KeysValues&, vector<CSTO>*);
-  template void
-  BuildBasisSet<CGTO>(const KeysValues&, vector<CGTO>*);
-  template void
-  BuildHAtomPI<CSTO>(const KeysValues&, HAtomPI<CSTO>**);
-  template void
-  BuildHAtomPI<CGTO>(const KeysValues&, HAtomPI<CGTO>**);
+  template void BuildBasisSet<CSTO>(const KeysValues&, vector<CSTO>*);
+  template void BuildBasisSet<CGTO>(const KeysValues&, vector<CGTO>*);
+  template void BuildHAtomPI<CSTO>(const KeysValues&, HAtomPI<CSTO>**);
+  template void BuildHAtomPI<CGTO>(const KeysValues&, HAtomPI<CGTO>**);
 }
