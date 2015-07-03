@@ -768,7 +768,7 @@ TEST(BuildHAtomPI, Construct) {
   delete hatom;
 }
 TEST(BuildHAtomPI, OptTarget) {
-KeysValues kv(":", " ");
+  KeysValues kv(":", " ");
   kv.Add<string>("channel", "1s->kp");
   kv.Add<string>("dipole", "length");
   kv.Add<string>("basis_type", "STO");

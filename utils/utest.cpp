@@ -92,6 +92,17 @@ TEST(TestKeysValues, Add) {
   EXPECT_ANY_THROW(keys_values.Add("c", 3));
   
 }
+TEST(TestKeysValues, CopyConstructor) {
+
+  KeysValues kv1(":", " ");
+  kv1.Add("a", 1.0);
+  kv1.Add("b", make_tuple(1, 2.0));
+
+  KeysValues* kv2 = new KeysValues(kv1);
+
+  EXPECT_DOUBLE_EQ(1, get<0>(kv2->Get<tuple<int, double> >("b")));
+
+}
 TEST(TestKeysValues, ConvertData) {
 
   KeysValues keys_values(":", " ");
