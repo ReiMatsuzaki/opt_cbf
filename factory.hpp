@@ -43,9 +43,11 @@ namespace opt_cbf_h {
     const char* what() const throw();
   };
 
-  // =============== Abstract Interface ================
+  // =============== Interface =========================
   template<class Prim> class HAtomPI;
   template<class F> class IOptimizer;
+  class IOptTarget;
+
   class IFactory {
   protected:
     KeysValues* kv_;
@@ -54,9 +56,20 @@ namespace opt_cbf_h {
     virtual ~IFactory();
     virtual vector<l2func::CSTO>* STOSet() const = 0;
     virtual vector<l2func::CGTO>* GTOSet() const = 0;
-    virtual HAtomPI<l2func::CSTO>* HAtomPiSTO() const = 0;
-    virtual HAtomPI<l2func::CGTO>* HAtomPiGTO() const = 0;
+    HAtomPI<l2func::CSTO>* HAtomPiSTO() const;
+    HAtomPI<l2func::CGTO>* HAtomPiGTO() const;
+    IOptTarget* OptTarget() const; 
     virtual IOptimizer<CD>* Optimizer() const = 0;
+  };
+
+  // ============== Mono ================================
+  class FactoryMono : public IFactory {
+  public:
+    FactoryMono(const KeysValues&);
+    ~FactoryMono();
+    vector<l2func::CSTO>* STOSet() const;
+    vector<l2func::CGTO>* GTOSet() const;
+    IOptimizer<CD>* Optimizer() const;    
   };
 
   // ============== EvenTempered ========================
@@ -66,8 +79,6 @@ namespace opt_cbf_h {
     ~FactoryEvenTemp();
     vector<l2func::CSTO>* STOSet() const;
     vector<l2func::CGTO>* GTOSet() const;
-    HAtomPI<l2func::CSTO>* HAtomPiSTO() const;
-    HAtomPI<l2func::CGTO>* HAtomPiGTO() const;
     IOptimizer<CD>* Optimizer() const;
   };
 

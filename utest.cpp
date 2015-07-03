@@ -645,7 +645,7 @@ TEST_F(TestOptSTO, optimization) {
 
   VectorXcd zs0(2);
   zs0 << CD(0.8, -0.1), CD(0.4, -0.6);
-
+  
   IOptTarget* opt_target = new OptCBF<CSTO>(basis_set, h_atom);
   IOptimizer<CD>* opt = new OptimizerNewton<CD>(100, 0.00001);
   OptRes<CD> opt_res = opt->Optimize

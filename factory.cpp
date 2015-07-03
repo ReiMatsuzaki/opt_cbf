@@ -4,8 +4,39 @@
 #include "driv.hpp"
 #include "restrict.hpp"
 #include "opt.hpp"
+#include "opt_cbf.hpp"
 
 namespace opt_cbf_h {
+
+  // ================ Utils ============================
+  template<class Prim> string basisName();
+  template<> string basisName<l2func::CSTO>() { return "STO"; }
+  template<> string basisName<l2func::CGTO>() { return "GTO"; }
+  void extractOptEtBasis2(const KeysValues& kv, int* n, int* num, CD* z0, 
+			 CD* r, int idx) {
+			 
+    typedef tuple<int,int,CD,CD> IICC;
+    IICC val = kv.Get<IICC>("opt_et_basis", idx);
+    *n   = get<0>(val);
+    *num = get<1>(val);
+    *z0  = get<2>(val);
+    *r   = get<3>(val);
+
+  }
+  template<class Prim> void checkBasis(const KeysValues& kv) {
+    string basis_type;
+    try {
+      basis_type = kv.Get<string>("basis_type");
+    } catch(exception& e) {
+      throw runtime_error("\nbasis_type does not found\n");
+    }
+
+    if(kv.Get<string>("basis_type") != basisName<Prim>()) {
+      string msg; SUB_LOCATION(msg); 
+      throw InvalidBasis(msg, basisName<Prim>());
+    }
+
+  }
 
   // =============== Create Factory ====================
   IFactory* CreateFactory(const KeysValues& kv) {
@@ -17,7 +48,7 @@ namespace opt_cbf_h {
 
     if( num_et == 0 && num_opt != 0) {
       
-      res = NULL;
+      res = new FactoryMono(kv);
       
     } else if( num_et != 0 && num_opt == 0) {
 
@@ -66,75 +97,14 @@ namespace opt_cbf_h {
     return msg.c_str();
   }
 
-  // =============== Abstract Interface ================
+  // =============== Interface ========================
   IFactory::IFactory(const KeysValues& _kv) : kv_(new KeysValues(_kv)) {}
   IFactory::~IFactory() {
     delete kv_;
   }
-
-  // ============== EvenTempered ========================  
-  template<class Prim> string basisName();
-  template<> string basisName<l2func::CSTO>() { return "STO"; }
-  template<> string basisName<l2func::CGTO>() { return "GTO"; }
-  void extractOptEtBasis2(const KeysValues& kv, int* n, int* num, CD* z0, 
-			 CD* r, int idx) {
-			 
-    typedef tuple<int,int,CD,CD> IICC;
-    IICC val = kv.Get<IICC>("opt_et_basis", idx);
-    *n   = get<0>(val);
-    *num = get<1>(val);
-    *z0  = get<2>(val);
-    *r   = get<3>(val);
-
-  }
-  
-  FactoryEvenTemp::FactoryEvenTemp(const KeysValues& kv) : IFactory(kv) {}
-  FactoryEvenTemp::~FactoryEvenTemp() {}
-
-  template<class Prim> vector<Prim>* basisSet(const KeysValues& kv) {
-
-    string basis_type;
-    try {
-      basis_type = kv.Get<string>("basis_type");
-    } catch(exception& e) {
-      throw runtime_error("\nbasis_type does not found\n");
-    }
-
-    if(kv.Get<string>("basis_type") != basisName<Prim>()) {
-      string msg; SUB_LOCATION(msg); 
-      throw InvalidBasis(msg, basisName<Prim>());
-    }
-    
-    int num_et = kv.Count("opt_et_basis");
-    vector<Prim>* basis_set = new vector<Prim>();
-    for(int i = 0; i < num_et; i++) {
-      int n, num_i;
-      CD  z0, r;
-      extractOptEtBasis2(kv, &n, &num_i, &z0, &r, i);      
-      CD z = z0;
-      for(int i = 0; i < num_i; i++) {
-	Prim u(n, z, l2func::Normalized);
-	basis_set->push_back(u);
-	z *= r;
-      }
-    }
-    return basis_set;
-}
-  vector<l2func::CSTO>* FactoryEvenTemp::STOSet() const {
-    return basisSet<l2func::CSTO>(*kv_);
-  }
-  vector<l2func::CGTO>* FactoryEvenTemp::GTOSet() const {
-    return basisSet<l2func::CGTO>(*kv_);
-  }
-
   template<class Prim> HAtomPI<Prim>* hAtomPI(const KeysValues& kv) {
 
-    // check basis type
-    string basis_type = kv.Get<string>("basis_type");
-    if(basis_type != basisName<Prim>()) {
-      string msg; SUB_LOCATION(msg); 
-      throw InvalidBasis(msg, basis_type);
-    }
+    checkBasis<Prim>(kv);
 
     // Hydrogen atom
     string ch = kv.Get<string>("channel");
@@ -175,11 +145,96 @@ namespace opt_cbf_h {
     HAtomPI<Prim>* h_pi = new HAtomPI<Prim>(l1, 1.0, ene, mu_phi);
     return h_pi;
   }
-  HAtomPI<l2func::CSTO>* FactoryEvenTemp::HAtomPiSTO() const {
+  HAtomPI<l2func::CSTO>* IFactory::HAtomPiSTO() const {
     return hAtomPI<l2func::CSTO>(*kv_);
   }
-  HAtomPI<l2func::CGTO>* FactoryEvenTemp::HAtomPiGTO() const {
+  HAtomPI<l2func::CGTO>* IFactory::HAtomPiGTO() const {
     return hAtomPI<l2func::CGTO>(*kv_);
+  }
+  IOptTarget* IFactory::OptTarget() const {
+    
+    string b_type = kv_->Get<string>("basis_type");
+    IOptTarget* opt_target(NULL);
+    if(b_type == "STO") {
+      vector<l2func::CSTO>* basis_set = this->STOSet();
+      HAtomPI<l2func::CSTO>* h_pi     = this->HAtomPiSTO();
+      opt_target = new OptCBF<l2func::CSTO>(*basis_set, h_pi);
+    } else if(b_type == "GTO") {
+      vector<l2func::CGTO>* basis_set = this->GTOSet();
+      HAtomPI<l2func::CGTO>* h_pi     = this->HAtomPiGTO();
+      opt_target = new OptCBF<l2func::CGTO>(*basis_set, h_pi);      
+    } else {
+      string msg; SUB_LOCATION(msg); throw InvalidBasis(msg, b_type);
+    }
+
+    return opt_target;
+    
+  }
+
+  // ============== Mono ================================
+  FactoryMono::FactoryMono(const KeysValues& kv) : IFactory(kv) {}
+  FactoryMono::~FactoryMono() {}
+
+  template<class Prim> vector<Prim>* monoBasisSet(const KeysValues& kv) {
+    
+    checkBasis<Prim>(kv);
+
+    vector<Prim>*  basis_set = new vector<Prim>();
+    for(int i = 0; i < kv.Count("opt_basis"); i++) {
+
+      tuple<int, CD> n_z = kv.Get<tuple<int, CD> >("opt_basis", i);
+      Prim u(get<0>(n_z), get<1>(n_z), l2func::Normalized);
+      basis_set->push_back(u);
+
+    }
+    
+    return basis_set;
+  }
+  vector<l2func::CSTO>* FactoryMono::STOSet() const {
+    return monoBasisSet<l2func::CSTO>(*kv_);
+  }
+  vector<l2func::CGTO>* FactoryMono::GTOSet() const {
+    return monoBasisSet<l2func::CGTO>(*kv_);
+  }
+
+  IOptimizer<CD>* FactoryMono::Optimizer() const {
+    
+    int max_iter = kv_->Get<int>("max_iter");
+    double eps   = kv_->Get<double>("eps");
+
+    IOptimizer<CD>* opt = new OptimizerNewton<CD>(max_iter, eps);
+
+    return opt; 
+  }
+
+  // ============== EvenTempered ========================    
+  FactoryEvenTemp::FactoryEvenTemp(const KeysValues& kv) : IFactory(kv) {}
+  FactoryEvenTemp::~FactoryEvenTemp() {}
+
+  template<class Prim> vector<Prim>* basisSet(const KeysValues& kv) {
+
+    checkBasis<Prim>(kv);
+       
+    int num_et = kv.Count("opt_et_basis");
+    vector<Prim>* basis_set = new vector<Prim>();
+    for(int i = 0; i < num_et; i++) {
+      int n, num_i;
+      CD  z0, r;
+      extractOptEtBasis2(kv, &n, &num_i, &z0, &r, i);      
+      CD z = z0;
+      for(int i = 0; i < num_i; i++) {
+	Prim u(n, z, l2func::Normalized);
+	basis_set->push_back(u);
+	z *= r;
+      }
+    }
+    return basis_set;
+}
+  vector<l2func::CSTO>* FactoryEvenTemp::STOSet() const {
+    return basisSet<l2func::CSTO>(*kv_);
+  }
+  vector<l2func::CGTO>* FactoryEvenTemp::GTOSet() const {
+    return basisSet<l2func::CGTO>(*kv_);
   }
 
   IOptimizer<CD>* FactoryEvenTemp::Optimizer() const {
