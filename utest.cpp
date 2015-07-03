@@ -46,7 +46,28 @@ public:
     (*h)(0,1)  = -4 * x;
     (*h)(1,1)  = 8; 
   }
+
 };
+void CalcFuncTest(VectorXd xs, double* a, VectorXd* g,MatrixXd* h) {
+  *a = pow(xs(0) - 1.0, 2) + pow(xs(1) -2.0, 2) + 
+    pow(xs(2)-xs(3), 2) + pow(xs(3) - 3.0, 2) + pow(xs(4), 2);
+
+  *g = VectorXd::Zero(5);
+  (*g) << 
+    2 * (xs(0) - 1), 
+    2 * (xs(1) - 2),
+    2 * (xs(2) - xs(3)),
+    -2* (xs(2) - xs(3)) + 2 * (xs(3) -3),
+    2 * xs(4);
+
+  *h = MatrixXd::Zero(5, 5);
+  *h << 
+    2, 0, 0, 0, 0,
+    0, 2, 0, 0, 0,
+    0, 0, 2,-2, 0,
+    0, 0, -2,4, 0,
+    0, 0, 0, 0, 2;
+}
 
 TEST(first, first) {
   EXPECT_EQ(2, 1 + 1);
@@ -185,7 +206,9 @@ TEST(LinearAlgebra, real_sto) {
 
   VectorXd aAia;
   Calc_a_Aj_b(m, A10, m, &aAia);
-  EXPECT_NEAR( m.transpose() * A_d0 * m, aAia(0, 0), 0.01);
+  double expe =  m.transpose() * A_d0 * m;
+  double calc = aAia(0, 0);
+  EXPECT_NEAR(0.0, (calc - expe)/expe, 0.001);
   EXPECT_NEAR( m.transpose() * A_d1 * m, aAia(1, 0), 0.0001);
 
   /*
@@ -245,6 +268,36 @@ TEST(Optimizer, NewtonWithEventemp) {
   EXPECT_NEAR(res.z(0,0), -1.3646556076560374, eps);
   EXPECT_NEAR(res.z(1,0), -0.5344287681232319, eps);  
 				     
+}
+TEST(Optimizer, MultiET) {
+
+  vector<int> idxs(2);
+  idxs[0] = 2; idxs[1] = 3;
+  IRestriction<double>* et = new MultiEvenTemp<double>(idxs);
+  IOptimizer<double>* opt = 
+    new OptimizerRestricted<double>(100, 0.00001, et);
+
+  //xs0.resize(5);
+    // in this test, the initial guess is choosen as
+    // (a,r,b,s) = (0.5, 1.8, 2.2, 0.7)
+    // but IRestriction class only support setting by 
+    // original sequences.
+  VectorXd xs(5);
+  xs << 0.5, 0.5*1.8, 2.2, 2.2*0.7, 2.2*0.7*0.7;
+  
+  OptRes<double> res = opt->Optimize(CalcFuncTest, xs);
+
+  // optimized points are
+  // (a,r,b,s) = (1,2,2.48028369537265,0.724491959000516)
+  double eps(0.0000001);
+  double b0(2.48028369537265);
+  double s0(0.724491959000516);
+  EXPECT_TRUE(res.convergence);
+  EXPECT_NEAR(1.0, res.z(0), eps);
+  EXPECT_NEAR(2.0, res.z(1), eps);
+  EXPECT_NEAR(b0, res.z(2), eps);
+  EXPECT_NEAR(b0*s0, res.z(3), eps);
+  EXPECT_NEAR(b0*s0*s0, res.z(4), eps);
 }
 TEST(Restriction, NoRestriction) {
 
@@ -339,6 +392,142 @@ TEST(Restriction, Interface) {
 
   EXPECT_EQ(3, even_temp->size());
 
+}
+class TEST_MultiET : public ::testing::Test {
+public:  
+
+  // this test is based on caluculation in 
+  // supply/opt_func.ipynb written in python
+  // f(x) : 5 variable function(x=x0,x1,...,x7)
+  // f(x) = (x0-1)^2 + (x1-2)^2 + (x2-x3)^2 
+  //        (x3-3)^2 x4^2
+  // the stationary point for f is 
+  // (1,2,3,3,0)
+  // 
+  // I restricted variable as follows
+  // x0 = a, x1 = ar,
+  // x2 = b, x3 = bs, x4 = bss
+  // the restricted optimization points are
+  // (a,r,b,s) = (1,2,2.48028369537265,0.724491959000516)
+
+  // xsTest is location for test (see python notebook)
+  VectorXd xsTest;  
+  MultiEvenTemp<double>* et;
+  virtual void SetUp() {
+    
+    xsTest.resize(5);
+    xsTest << 1,2,2,6,18;
+
+    // idxs represents the number of sequence for each 
+    // even-tempered numbers.
+    vector<int> idxs(2);
+    idxs[0] = 2; idxs[1] = 3;
+
+    et = new MultiEvenTemp<double>(idxs);
+
+  }
+
+};
+TEST_F(TEST_MultiET, construct) {
+ 
+  // IRestriction object must set vars before any use.
+  et->SetVars(xsTest);
+   
+  EXPECT_EQ(5, et->size());
+  
+  EXPECT_EQ(2, get<0>(et->num_x0_r(0)));
+  EXPECT_DOUBLE_EQ(1.0, get<1>(et->num_x0_r(0)));
+  EXPECT_DOUBLE_EQ(2.0, get<2>(et->num_x0_r(0)));
+
+  EXPECT_EQ(3, get<0>(et->num_x0_r(1)));  
+  EXPECT_DOUBLE_EQ(2.0, get<1>(et->num_x0_r(1)));
+  EXPECT_DOUBLE_EQ(3.0, get<2>(et->num_x0_r(1)));
+
+  EXPECT_ANY_THROW(et->num_x0_r(-1));
+  EXPECT_ANY_THROW(et->num_x0_r(2));
+}
+TEST_F(TEST_MultiET, Gradient) {
+  
+  et->SetVars(xsTest);
+
+  // this gradient is calculated in python notebook
+  VectorXd grad_normal(5);
+  grad_normal << 0, 0, -8, 14, 36;
+  VectorXd grad = et->Grad(grad_normal);
+
+  //
+  // df_db = 3^0 * (-2) + 3^1*(4) + 3^2*10 
+  //       = -2 + 12 + 90 = 100
+  EXPECT_DOUBLE_EQ(0.0, grad(0));
+  EXPECT_DOUBLE_EQ(0.0, grad(1));
+  EXPECT_DOUBLE_EQ(358.0, grad(2));
+  EXPECT_DOUBLE_EQ(460.0, grad(3));
+  
+}
+TEST_F(TEST_MultiET, Hess) {
+
+  et->SetVars(xsTest);
+
+  // this hess and grad are calculated in python notebook
+  VectorXd grad_normal(5);
+  grad_normal << 0, 0, -8, 14, 36;
+  MatrixXd hess_normal(5, 5);
+  hess_normal << 
+    2, 0, 0, 0, 0,
+    0, 2, 0, 0, 0,
+    0, 0, 2, -2, 0,
+    0, 0, -2, 4, 0,
+    0, 0, 0, 0, 2;
+  MatrixXd hess = et->Hess(grad_normal, hess_normal);
+
+  EXPECT_DOUBLE_EQ(10.0, hess(0,0));
+  EXPECT_DOUBLE_EQ(4.0,  hess(1,0));
+  EXPECT_DOUBLE_EQ( 0.0, hess(2,0));
+  EXPECT_DOUBLE_EQ( 0.0, hess(3,0));
+
+  EXPECT_DOUBLE_EQ(4.0, hess(0,1));
+  EXPECT_DOUBLE_EQ(2.0, hess(1,1));
+  EXPECT_DOUBLE_EQ(0.0, hess(2,1));
+  EXPECT_DOUBLE_EQ(0.0, hess(3,1));
+
+  EXPECT_DOUBLE_EQ(0.0, hess(0,2));
+  EXPECT_DOUBLE_EQ(0.0,  hess(1,2));
+  EXPECT_DOUBLE_EQ(188.0, hess(2,2));
+  EXPECT_DOUBLE_EQ(466.0, hess(3,2));
+
+  EXPECT_DOUBLE_EQ(0.0,   hess(0,3));
+  EXPECT_DOUBLE_EQ(0.0,   hess(1,3));
+  EXPECT_DOUBLE_EQ(466.0, hess(2,3));
+  EXPECT_DOUBLE_EQ(448.0, hess(3,3));
+
+}
+TEST_F(TEST_MultiET, Xs) {
+
+  VectorXd xs(5);
+  xs << 1,2,2,6,6;
+
+  et->SetVars(xs);
+  EXPECT_DOUBLE_EQ (18.0,  et->Xs()(4));
+
+}
+TEST_F(TEST_MultiET, Shift) {
+  
+  // set xs = (1,2,2,6,18)
+  et->SetVars(xsTest);
+  // (a0, r0, a1, r1) = (1,2,2,3)
+
+  // shift (1, 2, 3, -1);
+  VectorXd dx(4);
+  dx << 1.0, 2.0, 3.0, -1.0;
+  et->Shift(dx);
+
+  // (a0, r0, a1, r1) = (2, 4, 5, 2)
+  // xs = (2, 8, 5, 10, 20)
+  EXPECT_DOUBLE_EQ(2.0, et->Xs()(0));
+  EXPECT_DOUBLE_EQ(8.0, et->Xs()(1));
+  EXPECT_DOUBLE_EQ(5.0, et->Xs()(2));
+  EXPECT_DOUBLE_EQ(10.0, et->Xs()(3));
+  EXPECT_DOUBLE_EQ(20.0, et->Xs()(4));
 }
 TEST(Driv, Construct) {
   
@@ -456,7 +645,7 @@ TEST_F(TestOptSTO, optimization) {
 
   VectorXcd zs0(2);
   zs0 << CD(0.8, -0.1), CD(0.4, -0.6);
-
+  
   IOptTarget* opt_target = new OptCBF<CSTO>(basis_set, h_atom);
   IOptimizer<CD>* opt = new OptimizerNewton<CD>(100, 0.00001);
   OptRes<CD> opt_res = opt->Optimize
@@ -494,17 +683,21 @@ TEST(FromKV_BasisSet, EtBasis) {
 
   vector<CGTO> cgto_set;
   KeysValues kv(":", " ");
-  kv.Add("opt_et_basis", make_tuple(1,5,
-				    CD(1.2,0.0),CD(1.3,0.0)));
+  kv.Add("opt_et_basis", make_tuple(1,5, CD(1.2,0.0),CD(1.3,0.0)));
+  kv.Add("opt_et_basis", make_tuple(2,4, CD(1.1,0.0),CD(2.1,0.0)));
   
   BuildBasisSet(kv, &cgto_set);
 
-  EXPECT_EQ(5, cgto_set.size());
+  EXPECT_EQ(5 + 4, cgto_set.size());
   EXPECT_EQ(1, cgto_set[0].n());
+  EXPECT_EQ(2, cgto_set[6].n());
   EXPECT_DOUBLE_EQ(1.2, cgto_set[0].z().real());
   EXPECT_DOUBLE_EQ(1.2 * 1.3, cgto_set[1].z().real());
-  EXPECT_DOUBLE_EQ(1.2 * 1.3 * 1.3, 
-		   cgto_set[2].z().real());
+  EXPECT_DOUBLE_EQ(1.2 * 1.3 * 1.3, cgto_set[2].z().real());
+  EXPECT_DOUBLE_EQ(1.1, cgto_set[5].z().real());
+  EXPECT_DOUBLE_EQ(1.1*2.1, cgto_set[6].z().real());
+  EXPECT_DOUBLE_EQ(1.1*2.1*2.1, cgto_set[7].z().real());
+		   
 }
 TEST(FromKV_BasisSet, Exception) {
   
@@ -575,7 +768,7 @@ TEST(BuildHAtomPI, Construct) {
   delete hatom;
 }
 TEST(BuildHAtomPI, OptTarget) {
-KeysValues kv(":", " ");
+  KeysValues kv(":", " ");
   kv.Add<string>("channel", "1s->kp");
   kv.Add<string>("dipole", "length");
   kv.Add<string>("basis_type", "STO");
