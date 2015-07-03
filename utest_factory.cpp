@@ -12,7 +12,6 @@
 #include "opt.hpp"
 #include "driv.hpp"
 #include "opt_cbf.hpp"
-#include "from_kv.hpp"
 #include "factory.hpp"
 
 using namespace Eigen;

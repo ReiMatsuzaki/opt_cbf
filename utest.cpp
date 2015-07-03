@@ -12,7 +12,6 @@
 #include "opt.hpp"
 #include "driv.hpp"
 #include "opt_cbf.hpp"
-#include "from_kv.hpp"
 
 using namespace Eigen;
 using namespace opt_cbf_h;
@@ -663,126 +662,6 @@ TEST_F(TestOptSTO, optimization) {
   EXPECT_NEAR(-0.0600633, opt_res.z(0).imag(), 0.0000001);
   EXPECT_NEAR(0.664185, opt_res.z(1).real(), 0.000001);
   EXPECT_NEAR(-1.11116, opt_res.z(1).imag(), 0.00001);
-}
-TEST(FromKV_BasisSet, OptBasis) {
-  
-  vector<CSTO> csto_set;
-  KeysValues kv(":", " ");
-  kv.Add("opt_basis", make_tuple(1, CD(1.2, 0.0)));
-  kv.Add("opt_basis", make_tuple(2, CD(3.4, 0.0)));
-  kv.Add("opt_basis", make_tuple(2, CD(1.4, 0.0)));
-  
-  BuildBasisSet(kv, &csto_set);
-
-  EXPECT_EQ(3, csto_set.size());
-  EXPECT_EQ(2, csto_set[1].n());
-  EXPECT_DOUBLE_EQ(1.4, csto_set[2].z().real());
-  
-}
-TEST(FromKV_BasisSet, EtBasis) {
-
-  vector<CGTO> cgto_set;
-  KeysValues kv(":", " ");
-  kv.Add("opt_et_basis", make_tuple(1,5, CD(1.2,0.0),CD(1.3,0.0)));
-  kv.Add("opt_et_basis", make_tuple(2,4, CD(1.1,0.0),CD(2.1,0.0)));
-  
-  BuildBasisSet(kv, &cgto_set);
-
-  EXPECT_EQ(5 + 4, cgto_set.size());
-  EXPECT_EQ(1, cgto_set[0].n());
-  EXPECT_EQ(2, cgto_set[6].n());
-  EXPECT_DOUBLE_EQ(1.2, cgto_set[0].z().real());
-  EXPECT_DOUBLE_EQ(1.2 * 1.3, cgto_set[1].z().real());
-  EXPECT_DOUBLE_EQ(1.2 * 1.3 * 1.3, cgto_set[2].z().real());
-  EXPECT_DOUBLE_EQ(1.1, cgto_set[5].z().real());
-  EXPECT_DOUBLE_EQ(1.1*2.1, cgto_set[6].z().real());
-  EXPECT_DOUBLE_EQ(1.1*2.1*2.1, cgto_set[7].z().real());
-		   
-}
-TEST(FromKV_BasisSet, Exception) {
-  
-  KeysValues kv(":", " ");
-
-  // check throw exception when there does not exist
-  // any basis functions data.
-  vector<CSTO> vs;
-  EXPECT_ANY_THROW(BuildBasisSet(kv, &vs));
-
-  kv.Add("opt_basis", make_tuple(1, CD(1.2, 0.0)));
-  kv.Add("opt_basis", make_tuple(2, CD(3.4, 0.0)));
-  kv.Add("opt_et_basis", make_tuple(1,5,
-				    CD(1.2,0.0),CD(1.3,0.0)));
-
-  // check throw exception when both opt_basis and opt_et_basis
-  // exists simultouneously.
-  vector<CSTO> us;
-  EXPECT_ANY_THROW(BuildBasisSet(kv, &us));
-}
-TEST(TEST_BuildOptimizer, opt_basis) {
-
-  KeysValues kv(":", " ");
-  kv.Add("opt_basis", make_tuple(1, 1.2));
-  kv.Add("opt_basis", make_tuple(2, 3.4));
-  kv.Add("opt_basis", make_tuple(2, 1.4));
-  kv.Add("max_iter", 100);
-  kv.Add("eps", 0.00000001);
-
-  IOptimizer<CD>* opt;
-  BuildOptimizer(kv, &opt);
-  
-  EXPECT_TRUE(typeid(*opt) == typeid(OptimizerNewton<CD>));
-  EXPECT_EQ(100, opt->max_iter());
-  EXPECT_DOUBLE_EQ(0.00000001, opt->eps());
-}
-TEST(TEST_BuildOptimizer, opt_et_basis) {
-
-  KeysValues kv(":", " ");
-  kv.Add("opt_et_basis", make_tuple(2, 3, 1.4, 1.5));
-  kv.Add("max_iter", 99);
-  kv.Add("eps", 0.00000001);
-  
-  IOptimizer<CD>* opt;
-  BuildOptimizer(kv, &opt);
-
-  EXPECT_TRUE(typeid(*opt) == typeid(OptimizerRestricted<CD>));
-  EXPECT_EQ(99, opt->max_iter());
-  EXPECT_DOUBLE_EQ(0.00000001, opt->eps());  
-
-}
-TEST(BuildHAtomPI, Construct) {
-
-  KeysValues kv(":", " ");
-  kv.Add<string>("channel", "1s->kp");
-  kv.Add<string>("dipole", "length");
-  kv.Add<string>("basis_type", "STO");
-  kv.Add<double>("energy", 0.5);
-
-  HAtomPI<CSTO>* hatom;
-  BuildHAtomPI(kv, &hatom);
-
-  CSTO s1(1.1, 2, 1.2);
-  CSTO s2(2.1, 2, 1.3);
-  EXPECT_NEAR(-0.195858432000038, 
-	      hatom->OpEle(s1, s2).real(),
-	      +0.0000000000001);  
-  delete hatom;
-}
-TEST(BuildHAtomPI, OptTarget) {
-  KeysValues kv(":", " ");
-  kv.Add<string>("channel", "1s->kp");
-  kv.Add<string>("dipole", "length");
-  kv.Add<string>("basis_type", "STO");
-  kv.Add<double>("energy", 0.5);
-  kv.Add("opt_basis", make_tuple(1, CD(1.2, 0.0)));
-  kv.Add("opt_basis", make_tuple(2, CD(3.4, 0.0)));
-  kv.Add("opt_basis", make_tuple(2, CD(1.4, 0.0)));
-
-  IOptTarget* ptr = NULL;
-  VectorXcd zs;
-  BuildOptTarget(kv, &ptr, &zs);
-
-  if(ptr == NULL)
-    EXPECT_TRUE(false);
 }
 
 
