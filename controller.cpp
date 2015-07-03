@@ -9,7 +9,7 @@
 #include "driv.hpp"
 #include "restrict.hpp"
 #include "opt.hpp"
-#include "from_kv.hpp"
+#include "factory.hpp"
 
 namespace {
   using std::cout;
@@ -29,6 +29,7 @@ namespace opt_cbf_h {
 
     // -------- Member Field ---------
     KeysValues keys_values_;
+    boost::shared_ptr<IFactory> factory_;
     Timer      timer_;
     int debug_lvl_;
     boost::shared_ptr<IOptTarget> opt_target_;
@@ -40,7 +41,7 @@ namespace opt_cbf_h {
     Impl() : 
       keys_values_(":", " "), 
       timer_(),
-      debug_lvl_(0)
+      debug_lvl_(1)
     {}
 
     // ------- General support ------
@@ -62,7 +63,7 @@ namespace opt_cbf_h {
       keys_values_.Check<string>(NumberIs(1), "channel");
       keys_values_.Check<string>(NumberIs(1), "dipole");
       keys_values_.Check<double>(NumberIs(1), "energy");
-
+      
       keys_values_.Check<string>(NumberIs(1), "basis_type");
       keys_values_.Check<int,CD>(AnyNumber(), "opt_basis");
       keys_values_.Check<int,int,CD,CD>(AnyNumber(),
@@ -84,15 +85,16 @@ namespace opt_cbf_h {
     }
     void setOptTarget() {
 
-      IOptTarget* ptr = NULL;
-      BuildOptTarget(keys_values_, &ptr, &zs_);
+      IOptTarget* ptr(NULL);
+      ptr = factory_->OptTarget();
       opt_target_ = boost::shared_ptr<IOptTarget>(ptr);
+      factory_->SetZs(&zs_);
 
     }
     void setOptimizer() {
       
-      IOptimizer<CD>* ptr = NULL;
-      BuildOptimizer(keys_values_, &ptr);
+      IOptimizer<CD>* ptr(NULL);
+      ptr = factory_->Optimizer();
       optimizer_ = boost::shared_ptr<IOptimizer<CD> >(ptr);
 
     }
@@ -201,23 +203,34 @@ namespace opt_cbf_h {
 	throw runtime_error(msg);
       }
 
-      if(debug_lvl_ > 0) 
-	cout << "keys_values read data" << endl;
+      PrintInDebug("keys_values read data");
       keys_values_.Read(ifs);
       
-      if(debug_lvl_ > 0) 
-	cout << "check data type" << endl;
+      PrintInDebug("check data type");
       try {
 	this->convertData();
       } catch (exception& e) {
-	string msg = "failed to convertData. ";
+	string msg; SUB_LOCATION(msg);
+	msg += "failed to convertData. ";
 	msg += "Error message is: \n";
 	msg += e.what();
 	throw runtime_error(msg);
       }
+
+      PrintInDebug("create factory");
+      IFactory* ptr = CreateFactory(keys_values_);
+      factory_ = boost::shared_ptr<IFactory>(ptr);
       
       PrintInDebug("setting opt target");
-      this->setOptTarget();
+      try {
+	this->setOptTarget();
+      } catch(exception& e) {
+	string msg; SUB_LOCATION(msg);
+	msg += "\nfailed when setting opt targert\n";
+	msg += e.what();
+	throw runtime_error(msg);
+      }
+
       PrintInDebug("setting optimizer");
       this->setOptimizer();
           

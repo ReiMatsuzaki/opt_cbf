@@ -1,6 +1,6 @@
 l2func/utest
 utils/utest
-utest
+utest*
 opt_cbf
 *.o
 supply/*.out

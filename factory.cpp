@@ -156,8 +156,10 @@ namespace opt_cbf_h {
     string b_type = kv_->Get<string>("basis_type");
     IOptTarget* opt_target(NULL);
     if(b_type == "STO") {
-      vector<l2func::CSTO>* basis_set = this->STOSet();
-      HAtomPI<l2func::CSTO>* h_pi     = this->HAtomPiSTO();
+      vector<l2func::CSTO>* basis_set;
+      basis_set = this->STOSet();
+      HAtomPI<l2func::CSTO>* h_pi;
+      h_pi = this->HAtomPiSTO();
       opt_target = new OptCBF<l2func::CSTO>(*basis_set, h_pi);
     } else if(b_type == "GTO") {
       vector<l2func::CGTO>* basis_set = this->GTOSet();
@@ -169,6 +171,24 @@ namespace opt_cbf_h {
 
     return opt_target;
     
+  }
+  void IFactory::SetZs(VectorXcd* zs) const {
+    
+    string b_type = kv_->Get<string>("basis_type");
+    if(b_type == "STO") {
+      vector<l2func::CSTO>* us = this->STOSet();
+      *zs = VectorXcd::Zero(us->size());
+      for(int i = 0; i < us->size(); i++)
+	(*zs)[i] = (*us)[i].z();
+    } else if(b_type == "GTO") {
+      vector<l2func::CGTO>* us = this->GTOSet();
+      *zs = VectorXcd::Zero(us->size());
+      for(int i = 0; i < us->size(); i++)
+	(*zs)[i] = (*us)[i].z();
+    } else {
+      string msg; SUB_LOCATION(msg); throw InvalidBasis(msg, b_type);
+    }
+
   }
 
   // ============== Mono ================================
