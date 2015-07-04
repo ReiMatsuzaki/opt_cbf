@@ -23,6 +23,7 @@ namespace opt_cbf_h {
   public:
     // -------- Constructor ----------
     OptCBFController();
+    explicit OptCBFController(int _debug_lvl);
     ~OptCBFController();
     // -------- Method ---------------
     void Read(const char* filename);

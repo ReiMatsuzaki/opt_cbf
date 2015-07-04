@@ -22,36 +22,50 @@ void PrintExample() {
 }
 
 void PrintHelp() {
-  cout << "usage: opt_cbf input_file" << endl;
-  cout << "       opt_cbf option" << endl;
+  cout << "usage: opt_cbf input_file output_file [calculation option]" << endl;
+  cout << "       opt_cbf (print option)" << endl;
   cout << "read input_file and compute. " << endl;
   cout << "optimization of orbital exponents of CBF." << endl;
   cout << endl;
+  cout << "calculation option are" << endl;
+  cout << "-d, --debug           : switch to debugging mode" << endl;
+  cout << endl;
+  cout << "print option are" << endl;
   cout << "-h, --help            : print help" << endl;
-  cout << "-e, --example         : print example input file";
+  cout << "-e, --example         : print example input file" << endl;
   cout << endl;
 }
 
 int main(int argc, char* argv[]) {
+
+  if(argc == 1) {
+    PrintHelp();
+    return 0;
+  }
 
   if(argc == 2) {
     if(string(argv[1]) == "-h" || string(argv[1]) == "--help") 
       PrintHelp();
     else if(string(argv[1]) == "-e" || string(argv[1]) == "--example")
       PrintExample();
+    else
+      PrintHelp();
     return 0;
   }
 
-  if(argc != 3) {
-    PrintHelp();
-    return 0;
+  int debug_lvl(0);
+  if(argc >= 4) {
+    string option_str(argv[3]);
+    if(option_str == "-d")
+      debug_lvl = 1;
   }
 
-  OptCBFController controller;
+  OptCBFController controller(debug_lvl);
   char* in_file = argv[1];
   char* out_file= argv[2];
 
-  cout << "Reading file" << endl;
+  if(debug_lvl > 0)
+    cout << "Reading file" << endl;
   
   try {
     controller.Read(in_file);
@@ -62,7 +76,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  cout << "Computing" << endl;  
+  if(debug_lvl > 0)
+    cout << "Computing" << endl;  
 
   try {
     controller.Compute();
@@ -73,7 +88,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  cout << "Writing" << endl;  
+  if(debug_lvl > 0)
+    cout << "Writing" << endl;  
 
   try {
     controller.Write(out_file);

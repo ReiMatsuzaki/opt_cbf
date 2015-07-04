@@ -12,6 +12,7 @@
 #include "factory.hpp"
 
 namespace {
+
   using std::cout;
   using std::endl;
   using std::ifstream;
@@ -20,7 +21,6 @@ namespace {
   using namespace l2func;
 }
 namespace opt_cbf_h {
-
   class OptCBFController::Impl {
   public:
     // -------- type -----------------
@@ -38,10 +38,10 @@ namespace opt_cbf_h {
     OptRes<CD> opt_res_;
 
     // -------- Constructor ---------
-    Impl() : 
+    explicit Impl(int _debug_lvl) : 
       keys_values_(":", " "), 
       timer_(),
-      debug_lvl_(1)
+      debug_lvl_(_debug_lvl)
     {}
 
     // ------- General support ------
@@ -173,19 +173,23 @@ namespace opt_cbf_h {
 	}	
       }
       
-      if(num_et == 1 && num_opt == 0) {
+      if(num_opt == 0) {
 	typedef tuple<int,int,CD,CD> IICC;
-	IICC val = keys_values_.Get<IICC>("opt_et_basis");
-	int n   = get<0>(val);
-	int num = get<1>(val);
-	CD  x0  = opt_res_.z(0);
-	CD  r   = opt_res_.z(1) / x0;
-
-	ofs << "opt_et_basis: "
+	int num_et = keys_values_.Count("opt_et_basis");
+	int acc_num(0);
+	for(int i = 0; i < num_et; i++) {
+	  IICC val = keys_values_.Get<IICC>("opt_et_basis", i);
+	  int n   = get<0>(val);
+	  int num = get<1>(val);
+	  CD  x0  = opt_res_.z(acc_num);
+	  CD  r   = opt_res_.z(acc_num + 1) / x0;
+	  ofs << "opt_et_basis: "
 	    << n   << " " 
 	    << num << " "
 	    << x0 << " "
 	    << r << endl;
+	  acc_num += num;
+	}
       }
     }
     
@@ -301,7 +305,8 @@ namespace opt_cbf_h {
   };
     
   // =========== interface =============
-  OptCBFController::OptCBFController() : impl_(new Impl()) {}
+  OptCBFController::OptCBFController() : impl_(new Impl(0)) {}
+  OptCBFController::OptCBFController(int d) : impl_(new Impl(d)) {}
   OptCBFController::~OptCBFController() { 
     delete impl_; }
   void OptCBFController::Read(const char* fn) { 
@@ -310,3 +315,4 @@ namespace opt_cbf_h {
   void OptCBFController::Write(const char* fn) { 
     impl_->Write(fn); }
 }
+
