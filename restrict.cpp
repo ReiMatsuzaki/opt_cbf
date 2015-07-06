@@ -22,6 +22,22 @@ namespace opt_cbf_h {
   IRestriction<F>::~IRestriction() {}
 
   // ========== EvenTemp =================
+  /**
+   * represent eventempered sequence
+   * x_n = a r^n (n = 0, ..., N-1)
+   * df/da = sum_n (dx_n/da)(df/dx_n)
+   *       = sum_n r^n df/dx_n
+   * df/dr = sum_n (dx_n/dr)(df/dx_n)
+   *       = sum_n anr^{n-1} df/dx_n
+   *
+   * df/dada   = sum_nm dx_n/da dx_m/da df^2/(dx_n)(dx_m) 
+   *           = sum_nm r^n r^m f_nm
+   * d^2f/dadr = d_a sum_n anr^{n-1} f_n
+   *           = sum_n nr^{n-1}f_n + sum_nm anr^{n+m-1} f_nm
+   * d^2f/drdr = d_r sum_n anr^n{n-1} f_n
+   *           = an(n-1)r^{n-2} f_n
+   *             + n a r^{n-1} m a r^{m-1} f_nm
+   */      
   template<class F>
   EvenTemp<F>::EvenTemp() : num_(1), x0_(1.0), ratio_(1.0) {}
   template<class F>
@@ -34,14 +50,7 @@ namespace opt_cbf_h {
     ratio_ = xs(1) / xs(0);
 
   }
-  /**
-   * represent eventempered sequence
-   * x_n = a r^n (n = 0, ..., N-1)
-   * df/da = sum_n (dx_n/da)(df/dx_n)
-   *       = sum_n r^n df/dx_n
-   * df/dr = sum_n (dx_n/dr)(df/dx_n)
-   *       = sum_n anr^{n-1} df/dx_n
-   */      
+
   template<class F>
   Matrix<F, Dynamic, 1> EvenTemp<F>::Grad(const Matrix<F, Dynamic, 1>& dxs) const {
 
@@ -60,17 +69,6 @@ namespace opt_cbf_h {
     return grad;
 
   }
-  /**
-   * represent even-tempered sequence
-   * x_n = a r^n (n=0,...,N-1)
-   * df/dada   = sum_nm dx_n/da dx_m/da df^2/(dx_n)(dx_m) 
-   *           = sum_nm r^n r^m f_nm
-   * d^2f/dadr = d_a sum_n anr^{n-1} f_n
-   *           = sum_n nr^{n-1}f_n + sum_nm anr^{n+m-1} f_nm
-   * d^2f/drdr = d_r sum_n anr^n{n-1} f_n
-   *           = an(n-1)r^{n-2} f_n
-   *             + n a r^{n-1} m a r^{m-1} f_nm
-   */
   template<class F>
   Matrix<F, Dynamic, Dynamic> EvenTemp<F>::Hess
   (const Matrix<F, Dynamic, 1>&       dxs, 
