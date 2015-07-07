@@ -88,7 +88,7 @@ namespace opt_cbf_h {
       IOptTarget* ptr(NULL);
       ptr = factory_->OptTarget();
       opt_target_ = boost::shared_ptr<IOptTarget>(ptr);
-      factory_->SetZs(&zs_);
+      factory_->GetZs(&zs_);
 
     }
     void setOptimizer() {

@@ -1,0 +1,10 @@
+channel: 1s->kp
+dipole: length
+energy: 0.5
+basis_type: STO
+opt_et_basis: 2 2 (0.9928,-0.0037) (0.996,-0.416)
+opt_et_basis: 2 2g (0.6708,-0.9126) (0.879,-0.418)
+max_iter: 500
+eps: 0.00001
+
+

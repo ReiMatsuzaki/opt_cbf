@@ -61,7 +61,14 @@ namespace opt_cbf_h {
     HAtomPI<l2func::CSTO>* HAtomPiSTO() const;
     HAtomPI<l2func::CGTO>* HAtomPiGTO() const;
     IOptTarget* OptTarget() const; 
-    void SetZs(VectorXcd* zs) const;
+    /**
+     * getter for orbital exponents of basis function
+     */
+    void GetZs(VectorXcd* zs) const;
+    /**
+     * getter for the number of basis
+     */
+    int BasisSize() const;
     virtual IOptimizer<CD>* Optimizer() const = 0;
   };
 

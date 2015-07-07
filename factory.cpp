@@ -23,7 +23,8 @@ namespace opt_cbf_h {
     *r   = get<3>(val);
 
   }
-  template<class Prim> void checkBasis(const KeysValues& kv) {
+  template<class Prim> 
+  void checkBasis(const KeysValues& kv) {
     string basis_type;
     try {
       basis_type = kv.Get<string>("basis_type");
@@ -102,7 +103,8 @@ namespace opt_cbf_h {
   IFactory::~IFactory() {
     delete kv_;
   }
-  template<class Prim> HAtomPI<Prim>* hAtomPI(const KeysValues& kv) {
+  template<class Prim> HAtomPI<Prim>* 
+  hAtomPI(const KeysValues& kv) {
 
     checkBasis<Prim>(kv);
 
@@ -172,7 +174,7 @@ namespace opt_cbf_h {
     return opt_target;
     
   }
-  void IFactory::SetZs(VectorXcd* zs) const {
+  void IFactory::GetZs(VectorXcd* zs) const {
     
     string b_type = kv_->Get<string>("basis_type");
     if(b_type == "STO") {
@@ -190,12 +192,20 @@ namespace opt_cbf_h {
     }
 
   }
+  int IFactory::BasisSize() const {
+    
+    VectorXcd zs;
+    this->GetZs(&zs);
+
+    return zs.rows();
+  }
 
   // ============== Mono ================================
   FactoryMono::FactoryMono(const KeysValues& kv) : IFactory(kv) {}
   FactoryMono::~FactoryMono() {}
 
-  template<class Prim> vector<Prim>* monoBasisSet(const KeysValues& kv) {
+  template<class Prim> 
+  vector<Prim>* monoBasisSet(const KeysValues& kv) {
     
     checkBasis<Prim>(kv);
 

@@ -9,4 +9,5 @@ l2func/l2.a
 local.mk
 supply/.ipynb_checkpoints/
 utils/build/
+*.dtps
 
