@@ -1,6 +1,7 @@
 from cmath import rect
 import time
-from collect_opt_cbf import *
+sys.path.append("~/src/git/opt_cbf/script")
+from opt_cbf import *
 
 def create_z_list():
     x_list = [ 0.001 * 2.0 ** n for n  in range(10)]
