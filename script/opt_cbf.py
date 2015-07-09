@@ -5,6 +5,11 @@ import re
 # 
 # ===================================
 #  Utilities
+
+# take_uniq extract non equal elements from list xs
+# the equality is calculated from eq.
+# take_uniq_one is one process for take_uniq
+# ([a], [a]) -> (a,a->bool)
 def take_uniq_one(xs_ys, eq) :
     (xs, ys) = xs_ys
     if(ys == None or len(ys) == 0):
@@ -15,9 +20,11 @@ def take_uniq_one(xs_ys, eq) :
     rest = [y for y in ys if not(eq(y, y0))]
     return take_uniq_one((xs + [y0], rest), eq)
 
+# [a],(a,a->bool)->[a]
 def take_uniq(xs, eq): 
     return take_uniq_one(([], xs), eq)
 
+# [bool]->bool
 def take_and(xs):
     return reduce(lambda a,b : a and b, xs)
 
@@ -35,38 +42,35 @@ def cast_to_complex(line):
     return z
 
 # string->bool
-def cast_to_bool(str):
-    str2 = str.strip().lower()
-    if str2 == "true":
+def cast_to_bool(s):
+    s1 = s.strip().lower()
+    if s1 == "true":
         return True
-    elif str2 == "false":
+    elif s1 == "false":
         return False
     else:
         return None
 
-# [string->?]->(string->[?])
+# string,[string->?]->[?]
 def cast_array_to_array(s0, fs):
     ss = s0.split(" ")
     return [f(s) for (f,s) in zip(fs, ss)]
 
+# [string->?] -> (string->[?])
 def cast_array(fs):
     return lambda s: cast_array_to_array(s, fs)
-
-# string -> (complex,complex)
-def cast_iicc_to_cc(str):
-    return tuple(map(cast_to_complex, str.strip().split(" ")[2:4]))
 
 
 # 
 # ==================================
 # [string],string,(string->?)->[?]
-# (str_keys_values) find values whose key is /key/
-def values_for_key(str_keys_values, key, cast=None):
+# from kvs find values whose key is k
+def values_for_key(kvs, k, cast=None):
 
     vals = [line.split(":")[1].strip()
             for line 
-            in str_keys_values
-            if line.count(key)]
+            in kvs
+            if line.count(k)]
     if(cast == None):
         return vals
     else:
@@ -82,27 +86,29 @@ def values_for_key(str_keys_values, key, cast=None):
 #  Check validity of resutls
 # from [string] created by readlines method, return is 
 # valid output of opt_cbf program
-#
-def ok_conv(strs_out):
-    return values_for_key(strs_out,
+# [string] -> bool
+def ok_conv(ss):
+    return values_for_key(ss,
                           "convergence",
                           cast_to_bool)[0]
 
-def ok_coef(strs_out, eps):
-    cs = values_for_key(strs_out, "coef", cast_to_complex)
+def ok_coef(ss, eps):
+    cs = values_for_key(ss, "coef", cast_to_complex)
     c0 = min([abs(c) for c in cs])
     return c0 > eps
 
-def ok_et(strs_out, eps):
-    zr_list = values_for_key(strs_out, "opt_et_basis",
-                                cast_iicc_to_cc)
+def ok_et(ss, eps):
+    caster = [int,int,cast_to_complex, cast_to_complex]
+    iicc_list = values_for_key(ss, "opt_et_basis", cast)
+                               
+    zr_list = [(iicc[2], iicc[3]) for iicc in iicc_list]
     ok_zeta = [z.real > 0 and z.imag < 0 and r.imag < 0
                for (z,r) in zr_list]
     ok_ratio = [ abs(r-1) > eps for (z,r) in zr_list]
     return take_and(ok_zeta + ok_ratio)
 
-def ok_opt_basis(strs_out, eps):
-    zs = zetas_opt_cbf(strs_out);
+def ok_opt_basis(ss, eps):
+    zs = zetas_opt_cbf(ss);
     
     ok_dim = [z.real > 0 and z.imag < 0 for z in zs]
 
@@ -187,5 +193,6 @@ def near_opt_cbf(eps):
         return (dmin < eps)
     return __near
     
+# [complex], double -> [complex]
 def uniq_opt_cbf(zs_list, eps):
     return take_uniq(zs_list, near_opt_cbf(eps))
