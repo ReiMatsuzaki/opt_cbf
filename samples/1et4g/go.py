@@ -26,28 +26,24 @@ r_list = create_r_list()
 
 t0_calc = time.clock()
 zz_array = []
-for i in range(len(z_list)):
-    z0 = z_list[i]
-    for j in range(i):
-        z1 = z_list[j]
-        for r0 in r_list:
-            for r1 in r_list:
-                create_in_multi_et([z0,z1], [r0,r1], str_base, 'tmp.in')
-                os.system(opt_cbf)
-                out_file = open('tmp.out')
-                strs_out = out_file.readlines()
-                out_file.close()
-                if(ok_conv(strs_out) and 
-                   ok_coef(strs_out, 0.001) and 
-                   ok_et_basis(strs_out, 0.001)):
-                    zz_array.append(data_et(strs_out))
+for z in z_list:
+    for r in r_list:
+        create_in_et(z, r, str_base, 'tmp.in')
+        os.system(opt_cbf)
+        out_file = open('tmp.out')
+        strs_out = out_file.readlines()
+        out_file.close()
+        if(ok_conv(strs_out) and 
+           ok_coef(strs_out, 0.001) and 
+           ok_et_basis(strs_out, 0.001)):
+            zz_array.append( data_et(strs_out)[0] )
 t1_calc = time.clock()
 
 t0_uniq = time.clock()
 zz_uniq  = take_uniq(zz_array, near_et(0.001))
 t1_uniq = time.clock()
 
-print "number:" + str(len(z_list)**2 * len(r_list)**2)
+print "number:" + str(len(z_list) * len(r_list))
 print "calc_time:" + str(t1_calc-t0_calc)
 print "uniq_time:" + str(t1_uniq-t0_uniq)
 

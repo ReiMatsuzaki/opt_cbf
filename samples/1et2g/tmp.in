@@ -2,7 +2,7 @@ channel: 1s->kp
 dipole: length
 energy: 0.5
 basis_type: GTO
-opt_et_basis: 2 2 (__xr__,__xi__) (__rr__,__ri__)
+opt_et_basis: 2 2 (0.001,-0.512) (0.661865231751,-0.227891235022)
 max_iter: 50
 eps: 0.00001
 

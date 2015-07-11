@@ -1,0 +1,11 @@
+channel: 1s->kp
+dipole: length
+energy: 0.5
+basis_type: GTO
+opt_et_basis: 2 4 (__xr__,__xi__) (__rr__,__ri__)
+max_iter: 50
+eps: 0.00001
+write_hess: true hess.out
+write_psi:  true psi.out
+
+

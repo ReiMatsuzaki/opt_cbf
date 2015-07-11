@@ -1,0 +1,9 @@
+channel: 1s->kp
+dipole: length
+energy: 0.5
+basis_type: GTO
+opt_et_basis: 2 2 (0.001,-0.002) (1.28399578488,-0.203358856214)
+opt_et_basis: 2 2 (0.001,-0.001) (1.0519380458,-0.321599670101)
+eps: 0.00001
+
+

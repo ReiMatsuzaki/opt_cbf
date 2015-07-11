@@ -1,9 +1,13 @@
 from cmath import rect
 import time
 import sys
+import os
 
-sys.path.append('/home/users/vh5/source/opt_cbf/script')
+sys.path.append(os.environ["OPT_CBF"] + "/script")
 from opt_cbf import *
+
+opt_cbf  = os.environ["OPT_CBF"] + "/opt_cbf tmp.in tmp.out"
+print opt_cbf
 
 def create_z_list():
     x_list = [ 0.001 * 2.0 ** n for n  in range(10)]
@@ -17,15 +21,15 @@ def create_r_list():
 f = open("base.in", "r")
 str_base =  f.read()
 f.close()
-z_list = create_z_list()
-r_list = create_r_list()
+z_list = create_z_list()[0:10]
+r_list = create_r_list()[0:10]
 
 t0_calc = time.clock()
 zz_array = []
 for z in z_list:
     for r in r_list:
         create_in_et(z, r, str_base, 'tmp.in')
-        os.system('${HOME}/source/opt_cbf/opt_cbf tmp.in tmp.out')
+        os.system(opt_cbf)
         out_file = open('tmp.out')
         strs_out = out_file.readlines()
         out_file.close()
