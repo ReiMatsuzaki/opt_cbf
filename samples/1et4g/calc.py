@@ -1,6 +1,8 @@
 import sys
 import os
 import os.path
+import numpy as np
+import matplotlib.pyplot as plt
 
 opt_cbf_path = os.environ["OPT_CBF"] 
 script_path = opt_cbf_path + "/script"
@@ -30,16 +32,35 @@ os.chdir(base_dir)
 
 idx = 0
 for line in lines:
-    d = [l.strip() for l in line[1:-2].split(",")]
-    z=complex(d[2])
-    r=complex(d[3])
+
+    print idx
+
+    # directory
     dir = str(idx)
     if not os.path.exists(dir):
         os.mkdir(dir) 
     os.chdir(dir)
+
+    # extract input data
+    d = [l.strip() for l in line[1:-2].split(",")]
+    z=complex(d[2])
+    r=complex(d[3])
+
+    # create input file and calculation
     create_in_et(z, r, str_base, 'opt_cbf.in')
-    print idx
     os.system(opt_cbf_path +  '/opt_cbf opt_cbf.in opt_cbf.out')
+
+    # load wave functions data and plot it as 
+    psi_data = np.loadtxt('psi.out', delimiter=',')
+    r  = psi_data[:,0] 
+    re = psi_data[:,1]
+    im = psi_data[:,2]
+    plt.plot(r, re)
+    plt.plot(r, im)
+    plt.savefig('psi.eps')
+    plt.clf()   # clear figure
+
+    # end
     os.chdir('..')
     idx += 1
 
