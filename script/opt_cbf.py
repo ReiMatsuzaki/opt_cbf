@@ -2,9 +2,7 @@ import time
 import os
 import re
 
-# 
-# ===================================
-#  Utilities
+# ====== Utilities ==================
 
 # take_uniq extract non equal elements from list xs
 # the equality is calculated from eq.
@@ -29,10 +27,8 @@ def take_and(xs):
     return reduce(lambda a,b : a and b, xs)
 
 
-#
-# ==================================
-#  cast
-#
+# ======= Cast =======================
+
 # string->complex
 def cast_to_complex(line):
     m = re.search('\((.*), *(.*)\)', line)
@@ -60,9 +56,6 @@ def cast_array_to_array(s0, fs):
 def cast_array(fs):
     return lambda s: cast_array_to_array(s, fs)
 
-
-# 
-# ==================================
 # [string],string,(string->?)->[?]
 # from kvs find values whose key is k
 def values_for_key(kvs, k, cast=None):
@@ -81,8 +74,8 @@ def values_for_key(kvs, k, cast=None):
 
         return [f(v) for v in vals]
 
-#
-# ==================================
+
+# ======== Checker ======================
 #  Check validity of resutls
 # from [string] created by readlines method, return is 
 # valid output of opt_cbf program
@@ -97,15 +90,17 @@ def ok_coef(ss, eps):
     c0 = min([abs(c) for c in cs])
     return c0 > eps
 
-def ok_et(ss, eps):
-    caster = [int,int,cast_to_complex, cast_to_complex]
-    iicc_list = values_for_key(ss, "opt_et_basis", cast)
-                               
-    zr_list = [(iicc[2], iicc[3]) for iicc in iicc_list]
-    ok_zeta = [z.real > 0 and z.imag < 0 and r.imag < 0
-               for (z,r) in zr_list]
-    ok_ratio = [ abs(r-1) > eps for (z,r) in zr_list]
-    return take_and(ok_zeta + ok_ratio)
+def ok_et_basis(ss, eps):
+    data_list = data_et(ss)
+
+    zs = [ z * r**k for (n,num,z,r) in data_list for k in range(num) ]
+    ok_zeta = [ z.imag < 0 and z.real > 0 for z in zs]
+
+    ok_ratio = [ r.imag < 0 for (n,num,z,r) in data_list]
+                 
+    ok_ratio2 = [ abs(r-1) > eps for (n,num,z,r) in data_list]
+
+    return take_and(ok_zeta + ok_ratio + ok_ratio2)
 
 def ok_opt_basis(ss, eps):
     zs = zetas_opt_cbf(ss);
@@ -119,10 +114,9 @@ def ok_opt_basis(ss, eps):
 
     return take_and(ok_dim + ok_dist)
 
-#
-# ==================================
-# ET-Basis optimization
-#
+
+# ========== ET-Basis ==============
+# to be rmeoved
 def search(str_base, z_list, r_list):
     print "NumSearch: " + str(len(z_list) * len(r_list) )
     t0 = time.clock()
@@ -142,6 +136,7 @@ def search(str_base, z_list, r_list):
     print "Time: " + str(t1-t0)
     return zz_array
 
+# to be removed
 def near (a, b, eps):
     f = lambda x,y: abs(x,y)<eps
     take_and([ f(a0,b0) and f(ar,br) for ((a0,ar),(b0,br)) in zip(a,b)])
@@ -157,9 +152,36 @@ def create_in_et(z, r, str_base_file, file_name) :
     f.write(l)
     f.close()
 
+def create_in_multi_et(zs, rs, str_base_file, file_name):
+    l = str_base_file
+    num = len(zs)
+    for i in range(num):
+        l = l.replace("__x%sr__"%i, str(zs[i].real))
+        l = l.replace("__x%si__"%i, str(zs[i].imag))
+        l = l.replace("__r%sr__"%i, str(rs[i].real))
+        l = l.replace("__r%si__"%i, str(rs[i].imag))
 
-#
-# ==================================
+    f = open(file_name, "w")
+    f.write(l)
+    f.close()
+        
+
+def near_et(eps):
+
+    def __near__(x,y):
+        (a,b,z0,r0) = x
+        (c,d,z1,r1) = y
+        return abs(z0-z1) < eps and abs(r0-r1) < eps
+    return __near__
+
+# [string]->[(int,int,complex, complex)]
+def data_et(ss):
+    caster = [int,int,cast_to_complex, cast_to_complex]
+    iicc_list = values_for_key(ss, "opt_et_basis", caster)
+    return iicc_list
+
+
+# ========== Opt-Basis =============
 # Independenet optimization
 #
 def create_in_opt_cbf(zs, str_base_file, file_name):
@@ -185,6 +207,7 @@ def zetas_opt_cbf(ss_kv):
 
 # double -> ([complex], [complex] -> bool)
 def near_opt_cbf(eps):
+
     def __near(xs, ys):
         f = lambda x: (x.real, x.imag)
         xs0 = sorted(xs, key=f)

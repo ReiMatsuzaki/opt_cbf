@@ -1,0 +1,10 @@
+channel: 1s->kp
+dipole: length
+energy: 0.5
+basis_type: GTO
+opt_basis: 2 (__z0r__,__z0i__)
+opt_basis: 2 (__z1r__,__z1i__)
+max_iter: 50
+eps: 0.00001
+
+
