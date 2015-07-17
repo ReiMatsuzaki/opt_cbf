@@ -135,7 +135,12 @@ namespace opt_cbf_h {
       mu_phi = hatom.DipoleInitLength(l1);
     else if (di == "velocity")
       mu_phi = hatom.DipoleInitVelocity(l1);
-    else  {
+    else if (di == "GTO") {
+      string msg; SUB_LOCATION(msg); 
+      throw InvalidDriv(msg, ch, di);
+      l2func::LinearComb<l2func::CGTO> driven_term;
+      driven_term.Add(1.0, l2func::CGTO(2, 1.0));
+    } else {
       string msg; SUB_LOCATION(msg); 
       throw InvalidDriv(msg, ch, di);
     }
