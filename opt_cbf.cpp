@@ -256,7 +256,7 @@ namespace opt_cbf_h {
       for(int i = 0; i < num_grid; i++) {
 
 	double r = i * dr;
-	CD     v = AtX(r, psi);
+	CD     v = psi.at(r);
 	ofs << r << ", " << v.real();
 	ofs <<      ", " << v.imag() << endl;
 	

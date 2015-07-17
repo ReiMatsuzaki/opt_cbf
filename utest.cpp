@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <gtest/gtest.h>
 #include <Eigen/Core>
 #include <l2func.hpp>
@@ -144,15 +145,19 @@ TEST(LinearAlgebra, a_Aij_a) {
 }
 TEST(LinearAlgebra, real_sto) {
 
+  typedef LinearComb<RSTO> B;
   int num = 3;
-  vector<RSTO> us(num);
-  vector<RSTO> d_us(num);
-  vector<RSTO> dd_us(num);
+  vector<B> us;
+  vector<B> d_us;
+  vector<B> dd_us;
   for(int i = 0; i < num; i++) {
     double z = 0.1 + i * 0.5;
-    us[i]   = RSTO(          1.0, 2, z);
-    d_us[i] = DBasis<1,RSTO>(1.0, 2, z);
-    dd_us[i]= DBasis<2,RSTO>(1.0, 2, z);
+    RSTO ui = RSTO(2, z, Normalized);
+    us.push_back( ui);
+    LinearComb<RSTO> d_ui =  D1Normalized(ui);
+    LinearComb<RSTO> dd_ui = D2Normalized(ui);
+    d_us.push_back(d_ui);
+    dd_us.push_back(dd_ui);
   }
   RSTO driv(1.1, 1, 1.0);
 
@@ -160,40 +165,42 @@ TEST(LinearAlgebra, real_sto) {
   MatrixXd A10(num, num);
   MatrixXd A20(num, num);
   MatrixXd A11(num, num);
-  MatrixXd A_d0(num, num);
-  MatrixXd A_d1(num, num);
-  MatrixXd A_d00(num, num);
-  MatrixXd A_d10(num, num);
+  MatrixXd A_d0 = MatrixXd::Zero(num, num);
+  MatrixXd A_d1 = MatrixXd::Zero(num, num);
+  //  MatrixXd A_d00(num, num);
+  //  MatrixXd A_d10(num, num);
   VectorXd m(num);
   
   for(int i = 0; i < num; i++) {
 
-    m(i, 0) = CIP(us[i], driv);
+    m(i) = CIP(us[i], driv);
     
     for(int j = 0; j < num; j++) {
 
       A(i, j)   = CIP(us[i],    us[j]);
       A10(i, j) = CIP(d_us[i],  us[j]);
-      A20(i, j) = CIP(d_us[i], d_us[j]);
+      A20(i, j) = CIP(dd_us[i], us[j]);
       A11(i, j) = CIP(d_us[i], d_us[j]);
     }
   }
 
   for(int i = 0; i < num; i++) {
     if(i ==0)
-      A_d0(i, 0) = 2 * CIP(d_us[0], us[0]);
+      A_d0(0, 0) = 2 * CIP(d_us[0], us[0]);
     else 
       A_d0(0, i) = A_d0(i, 0) = CIP(d_us[0], us[i]);
 
+  
     if(i == 1)
       A_d1(1, 1) = 2 * CIP(d_us[1], us[1]);
     else 
-      A_d1(1, i) = A_d1(i, 1) = CIP(d_us[i], us[1]);
-
+      A_d1(1, i) = A_d1(i, 1) = CIP(d_us[1], us[i]);
+  /*
     if(i == 0)
       A_d00(0, 0) = 2 * (CIP(d_us[0], d_us[0]) + CIP(us[0], dd_us[0]));
     else
       A_d00(i, 0) = A_d00(0, i) = 2 * CIP(dd_us[0], us[i]);
+    */
   }
 
   /*
@@ -207,8 +214,9 @@ TEST(LinearAlgebra, real_sto) {
   Calc_a_Aj_b(m, A10, m, &aAia);
   double expe =  m.transpose() * A_d0 * m;
   double calc = aAia(0, 0);
-  EXPECT_NEAR(0.0, (calc - expe)/expe, 0.001);
-  EXPECT_NEAR( m.transpose() * A_d1 * m, aAia(1, 0), 0.0001);
+  //EXPECT_NEAR(0.0, (calc - expe)/expe, 0.001);
+  EXPECT_DOUBLE_EQ(expe, calc);
+  EXPECT_NEAR( m.transpose() * A_d1 * m, aAia(1), 0.0001);
 
   /*
   MatrixXd a_Aij_a;

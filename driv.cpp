@@ -19,13 +19,17 @@ namespace opt_cbf_h {
     int l_;   // angular quantum number;
     F   z_;   // charge;
     F   ene_; // energy;
+    Op<Basis> op_; // means H-E operator
     STOs driv_;
     
   public:
     // ------ constructors ---
     Impl(int _l, F _z, F _ene, STOs _driv ) :
       l_(_l), z_(_z), ene_(_ene), driv_(_driv) {
+
       IsPrimitive<Basis>();
+      HLikeAtom<F> h_like_atom(1, _z, _l);
+      op_ = h_like_atom.template HMinusEnergy<Basis>(_ene);
       
     }
     ~Impl() { }
@@ -33,13 +37,15 @@ namespace opt_cbf_h {
     // ------ matrix elements ------
     F OpEle(const Basis& a, const Basis& b) {
 
+      /*
       F acc(0);
       acc += -0.5 * CIP(a, Op(OpDDr2<Basis>(), b));
       F ll = l_ * (l_ + 1) * 0.5;
       acc += ll    * CIP(a, Op(OpRm<Basis>(-2), b));
       acc += -z_   * CIP(a, Op(OpRm<Basis>(-1), b));
       acc += -ene_ * CIP(a, b);
-
+      */
+      F acc = CIP(a, op_(b));
       return acc;
     }
     F DrivEle(const Basis& a) {

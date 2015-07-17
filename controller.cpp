@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
+#include <boost/bind.hpp>
 #include <Eigen/Core>
 #include <keys_values.hpp>
 #include <timer.hpp>
