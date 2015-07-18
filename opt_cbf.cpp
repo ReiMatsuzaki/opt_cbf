@@ -52,8 +52,140 @@ namespace opt_cbf_h {
     *h = tmp1 + tmp2 + tmp3 + tmp4 + tmp5 + tmp6;
   }
 
-  template<class Prim>
+  template<class BasisPrim, class DrivPrim>
   class OptCBF<Prim>::Impl {
+  private:
+    // ----------- type -------------------
+    typedef typename PrimBasis::Field F;
+    typedef typename vector<Prim>::const_iterator IT;
+    typedef LinearComb<PrimBasis> BasisLC;
+    typedef LinearComb<DrivPrim>  DrivLC;
+    typedef MatrixXcd M;
+    typedef VectorXcd V;
+  public:
+    // ----------- Member Field ------------
+    // inputs
+    vector<BasisPrim> basis_set_;
+    vector<BasisLC>   d_basis_set_;
+    vector<BasisLC>   dd_basis_set_;
+    Op<BasisPrim>     op_l_;
+    DrivLC            driven_term_;
+    // outputs
+    VectorXcd coef_;
+    
+    // ----------- Constructors ------------
+    Impl(const vector<BasisPrim>& us, 
+	 const HLikeAtom<CD>& h_final,
+	 const DrivLC& _driv) {
+      basis_set_ = us;
+      d_basis_set_.resize(us.size());
+      dd_basis_set_.resize(us.size());
+
+      VectorXcd zs;
+      this->getZeta(&zs);
+      this->updateZeta(zs);
+
+    }
+    // ---------- minor method -----------
+    void getZeta(V* zs) {
+      int num = basis_set_.size();
+      zs->resize(num);
+      for(int i = 0; i < num; i++) {
+	(*zs)(i) = basis_set_[i].z()
+      }
+    }
+    void updateZeta(const Vd& zs) {
+
+      int num = zs.rows();
+      for(int i = 0; i < num; i++) {
+	CD z = zs[i];
+	Prim ui(basis_set_[i].n(), z, Normalized);
+	basis_set_[i]   = ui;
+	d_basis_set_[i] = D1Normalized(ui);
+	dd_basis_set_[i]= D2Normalized(ui);
+      }
+      
+    }
+    void computeMatrix(M* D00, M* D10, M* D20, M* D11) {
+
+      int num = basis_set_.size();
+
+      *D00 = MatrixXcd::Zero(num, num);
+      *D10 = MatrixXcd::Zero(num, num);
+      *D11 = MatrixXcd::Zero(num, num);
+      *D20 = MatrixXcd::Zero(num, num);
+
+      for(int i = 0; i < num; i++) {
+	CD d_00_ii = h_atom_pi_->OpEle(basis_set_[i], 
+				    basis_set_[i]);
+	CD d_11_ii = h_atom_pi_->OpEle(d_basis_set_[i],
+				       d_basis_set_[i]);
+	(*D00)(i, i) = d_00_ii;
+	(*D11)(i, i) = d_11_ii;
+	for(int j = i+1; j < num; j++) {
+	  CD d_00_ij = h_atom_pi_->OpEle(basis_set_[i], 
+					 basis_set_[j]);
+	  CD d_11_ij = h_atom_pi_->OpEle(d_basis_set_[i], 
+					 d_basis_set_[j]);
+	  (*D00)(i, j) = d_00_ij;
+	  (*D00)(j, i) = d_00_ij;
+	  (*D11)(i, j) = d_11_ij;
+	  (*D11)(j, i) = d_11_ij;
+	}
+      }
+
+      for(int i = 0; i < num; i++)
+	for(int j = 0; j < num; j++) {
+	  (*D10)(i,j) = h_atom_pi_->OpEle(d_basis_set_[i],  
+					  basis_set_[j]);
+	  (*D20)(i,j) = h_atom_pi_->OpEle(dd_basis_set_[i], 
+					  basis_set_[j]);
+	}
+
+    }
+    void computeVector(V* m0, V* m1, V* m2) {
+
+      int num = basis_set_.size();
+      
+      *m0 = VectorXcd::Zero(num_all);
+      *m1 = VectorXcd::Zero(num_opt);
+      *m2 = VectorXcd::Zero(num_opt);
+
+      for(int i = 0; i < num; i++)
+	(*m0)(i, 0) = h_atom_pi_->DrivEle(basis_set_[i]);
+      for(int i = 0; i < num; i++) {
+	(*m1)(i, 0) = h_atom_pi_->DrivEle(d_basis_set_[i]);
+	(*m2)(i, 0) = h_atom_pi_->DrivEle(dd_basis_set_[i]);
+      }
+
+    }      
+    
+    // ---------- called from interface -------
+    void Compute(const V& zs, CD* a, V* g, M* h) {
+
+      // update orbital exponents (zs)
+      this->updateZeta(zs);
+
+      // prepare basic matrix and vector
+      MatrixXcd D00, D10, D20, D11;
+      VectorXcd m0, m1, m2;
+      this->computeMatrix(&D00, &D10, &D20, &D11);
+      this->computeVector(&m0, &m1, &m2);
+
+      // compute coefficient
+      coef_ = D00.fullPivLu().solve(m0);
+
+      // compute gradient and hessian
+      computeAlphaGradHess(coef_, 
+			   D00, D10, D20, D11, m0, m1, m2, 
+			   a, g, h);
+
+    }
+	 
+  };
+
+  template<class Prim>
+  class OptCBF<Prim>::ImplOld {
   private:
     // ------ type --------
     typedef typename Prim::Field F;
@@ -74,7 +206,7 @@ namespace opt_cbf_h {
     VectorXcd     coef_;
 
     // ------- constructor ---------
-    Impl(const vector<Prim>& _opt_basis_set,
+    ImplOld(const vector<Prim>& _opt_basis_set,
 	 HAtomPI<Prim>* _h_atom_pi) :
       basis_set_(_opt_basis_set),
       it_fix_begin_(basis_set_.end()),
@@ -84,7 +216,7 @@ namespace opt_cbf_h {
 
       this->init();
     }
-    Impl(const vector<Prim>& _opt_basis_set,
+    ImplOld(const vector<Prim>& _opt_basis_set,
 	 const vector<Prim>& _fix_basis_set,
 	 HAtomPI<Prim>*  _h_atom_pi) :
       h_atom_pi_(_h_atom_pi),
