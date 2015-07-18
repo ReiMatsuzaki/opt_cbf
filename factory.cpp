@@ -1,7 +1,7 @@
 #include <keys_values.hpp>
 #include <l2func.hpp>
-#include "factory.hpp"
 #include "driv.hpp"
+#include "factory.hpp"
 #include "restrict.hpp"
 #include "opt.hpp"
 #include "opt_cbf.hpp"
@@ -139,7 +139,7 @@ namespace opt_cbf_h {
       string msg; SUB_LOCATION(msg); 
       throw InvalidDriv(msg, ch, di);
       l2func::LinearComb<l2func::CGTO> driven_term;
-      driven_term.Add(1.0, l2func::CGTO(2, 1.0));
+      driven_term.Add(1.0, l2func::CGTO(1.0, 2, 1.0));
     } else {
       string msg; SUB_LOCATION(msg); 
       throw InvalidDriv(msg, ch, di);

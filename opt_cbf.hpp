@@ -16,10 +16,14 @@ namespace {
   using std::endl;
 }
 
-namespace opt_cbf_h {
+// ------- forward declaration --------
+namespace l2func {
+  template<class F> class HLikeAtom;
+  template<class Prim> class LinearComb;
+}
 
-  // ------- forward declaration --------
-  template<class Prim> class HAtomPI;
+
+namespace opt_cbf_h {
 
   // ------- type -----------------------
   typedef const MatrixXcd cM;
@@ -37,42 +41,36 @@ namespace opt_cbf_h {
   public:
     virtual ~IOptTarget() {} ;
     virtual void Compute(const VectorXcd& zs, CD* a, VectorXcd* g, MatrixXcd* h) = 0;
-    virtual void Display() = 0;
-    virtual void WritePsi(const string&,double,double)=0;
-    virtual VectorXcd GetCoefs() const = 0;
+    //    virtual void Display() = 0;
+    //virtual void WritePsi(const string&,double,double)=0;
+    //virtual VectorXcd GetCoefs() const = 0;
   };  
 
   // ====== calculator of alpha, gradient and hessian ==
-  template<class Prim>
+  template<class BasisPrim, class DrivPrim>
   class OptCBF : public IOptTarget {
   private:
     // ------ Member Field -------
     class Impl;
     Impl* impl_;
+    class ImplOld;
 
     // ------ uncopyable ---------
     OptCBF(const OptCBF&);
     
   public:
     // ------ constructor --------
-    OptCBF(const vector<Prim>& _opt_basis_set,
-	   HAtomPI<Prim>* _h_atom_pi);
-    OptCBF(const vector<Prim>& _opt_basis_set,
-	   const vector<Prim>& _fix_basis_set,
-	   HAtomPI<Prim>* _h_atom_pi);
+    OptCBF(const vector<BasisPrim>& _opt_basis_set,
+	   const l2func::HLikeAtom<CD>& h_final,
+	   const l2func::LinearComb<DrivPrim>& _driv, 
+	   CD _energy);
     ~OptCBF();
 
     // ------ method -----------
     // calculation of gradient and hessian from orbital exp.
     // this method will be used for optimization.
     void Compute(cV& zs, CD* a, VectorXcd* g, MatrixXcd* h);
-    void computeMatrix (MatrixXcd* D00, MatrixXcd* D10,
-			MatrixXcd* D20, MatrixXcd* D11);    
-    void computeVector (VectorXcd* m0, VectorXcd* m1, 
-			VectorXcd* m2);
-    void Display();
-    void WritePsi(const string&, double rmax, double dr);
-    VectorXcd GetCoefs() const;
+    l2func::LinearComb<BasisPrim> GetWaveFunction() const;
     
   };
 }

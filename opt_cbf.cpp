@@ -53,12 +53,12 @@ namespace opt_cbf_h {
   }
 
   template<class BasisPrim, class DrivPrim>
-  class OptCBF<Prim>::Impl {
+  class OptCBF<BasisPrim, DrivPrim>::Impl {
   private:
     // ----------- type -------------------
-    typedef typename PrimBasis::Field F;
-    typedef typename vector<Prim>::const_iterator IT;
-    typedef LinearComb<PrimBasis> BasisLC;
+    typedef typename BasisPrim::Field F;
+    typedef typename vector<BasisPrim>::const_iterator IT;
+    typedef LinearComb<BasisPrim> BasisLC;
     typedef LinearComb<DrivPrim>  DrivLC;
     typedef MatrixXcd M;
     typedef VectorXcd V;
@@ -74,12 +74,13 @@ namespace opt_cbf_h {
     VectorXcd coef_;
     
     // ----------- Constructors ------------
-    Impl(const vector<BasisPrim>& us, 
-	 const HLikeAtom<CD>& h_final,
-	 const DrivLC& _driv) {
+    Impl(const vector<BasisPrim>& us, const HLikeAtom<CD>& h_final,
+	 const DrivLC& _driv, CD _energy) {
       basis_set_ = us;
       d_basis_set_.resize(us.size());
       dd_basis_set_.resize(us.size());
+      op_l_ = h_final.HMinusEnergy<BasisPrim>(_energy);
+      driven_term_ = _driv;
 
       VectorXcd zs;
       this->getZeta(&zs);
@@ -90,16 +91,15 @@ namespace opt_cbf_h {
     void getZeta(V* zs) {
       int num = basis_set_.size();
       zs->resize(num);
-      for(int i = 0; i < num; i++) {
-	(*zs)(i) = basis_set_[i].z()
-      }
+      for(int i = 0; i < num; i++) 
+	(*zs)(i) = basis_set_[i].z();
     }
-    void updateZeta(const Vd& zs) {
+    void updateZeta(const V& zs) {
 
       int num = zs.rows();
       for(int i = 0; i < num; i++) {
 	CD z = zs[i];
-	Prim ui(basis_set_[i].n(), z, Normalized);
+	BasisPrim ui(basis_set_[i].n(), z, Normalized);
 	basis_set_[i]   = ui;
 	d_basis_set_[i] = D1Normalized(ui);
 	dd_basis_set_[i]= D2Normalized(ui);
@@ -115,51 +115,39 @@ namespace opt_cbf_h {
       *D11 = MatrixXcd::Zero(num, num);
       *D20 = MatrixXcd::Zero(num, num);
 
-      for(int i = 0; i < num; i++) {
-	CD d_00_ii = h_atom_pi_->OpEle(basis_set_[i], 
-				    basis_set_[i]);
-	CD d_11_ii = h_atom_pi_->OpEle(d_basis_set_[i],
-				       d_basis_set_[i]);
-	(*D00)(i, i) = d_00_ii;
-	(*D11)(i, i) = d_11_ii;
-	for(int j = i+1; j < num; j++) {
-	  CD d_00_ij = h_atom_pi_->OpEle(basis_set_[i], 
-					 basis_set_[j]);
-	  CD d_11_ij = h_atom_pi_->OpEle(d_basis_set_[i], 
-					 d_basis_set_[j]);
-	  (*D00)(i, j) = d_00_ij;
-	  (*D00)(j, i) = d_00_ij;
-	  (*D11)(i, j) = d_11_ij;
-	  (*D11)(j, i) = d_11_ij;
+      for(int j = 0; j < num; j++) {
+	LinearComb<BasisPrim> l_uj   = op_l_(basis_set_[j]);
+	LinearComb<BasisPrim> l_d_uj = op_l_(d_basis_set_[j]);
+
+	(*D00)(j, j) = CIP(basis_set_[j], l_uj);
+	(*D11)(j, j) = CIP(d_basis_set_[j], l_d_uj);
+
+	for(int i = 0; i < num; i++) {
+	  (*D10)(i, j) = CIP(d_basis_set_[i], l_uj);
+	  (*D20)(i, j) = CIP(dd_basis_set_[i], l_uj);
+	}
+
+	for(int i = 0; i < j; i++) {
+	  (*D00)(i, j) = (*D00)(j, i) = CIP(basis_set_[i], l_uj);
+	  (*D11)(i, j) = (*D11)(j, i) = CIP(d_basis_set_[i], l_d_uj);
 	}
       }
-
-      for(int i = 0; i < num; i++)
-	for(int j = 0; j < num; j++) {
-	  (*D10)(i,j) = h_atom_pi_->OpEle(d_basis_set_[i],  
-					  basis_set_[j]);
-	  (*D20)(i,j) = h_atom_pi_->OpEle(dd_basis_set_[i], 
-					  basis_set_[j]);
-	}
-
     }
     void computeVector(V* m0, V* m1, V* m2) {
 
       int num = basis_set_.size();
       
-      *m0 = VectorXcd::Zero(num_all);
-      *m1 = VectorXcd::Zero(num_opt);
-      *m2 = VectorXcd::Zero(num_opt);
+      *m0 = VectorXcd::Zero(num);
+      *m1 = VectorXcd::Zero(num);
+      *m2 = VectorXcd::Zero(num);
 
-      for(int i = 0; i < num; i++)
-	(*m0)(i, 0) = h_atom_pi_->DrivEle(basis_set_[i]);
       for(int i = 0; i < num; i++) {
-	(*m1)(i, 0) = h_atom_pi_->DrivEle(d_basis_set_[i]);
-	(*m2)(i, 0) = h_atom_pi_->DrivEle(dd_basis_set_[i]);
+	(*m0)(i) =  CIP(basis_set_[i], driven_term_);
+	(*m1)(i) =  CIP(d_basis_set_[i], driven_term_);
+	(*m2)(i) =  CIP(dd_basis_set_[i], driven_term_);
       }
 
     }      
-    
     // ---------- called from interface -------
     void Compute(const V& zs, CD* a, V* g, M* h) {
 
@@ -181,11 +169,22 @@ namespace opt_cbf_h {
 			   a, g, h);
 
     }
+    BasisLC GetWaveFunction() const {
+
+      LinearComb<BasisPrim> psi;
+      int num_basis = basis_set_.size();
+      for(int i = 0; i < num_basis; i++) 
+	psi += coef_(i, 0) * basis_set_[i];
+      return psi;      
+
+    }
 	 
   };
 
-  template<class Prim>
-  class OptCBF<Prim>::ImplOld {
+
+  /*
+  template<class Prim, class A>
+  class OptCBF<Prim, A>::ImplOld {
   private:
     // ------ type --------
     typedef typename Prim::Field F;
@@ -193,10 +192,6 @@ namespace opt_cbf_h {
     typedef LinearComb<Prim> LC;
     
   public:
-    /* ------ member field --------
-     * basis_set = {opt_basis1, ............... , opt_basisM }
-     *           fix_basis1(= it_fix_begin), ...., fix_basisN,
-    */
     vector<Prim>  basis_set_;
     IT            it_fix_begin_;
     HAtomPI<Prim>* h_atom_pi_;
@@ -234,7 +229,7 @@ namespace opt_cbf_h {
       this->init();
       
     }
-    ~Impl() {
+    ~ImplOld() {
       delete h_atom_pi_;
     }
     
@@ -393,65 +388,39 @@ namespace opt_cbf_h {
 	ofs <<      ", " << v.imag() << endl;
 	
       }
+
     }
     VectorXcd GetCoefs() const {
       return coef_;
     }
   };
+*/
 
+  template<class B, class D>
+  OptCBF<B,D>::OptCBF(const vector<B>& a, const HLikeAtom<CD>& b,
+		      const LinearComb<D>& c, CD d) :
+    impl_(new Impl(a,b,c,d)) {}
 
-  template<class Prim>
-  OptCBF<Prim>::OptCBF(const vector<Prim>& _opt_basis_set,
-		       HAtomPI<Prim>* _h_atom_pi) :
-    impl_(new Impl(_opt_basis_set, _h_atom_pi)) {}
-
-  template<class Prim>
-  OptCBF<Prim>::OptCBF(const vector<Prim>& _o,
-		       const vector<Prim>& _f,
-		       HAtomPI<Prim>* _h) :
-    impl_(new Impl(_o, _f, _h)) {}
-
-  template<class Prim>
-  OptCBF<Prim>::~OptCBF() {
+  template<class B, class D> OptCBF<B,D>::~OptCBF() {
     delete impl_;
   }
 
-  template<class Prim>
-  void OptCBF<Prim>::Compute(cV& zs, CD* a, VectorXcd* g, 
-			     MatrixXcd* h) {
+  template<class B, class D>
+  void OptCBF<B, D>::Compute(cV& zs, CD* a, VectorXcd* g, MatrixXcd* h) {
 
     impl_->Compute(zs, a, g, h);
 
     }
-  template<class Prim>
-  void OptCBF<Prim>::computeMatrix
-  (MatrixXcd* D00, MatrixXcd* D10,
-   MatrixXcd* D20, MatrixXcd* D11) {
-    impl_->computeMatrix(D00, D10, D20, D11);
-  }
-  template<class Prim>
-  void OptCBF<Prim>::computeVector 
-    (VectorXcd* m0, VectorXcd* m1, VectorXcd* m2) {
-      impl_->computeVector(m0, m1, m2);
-    }
-
-  template<class Prim>
-  void OptCBF<Prim>::Display() {
-    impl_->Display();
-  }
-  
-  template<class Prim>
-  void OptCBF<Prim>::WritePsi(const string& fn, double rm, double dr) {
-    impl_->WritePsi(fn, rm, dr);
-  }
-  
-  template<class Prim>
-  VectorXcd OptCBF<Prim>::GetCoefs() const {
-    return impl_->GetCoefs();
+  template<class B, class D>
+  LinearComb<B> OptCBF<B,D>::GetWaveFunction() const {
+    return impl_->GetWaveFunction();
   }
   
   // ============= explicit instance ===============
-  template class OptCBF<CSTO>;
-  template class OptCBF<CGTO>;
+  template class OptCBF<CSTO, CSTO>;
+  template class OptCBF<CSTO, CGTO>;
+  template class OptCBF<CGTO, CGTO>;
+  template class OptCBF<CGTO, CSTO>;
+
   
 }

@@ -25,7 +25,7 @@ namespace opt_cbf_h {
   public:
     IDrivSystem() {}
     virtual ~IDrivSystem() {}
-    Op<Basis> OpHMinusEnergy() const;
+    l2func::Op<Basis> OpHMinusEnergy() const;
 
     //    virtual F OpEle(const Basis& a, const Basis& b) = 0;
     //    virtual F DrivEle(const Basis& a) = 0;

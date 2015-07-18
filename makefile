@@ -2,8 +2,8 @@ include local.mk
 DEBUGS=-g3 -Wall -O0
 OPTS=-O3 -Wall
 CXXFLAGS=${LIBPATH} ${OPTS}
-OPT_CBF_OBJS= factory.o opt_cbf.o driv.o opt.o restrict.o l_algebra.o
-RUN_OBJS=run.o controller.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${L2_DIR}/l2.a
+OPT_CBF_OBJS= opt_cbf.o opt.o restrict.o l_algebra.o
+RUN_OBJS=run.o controller.o factory.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${L2_DIR}/l2.a
 
 ${UTILS_DIR}/keys_values.o :
 	cd ${UTILS_DIR} \
@@ -20,14 +20,14 @@ ${L2_DIR}/l2.a:
 	make l2.a \
 	cd ..
 
-utest: utest.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o
-	${CXX} -o utest ${CXXFLAGS} utest.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${UTILS_DIR}/keys_values.o ${LIBGTEST}
+utest: utest.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o
+	${CXX} -o utest ${CXXFLAGS} utest.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${LIBGTEST}
 	./utest
 
 factory.o: factory.cpp factory.hpp
 	${CXX} -o $@ -c ${CXXFLAGS} factory.cpp
-utest_factory: utest_factory.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o
-	${CXX} -o $@ ${CXXFLAGS} utest_factory.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${UTILS_DIR}/keys_values.o ${LIBGTEST}
+utest_factory: utest_factory.o factory.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o
+	${CXX} -o $@ ${CXXFLAGS} utest_factory.o factory.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${UTILS_DIR}/keys_values.o ${LIBGTEST}
 
 opt_cbf: ${RUN_OBJS}
 	${CXX} -o opt_cbf ${CXXFLAGS} ${RUN_OBJS}
