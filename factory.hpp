@@ -6,6 +6,10 @@
 #include <stdexcept>
 #include <Eigen/Core>
 
+/**
+ * this factory object create IOptTarget, IOptimizer, LinearComb<Prim> object
+ */
+
 namespace {
   using std::vector;
   using std::string;
@@ -46,7 +50,6 @@ namespace opt_cbf_h {
   };
 
   // =============== Interface =========================
-  template<class Prim> class HAtomPI;
   template<class F> class IOptimizer;
   class IOptTarget;
 
@@ -56,40 +59,42 @@ namespace opt_cbf_h {
   public:
     explicit IFactory(const KeysValues&);
     virtual ~IFactory();
-    virtual vector<l2func::CSTO>* STOSet() const = 0;
-    virtual vector<l2func::CGTO>* GTOSet() const = 0;
-    HAtomPI<l2func::CSTO>* HAtomPiSTO() const;
-    HAtomPI<l2func::CGTO>* HAtomPiGTO() const;
     IOptTarget* OptTarget() const; 
+    virtual IOptTarget* optTarget() const = 0;
+    virtual IOptimizer<CD>* Optimizer() const = 0;
     /**
      * getter for orbital exponents of basis function
      */
-    void GetZs(VectorXcd* zs) const;
+    virtual void GetZs(VectorXcd* zs) const = 0;
     /**
      * getter for the number of basis
      */
     int BasisSize() const;
-    virtual IOptimizer<CD>* Optimizer() const = 0;
+
   };
 
   // ============== Mono ================================
+  template<class PrimBasis, class PrimDriv>
   class FactoryMono : public IFactory {
   public:
     FactoryMono(const KeysValues&);
     ~FactoryMono();
-    vector<l2func::CSTO>* STOSet() const;
-    vector<l2func::CGTO>* GTOSet() const;
-    IOptimizer<CD>* Optimizer() const;    
+    vector<PrimBasis>* BasisSet() const;
+    IOptTarget* optTarget() const;
+    IOptimizer<CD>* Optimizer() const; 
+    void GetZs(VectorXcd* zs) const;
   };
 
   // ============== EvenTempered ========================
+  template<class PrimBasis, class PrimDriv>
   class FactoryEvenTemp : public IFactory {
   public:
     FactoryEvenTemp(const KeysValues&);
     ~FactoryEvenTemp();
-    vector<l2func::CSTO>* STOSet() const;
-    vector<l2func::CGTO>* GTOSet() const;
+    vector<PrimBasis>* BasisSet() const;
+    IOptTarget* optTarget() const;
     IOptimizer<CD>* Optimizer() const;
+    void GetZs(VectorXcd* zs) const;
   };
 
 }

@@ -663,9 +663,10 @@ TEST_F(TestOptSTO, optimization) {
 }
 TEST(TestOptCbf, TimeCheck) {
 
-  // non-opt : 0.261512
-  // symmetry: 0.204394
-  // sym + L : 0.069230
+  // time comparing
+  // non-opt : 0.261512 s
+  // symmetry: 0.204394 s
+  // sym + L : 0.069230 s
   
   int num(100);
   VectorXcd zs = VectorXcd::Zero(num);

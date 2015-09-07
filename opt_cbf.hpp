@@ -41,9 +41,9 @@ namespace opt_cbf_h {
   public:
     virtual ~IOptTarget() {} ;
     virtual void Compute(const VectorXcd& zs, CD* a, VectorXcd* g, MatrixXcd* h) = 0;
-    //    virtual void Display() = 0;
-    //virtual void WritePsi(const string&,double,double)=0;
-    //virtual VectorXcd GetCoefs() const = 0;
+    virtual void Display() const = 0;
+    virtual void WritePsi(string,double,double) const = 0;
+    virtual VectorXcd GetCoefs() const = 0;
   };  
 
   // ====== calculator of alpha, gradient and hessian ==
@@ -71,7 +71,9 @@ namespace opt_cbf_h {
     // this method will be used for optimization.
     void Compute(cV& zs, CD* a, VectorXcd* g, MatrixXcd* h);
     l2func::LinearComb<BasisPrim> GetWaveFunction() const;
-    
+    void Display() const;
+    void WritePsi(string, double, double) const;
+    VectorXcd GetCoefs() const;
   };
 }
 

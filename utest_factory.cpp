@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <gtest/gtest.h>
 #include <Eigen/Core>
 #include <l2func.hpp>
@@ -10,7 +11,6 @@
 #include "l_algebra.hpp"
 #include "restrict.hpp"
 #include "opt.hpp"
-#include "driv.hpp"
 #include "opt_cbf.hpp"
 #include "factory.hpp"
 
@@ -77,13 +77,16 @@ TEST_F(TEST_MonoBasis, Construct) {
 
 }
 TEST_F(TEST_MonoBasis, BasisSet) {
-  
+
   IFactory* factory = CreateFactory(kv);
   EXPECT_TRUE(factory != NULL);
   vector<CGTO>* gtos(NULL);
-  EXPECT_ANY_THROW(factory->STOSet());
+  //EXPECT_ANY_THROW(dynamic_cast<FactoryMono<CSTO,CSTO>* > (factory));
+  FactoryMono<CSTO,CSTO>* ptr =
+    dynamic_cast<FactoryMono<CSTO,CSTO>* > (factory);
+  EXPECT_TRUE(ptr == NULL);
 
-  gtos = factory->GTOSet();
+  gtos = (dynamic_cast<FactoryMono<CGTO,CSTO>* >(factory))->BasisSet();
 
   EXPECT_TRUE(gtos != NULL);
   
@@ -108,12 +111,13 @@ TEST_F(TEST_MonoBasis, OptTarget) {
 
   IFactory* factory = CreateFactory(kv);
   EXPECT_TRUE(factory != NULL);
-
-  HAtomPI<l2func::CGTO>* hatom = NULL;
+  IOptTarget* target = factory->OptTarget();
+  EXPECT_TRUE(target != NULL);
+  //HAtomPI<l2func::CGTO>* hatom = NULL;
   
-  hatom = factory->HAtomPiGTO();
+  //  hatom = factory->HAtomPiGTO();
 
-  EXPECT_TRUE(hatom != NULL);
+  //  EXPECT_TRUE(hatom != NULL);
 
 }
 TEST_F(TEST_MonoBasis, Optimizer) {
@@ -159,18 +163,9 @@ TEST_F(TEST_EvenTemp, BasisSet) {
 
   IFactory* factory = CreateFactory(kv);
 
-  vector<CSTO>* stos;
-  EXPECT_ANY_THROW(factory->GTOSet());
-  EXPECT_NO_THROW(stos= factory->STOSet());
-
-  try {
-    factory->GTOSet();
-  } catch(std::exception& e) {
-    cout << e.what() << endl;
-  }
-
-  stos = factory->STOSet();
-
+  vector<CSTO>* stos = 
+    dynamic_cast<FactoryEvenTemp<CSTO,CSTO>*>(factory)->BasisSet();
+  
   EXPECT_TRUE(stos != NULL);
   
   EXPECT_EQ(5 + 4, stos->size());
@@ -203,14 +198,17 @@ TEST_F(TEST_EvenTemp, Getter) {
 TEST_F(TEST_EvenTemp, OptTarget) {
 
   IFactory* factory = CreateFactory(kv);
-  HAtomPI<l2func::CSTO>* hatom = NULL;
-  hatom = factory->HAtomPiSTO();
-  EXPECT_TRUE(hatom != NULL);
-  
+  IOptTarget* target(NULL);
+  target = factory->OptTarget();
+  EXPECT_TRUE(target != NULL);
+
+  /*  
   CSTO s1(1.1, 2, 1.2);
   CSTO s2(2.1, 2, 1.3);
+
   EXPECT_NEAR(-0.195858432000038, hatom->OpEle(s1, s2).real(), +0.0000000000001); 
   delete hatom;
+  */
   
 }
 TEST_F(TEST_EvenTemp, Optimizer) {
@@ -312,5 +310,4 @@ TEST(TEST_OptCBF, et_sto_et_sto) {
   EXPECT_NEAR(-1.08305, opt_res.z(3).imag(), eps);
 
 }
-
 

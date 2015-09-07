@@ -1,11 +1,17 @@
 #include <keys_values.hpp>
 #include <l2func.hpp>
-#include "driv.hpp"
 #include "factory.hpp"
 #include "restrict.hpp"
 #include "opt.hpp"
 #include "opt_cbf.hpp"
 
+namespace {
+  using l2func::CSTO;
+  using l2func::CGTO;
+  using l2func::LinearComb;
+  using l2func::HLikeAtom;
+}
+  
 namespace opt_cbf_h {
 
   // ================ Utils ============================
@@ -40,20 +46,47 @@ namespace opt_cbf_h {
   }
 
   // =============== Create Factory ====================
+  string GetDrivType(const KeysValues& kv) {
+
+    string di = kv.Get<string>("dipole");
+    if(di == "length" || di == "velocity")
+      return "STO";
+    else if(di == "GTO")
+      return "GTO";
+    else {
+      string msg; SUB_LOCATION(msg);
+      throw InvalidDriv(msg, kv.Get<string>("channel"), di);
+    }
+
+  }
   IFactory* CreateFactory(const KeysValues& kv) {
 
     IFactory* res(NULL);
 
     int num_et  = kv.Count("opt_et_basis");
     int num_opt = kv.Count("opt_basis");
+    string b_type = kv.Get<string>("basis_type");
+    string d_type  = GetDrivType(kv);
 
     if( num_et == 0 && num_opt != 0) {
-      
-      res = new FactoryMono(kv);
+      if( b_type == "STO" && d_type == "STO")
+	res = new FactoryMono<CSTO,CSTO>(kv);
+      else if(b_type == "STO" && d_type == "GTO")
+	res = new FactoryMono<CSTO,CGTO>(kv);
+      else if(b_type == "GTO" && d_type == "STO")
+	res = new FactoryMono<CGTO,CSTO>(kv);
+      else if(b_type == "GTO" && d_type == "GTO")
+	res = new FactoryMono<CGTO,CGTO>(kv);
       
     } else if( num_et != 0 && num_opt == 0) {
-
-      res = new FactoryEvenTemp(kv);
+      if( b_type == "STO" && d_type == "STO")
+	res = new FactoryEvenTemp<CSTO,CSTO>(kv);
+      else if(b_type == "STO" && d_type == "GTO")
+	res = new FactoryEvenTemp<CSTO,CGTO>(kv);
+      else if(b_type == "GTO" && d_type == "STO")
+	res = new FactoryEvenTemp<CGTO,CSTO>(kv);
+      else if(b_type == "GTO" && d_type == "GTO")
+	res = new FactoryEvenTemp<CGTO,CGTO>(kv);
 
 
     } else if( num_et == 0 && num_opt == 0) {
@@ -103,12 +136,26 @@ namespace opt_cbf_h {
   IFactory::~IFactory() {
     delete kv_;
   }
-  template<class Prim> HAtomPI<Prim>* 
-  hAtomPI(const KeysValues& kv) {
 
-    checkBasis<Prim>(kv);
+  template<class DrivPrim>
+  void GetCustomDriv(const KeysValues& kv, LinearComb<DrivPrim>* driv) {
 
-    // Hydrogen atom
+    int num = kv.Count("custom_driv");
+    
+    if(num == 0) {
+      string msg; SUB_LOCATION(msg);
+      msg += "\nkey named custom_driv not found.\n";
+      throw runtime_error(msg);
+    }
+
+    typedef tuple<CD,int,CD> T;
+    for(int i = 0; i < num; i++) {
+      T d = kv.Get<T>("custom_driv");
+      *driv += DrivPrim(get<0>(d), get<1>(d), get<2>(d));
+    }
+  }
+  void GetChannel(const KeysValues& kv, HLikeAtom<CD>* h0, HLikeAtom<CD>* h1) {
+
     string ch = kv.Get<string>("channel");
     string di = kv.Get<string>("dipole");
     int l0, l1, n0;
@@ -128,74 +175,61 @@ namespace opt_cbf_h {
       throw InvalidDriv(msg, ch, di);
     }
 
-    // driven term
-    l2func::HLikeAtom<CD> hatom(n0, 1.0, l0);
-    l2func::LinearComb<l2func::CSTO> mu_phi;
-    if(di == "length")
-      mu_phi = hatom.DipoleInitLength(l1);
-    else if (di == "velocity")
-      mu_phi = hatom.DipoleInitVelocity(l1);
-    else if (di == "GTO") {
+    *h0 = HLikeAtom<CD>(n0, 1.0, l0);
+    *h1 = HLikeAtom<CD>(-1, 1.0, l1); // -1 is dummy and meaning less
+
+  }
+
+  // static polymorphism for cSTO/cGTO is realized by using override
+  void GetDriv(const KeysValues& kv, LinearComb<CSTO>* driv) {
+
+    HLikeAtom<CD> h0;
+    HLikeAtom<CD> h1;
+    GetChannel(kv, &h0, &h1);
+
+    string ch = kv.Get<string>("channel");
+    string di = kv.Get<string>("dipole");
+    int l1 = h1.l();
+    
+    if(di == "length") 
+      *driv = h0.DipoleInitLength(l1);
+    else if (di == "velocity") 
+      *driv = h0.DipoleInitVelocity(l1);
+    else if (di == "STO") {
+      GetCustomDriv<CSTO>(kv, driv);
       string msg; SUB_LOCATION(msg); 
-      throw InvalidDriv(msg, ch, di);
-      l2func::LinearComb<l2func::CGTO> driven_term;
-      driven_term.Add(1.0, l2func::CGTO(1.0, 2, 1.0));
+      msg += "\n mada junbi shiteinai \n";
+      throw msg;
+      *driv += 1.0 * l2func::CSTO(1.0, 2, 1.0);
     } else {
       string msg; SUB_LOCATION(msg); 
       throw InvalidDriv(msg, ch, di);
     }
+  }
+  void GetDriv(const KeysValues& kv, LinearComb<CGTO>* driv) {
 
-    // energy 
-    double ene = kv.Get<double>("energy");
+    string ch = kv.Get<string>("channel");
+    string di = kv.Get<string>("dipole");
 
-    // create HAtomPI object
-    HAtomPI<Prim>* h_pi = new HAtomPI<Prim>(l1, 1.0, ene, mu_phi);
-    return h_pi;
+    if (di == "GTO") {
+      for(int i = 0; i < kv.Count("custom_driv"); i++) {
+	typedef tuple<CD,int,CD> CIC;
+	CIC cic = kv.Get<CIC>("custom_driv", i);
+	CD  c = get<0>(cic);
+	int n = get<1>(cic);
+	CD  z = get<2>(cic);
+	*driv += c * l2func::CGTO(1.0, n, z);
+      }
+    } else {
+      string msg; SUB_LOCATION(msg); 
+      throw InvalidDriv(msg, ch, di);      
+    }
   }
-  HAtomPI<l2func::CSTO>* IFactory::HAtomPiSTO() const {
-    return hAtomPI<l2func::CSTO>(*kv_);
-  }
-  HAtomPI<l2func::CGTO>* IFactory::HAtomPiGTO() const {
-    return hAtomPI<l2func::CGTO>(*kv_);
-  }
+
   IOptTarget* IFactory::OptTarget() const {
-    
-    string b_type = kv_->Get<string>("basis_type");
-    IOptTarget* opt_target(NULL);
-    if(b_type == "STO") {
-      vector<l2func::CSTO>* basis_set;
-      basis_set = this->STOSet();
-      HAtomPI<l2func::CSTO>* h_pi;
-      h_pi = this->HAtomPiSTO();
-      opt_target = new OptCBF<l2func::CSTO>(*basis_set, h_pi);
-    } else if(b_type == "GTO") {
-      vector<l2func::CGTO>* basis_set = this->GTOSet();
-      HAtomPI<l2func::CGTO>* h_pi     = this->HAtomPiGTO();
-      opt_target = new OptCBF<l2func::CGTO>(*basis_set, h_pi);      
-    } else {
-      string msg; SUB_LOCATION(msg); throw InvalidBasis(msg, b_type);
-    }
 
-    return opt_target;
+    return this->optTarget();
     
-  }
-  void IFactory::GetZs(VectorXcd* zs) const {
-    
-    string b_type = kv_->Get<string>("basis_type");
-    if(b_type == "STO") {
-      vector<l2func::CSTO>* us = this->STOSet();
-      *zs = VectorXcd::Zero(us->size());
-      for(int i = 0; i < us->size(); i++)
-	(*zs)[i] = (*us)[i].z();
-    } else if(b_type == "GTO") {
-      vector<l2func::CGTO>* us = this->GTOSet();
-      *zs = VectorXcd::Zero(us->size());
-      for(int i = 0; i < us->size(); i++)
-	(*zs)[i] = (*us)[i].z();
-    } else {
-      string msg; SUB_LOCATION(msg); throw InvalidBasis(msg, b_type);
-    }
-
   }
   int IFactory::BasisSize() const {
     
@@ -206,73 +240,111 @@ namespace opt_cbf_h {
   }
 
   // ============== Mono ================================
-  FactoryMono::FactoryMono(const KeysValues& kv) : IFactory(kv) {}
-  FactoryMono::~FactoryMono() {}
+  template<class B, class D>
+  FactoryMono<B,D>::FactoryMono(const KeysValues& kv) : IFactory(kv) {}
+  template<class B, class D>
+  FactoryMono<B,D>::~FactoryMono() {}
 
-  template<class Prim> 
-  vector<Prim>* monoBasisSet(const KeysValues& kv) {
-    
-    checkBasis<Prim>(kv);
+  template<class B, class D>
+  vector<B>* FactoryMono<B,D>::BasisSet() const {
 
-    vector<Prim>*  basis_set = new vector<Prim>();
-    for(int i = 0; i < kv.Count("opt_basis"); i++) {
+    checkBasis<B>(*kv_);
 
-      tuple<int, CD> n_z = kv.Get<tuple<int, CD> >("opt_basis", i);
-      Prim u(get<0>(n_z), get<1>(n_z), l2func::Normalized);
+    vector<B>*  basis_set = new vector<B>();
+    for(int i = 0; i < kv_->Count("opt_basis"); i++) {
+
+      tuple<int, CD> n_z = kv_->Get<tuple<int, CD> >("opt_basis", i);
+      B u(get<0>(n_z), get<1>(n_z), l2func::Normalized);
       basis_set->push_back(u);
 
     }
     
     return basis_set;
-  }
-  vector<l2func::CSTO>* FactoryMono::STOSet() const {
-    return monoBasisSet<l2func::CSTO>(*kv_);
-  }
-  vector<l2func::CGTO>* FactoryMono::GTOSet() const {
-    return monoBasisSet<l2func::CGTO>(*kv_);
-  }
 
-  IOptimizer<CD>* FactoryMono::Optimizer() const {
+  }
+  template<class B, class D>
+  IOptTarget* FactoryMono<B,D>::optTarget() const {
     
+    vector<B>* basis_set;
+    l2func::HLikeAtom<CD> h_init;
+    l2func::HLikeAtom<CD> h_final;
+    l2func::LinearComb<D> driv;
+
+    basis_set = this->BasisSet();
+    GetChannel(*kv_, &h_init, &h_final);
+    GetDriv(*kv_, &driv);
+    double energy = kv_->Get<double>("energy");
+    
+    IOptTarget* ptr = new OptCBF<B,D>(*basis_set, h_final, driv, energy);
+    return ptr;
+  }
+  template<class B, class D>
+  IOptimizer<CD>* FactoryMono<B,D>::Optimizer() const {
+
     int max_iter = kv_->Get<int>("max_iter");
     double eps   = kv_->Get<double>("eps");
+    IOptimizer<CD>* opt  = new OptimizerNewton<CD>(max_iter, eps);
 
-    IOptimizer<CD>* opt = new OptimizerNewton<CD>(max_iter, eps);
+    return opt;
 
-    return opt; 
+  }
+  template<class B, class D>
+  void FactoryMono<B,D>::GetZs(VectorXcd* zs) const {
+
+    vector<B>* us = this->BasisSet();
+    *zs = VectorXcd::Zero(us->size());
+    for(int i = 0; i < us->size(); i++)
+	(*zs)[i] = (*us)[i].z();
+    //    delete us;
+    
   }
 
   // ============== EvenTempered ========================    
-  FactoryEvenTemp::FactoryEvenTemp(const KeysValues& kv) : IFactory(kv) {}
-  FactoryEvenTemp::~FactoryEvenTemp() {}
+  template<class B, class D>
+  FactoryEvenTemp<B,D>::FactoryEvenTemp(const KeysValues& kv) : IFactory(kv) {}
+  template<class B, class D>
+  FactoryEvenTemp<B,D>::~FactoryEvenTemp() {}
+  template<class B, class D>
+  vector<B>* FactoryEvenTemp<B,D>::BasisSet() const {
 
-  template<class Prim> vector<Prim>* basisSet(const KeysValues& kv) {
-
-    checkBasis<Prim>(kv);
-       
-    int num_et = kv.Count("opt_et_basis");
-    vector<Prim>* basis_set = new vector<Prim>();
+    checkBasis<B>(*kv_);
+    
+    vector<B>* basis_set = new vector<B>();
+    int num_et = kv_->Count("opt_et_basis");
+    
     for(int i = 0; i < num_et; i++) {
       int n, num_i;
       CD  z0, r;
-      extractOptEtBasis2(kv, &n, &num_i, &z0, &r, i);      
+      extractOptEtBasis2(*kv_, &n, &num_i, &z0, &r, i);      
       CD z = z0;
       for(int i = 0; i < num_i; i++) {
-	Prim u(n, z, l2func::Normalized);
+	B u(n, z, l2func::Normalized);
 	basis_set->push_back(u);
 	z *= r;
       }
     }
     return basis_set;
-}
-  vector<l2func::CSTO>* FactoryEvenTemp::STOSet() const {
-    return basisSet<l2func::CSTO>(*kv_);
   }
-  vector<l2func::CGTO>* FactoryEvenTemp::GTOSet() const {
-    return basisSet<l2func::CGTO>(*kv_);
-  }
+  template<class B, class D>
+  IOptTarget* FactoryEvenTemp<B,D>::optTarget() const {
 
-  IOptimizer<CD>* FactoryEvenTemp::Optimizer() const {
+    vector<B>* basis_set;
+    l2func::HLikeAtom<CD> h_init;
+    l2func::HLikeAtom<CD> h_final;
+    l2func::LinearComb<D> driv;
+
+    basis_set = this->BasisSet();
+    GetChannel(*kv_, &h_init, &h_final);
+    GetDriv(*kv_, &driv);
+    double energy = kv_->Get<double>("energy");
+    
+    IOptTarget* ptr = new OptCBF<B,D>(*basis_set, h_final, driv, energy);
+    delete basis_set;
+    //    delete h_final; delete h_init; delete basis_set;
+    return ptr;
+  }
+  template<class B, class D>
+  IOptimizer<CD>* FactoryEvenTemp<B,D>::Optimizer() const {
     
     int max_iter = kv_->Get<int>("max_iter");
     double eps   = kv_->Get<double>("eps");
@@ -289,5 +361,15 @@ namespace opt_cbf_h {
     IOptimizer<CD>* opt  = new OptimizerRestricted<CD>(max_iter, eps, et);
 
     return opt;
+  }
+  template<class B, class D>
+  void FactoryEvenTemp<B,D>::GetZs(VectorXcd* zs) const {
+
+    vector<B>* us = this->BasisSet();
+    *zs = VectorXcd::Zero(us->size());
+    for(int i = 0; i < us->size(); i++)
+	(*zs)[i] = (*us)[i].z();
+    delete us;
+    
   }
 }

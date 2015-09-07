@@ -63,6 +63,7 @@ namespace opt_cbf_h {
       
       keys_values_.Check<string>(NumberIs(1), "channel");
       keys_values_.Check<string>(NumberIs(1), "dipole");
+      keys_values_.Check<CD,int,CD>(AnyNumber(), "custom_driv");
       keys_values_.Check<double>(NumberIs(1), "energy");
       
       keys_values_.Check<string>(NumberIs(1), "basis_type");

@@ -6,7 +6,6 @@
 #include <macros.hpp>
 #include "l_algebra.hpp"
 #include "opt_cbf.hpp"
-#include "driv.hpp"
 
 
 using namespace l2func;
@@ -178,194 +177,21 @@ namespace opt_cbf_h {
       return psi;      
 
     }
-	 
-  };
-
-
-  /*
-  template<class Prim, class A>
-  class OptCBF<Prim, A>::ImplOld {
-  private:
-    // ------ type --------
-    typedef typename Prim::Field F;
-    typedef typename vector<Prim>::const_iterator IT;
-    typedef LinearComb<Prim> LC;
-    
-  public:
-    vector<Prim>  basis_set_;
-    IT            it_fix_begin_;
-    HAtomPI<Prim>* h_atom_pi_;
-    vector<LC>    d_basis_set_;    // derivative basis
-    vector<LC>    dd_basis_set_;   // second derivative basis
-
-    VectorXcd     coef_;
-
-    // ------- constructor ---------
-    ImplOld(const vector<Prim>& _opt_basis_set,
-	 HAtomPI<Prim>* _h_atom_pi) :
-      basis_set_(_opt_basis_set),
-      it_fix_begin_(basis_set_.end()),
-      h_atom_pi_(_h_atom_pi),
-      d_basis_set_(_opt_basis_set.size()),
-      dd_basis_set_(_opt_basis_set.size()) {
-
-      this->init();
-    }
-    ImplOld(const vector<Prim>& _opt_basis_set,
-	 const vector<Prim>& _fix_basis_set,
-	 HAtomPI<Prim>*  _h_atom_pi) :
-      h_atom_pi_(_h_atom_pi),
-      d_basis_set_(_opt_basis_set.size()),
-      dd_basis_set_(_opt_basis_set.size()) {
-      
-      // copy _opt_basis_set and
-      basis_set_ = _opt_basis_set;
-      it_fix_begin_ = basis_set_.end();
-      basis_set_.insert(basis_set_.end(), 
-			_fix_basis_set.begin(),
-			_fix_basis_set.end());
-
-      // initialize
-      this->init();
-      
-    }
-    ~ImplOld() {
-      delete h_atom_pi_;
-    }
-    
-    // ------- method ----------------
-    void Compute(cV& zs, CD* a, VectorXcd* g, 
-		 MatrixXcd* h) {
-
-      // update orbital exponent (zeta)
-      updateZeta(zs);
-
-      // prepare matrix
-      //      int num_all = basis_set_.size();
-      //int num_opt = numOptBasis();
-
-      MatrixXcd D00, D10, D20, D11;
-      VectorXcd m0, m1, m2;
-      //      VectorXcd tmp = VectorXcd::Zero(num_opt);
-      
-
-      // compute matrix and vector
-      computeMatrix(&D00, &D10, &D20, &D11);
-      computeVector(&m0, &m1, &m2);
-      coef_ = D00.fullPivLu().solve(m0);
-
-      computeAlphaGradHess(coef_,
-			   D00, D10, D20, D11, m0, m1, m2, 
-			   a, g, h);
-      
-    }
-    void computeMatrix
-    (MatrixXcd* D00, MatrixXcd* D10,
-     MatrixXcd* D20, MatrixXcd* D11) {
-
-      // typedef typename vector<Prim>::const_iterator IT;
-
-      int num_all = basis_set_.size();
-      int num_opt = numOptBasis();
-
-      *D00 = MatrixXcd::Zero(num_all, num_all);
-      *D10 = MatrixXcd::Zero(num_opt, num_all);
-      *D11 = MatrixXcd::Zero(num_opt, num_opt);
-      *D20 = MatrixXcd::Zero(num_opt, num_all);
-
-      for(int i = 0; i < num_all; i++) {
-	CD d_00_ii = h_atom_pi_->OpEle(basis_set_[i], 
-				    basis_set_[i]);
-	CD d_11_ii = h_atom_pi_->OpEle(d_basis_set_[i],
-				       d_basis_set_[i]);
-	(*D00)(i, i) = d_00_ii;
-	(*D11)(i, i) = d_11_ii;
-	for(int j = i+1; j < num_all; j++) {
-	  CD d_00_ij = h_atom_pi_->OpEle(basis_set_[i], 
-					 basis_set_[j]);
-	  CD d_11_ij = h_atom_pi_->OpEle(d_basis_set_[i], 
-					 d_basis_set_[j]);
-	  (*D00)(i, j) = d_00_ij;
-	  (*D00)(j, i) = d_00_ij;
-	  (*D11)(i, j) = d_11_ij;
-	  (*D11)(j, i) = d_11_ij;
-	}
+    void Display() const {
+      cout << endl;
+      cout << "========= OptCBF::Display ==========" << endl;
+      cout << "Basis Set:" << basis_set_.size() << endl;
+      for(int i = 0; i < basis_set_.size(); i++) 
+	cout << "basis " << i << " : " << basis_set_[i] << endl;
+      cout << "Driven Term:" << endl;
+      for(int i= 0; i < driven_term_.size(); i++) {
+	typename DrivPrim::Field c = driven_term_.coef_i(i);
+	cout << "driv " << i <<  " : " << c;
+	cout << " " << driven_term_.prim_i(i) << endl;
       }
-
-      for(int i = 0; i < num_opt; i++)
-	for(int j = 0; j < num_all; j++) {
-	  (*D10)(i,j) = h_atom_pi_->OpEle(d_basis_set_[i],  
-					  basis_set_[j]);
-	  (*D20)(i,j) = h_atom_pi_->OpEle(dd_basis_set_[i], 
-					  basis_set_[j]);
-	}
-      
-    }  
-    void computeVector
-    (VectorXcd* m0, VectorXcd* m1, VectorXcd* m2) {
-
-      int num_all = basis_set_.size();
-      int num_opt = numOptBasis();
-      
-      *m0 = VectorXcd::Zero(num_all);
-      *m1 = VectorXcd::Zero(num_opt);
-      *m2 = VectorXcd::Zero(num_opt);
-
-      for(int i = 0; i < num_all; i++)
-	(*m0)(i, 0) = h_atom_pi_->DrivEle(basis_set_[i]);
-      for(int i = 0; i < num_opt; i++) {
-	(*m1)(i, 0) = h_atom_pi_->DrivEle(d_basis_set_[i]);
-	(*m2)(i, 0) = h_atom_pi_->DrivEle(dd_basis_set_[i]);
-      }
-      
+      cout << "====================================" << endl;
     }
-    int numOptBasis()  {
-    
-      typedef typename vector<Prim>::const_iterator IT;
-      return std::distance(static_cast<IT>(basis_set_.begin()),
-			   it_fix_begin_);
-    }
-    void updateZeta(const VectorXcd& zs) {
-
-      int num = zs.rows();
-      for(int i = 0; i < num; i++) {
-	CD z = zs[i];
-	Prim ui(basis_set_[i].n(), z, Normalized);
-	basis_set_[i]   = ui;
-	d_basis_set_[i] = D1Normalized(ui);
-	dd_basis_set_[i]= D2Normalized(ui);
-      }
-      
-    }
-    void init() {
-      
-      // copy orbital exponent of opt_basis_set
-      VectorXcd zs = VectorXcd::Zero(basis_set_.size());
-
-      int i = 0;
-      typedef typename vector<Prim>::const_iterator IT;
-      for(IT it = basis_set_.begin(); it != it_fix_begin_; 
-	  ++it, ++i) 
-	zs(i) = it->z();
-      
-      // call function to compute derivative basis set
-      updateZeta(zs);
-    }
-    void Display() {
-      cout << "OptCBF_Display" << endl;
-      cout << "# of basis:" << basis_set_.size() << endl;
-      h_atom_pi_->Display();
-    }
-    LinearComb<Prim> WaveFunc() const {
-      
-      LinearComb<Prim> psi;
-      int num_basis = basis_set_.size();
-      for(int i = 0; i < num_basis; i++) 
-	psi += coef_(i, 0) * basis_set_[i];
-      return psi;
-      
-    }
-    void WritePsi(const string& fn, double rmax, double dr) {
+    void WritePsi(const string& fn, double rmax, double dr) const{
 
       ofstream ofs(fn.c_str());
 
@@ -378,7 +204,7 @@ namespace opt_cbf_h {
       }
       
       int num_grid(int(rmax/dr));
-      LinearComb<Prim> psi = this->WaveFunc();
+      LinearComb<BasisPrim> psi = this->GetWaveFunction();
       
       for(int i = 0; i < num_grid; i++) {
 
@@ -393,8 +219,8 @@ namespace opt_cbf_h {
     VectorXcd GetCoefs() const {
       return coef_;
     }
+	 
   };
-*/
 
   template<class B, class D>
   OptCBF<B,D>::OptCBF(const vector<B>& a, const HLikeAtom<CD>& b,
@@ -414,6 +240,15 @@ namespace opt_cbf_h {
   template<class B, class D>
   LinearComb<B> OptCBF<B,D>::GetWaveFunction() const {
     return impl_->GetWaveFunction();
+  }
+  template<class B, class D> void OptCBF<B,D>::Display() const {
+    impl_->Display();
+  }
+  template<class B, class D> void OptCBF<B,D>::WritePsi(string a, double b, double c) const {
+    impl_->WritePsi(a, b, c);
+  }
+  template<class B, class D> VectorXcd OptCBF<B,D>::GetCoefs() const{
+    return impl_->GetCoefs();
   }
   
   // ============= explicit instance ===============

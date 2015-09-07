@@ -141,6 +141,7 @@ def near (a, b, eps):
     f = lambda x,y: abs(x,y)<eps
     take_and([ f(a0,b0) and f(ar,br) for ((a0,ar),(b0,br)) in zip(a,b)])
 
+# create input file for EvenTemp optimization in opt_cbf 
 def create_in_et(z, r, str_base_file, file_name) :
     l = str_base_file
     l = l.replace("__xr__", str(z.real))
@@ -152,6 +153,7 @@ def create_in_et(z, r, str_base_file, file_name) :
     f.write(l)
     f.close()
 
+# create input file for MultiEvenTemp opt in opt_cbf 
 def create_in_multi_et(zs, rs, str_base_file, file_name):
     l = str_base_file
     num = len(zs)
@@ -219,3 +221,5 @@ def near_opt_cbf(eps):
 # [complex], double -> [complex]
 def uniq_opt_cbf(zs_list, eps):
     return take_uniq(zs_list, near_opt_cbf(eps))
+
+

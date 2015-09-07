@@ -30,8 +30,6 @@ namespace opt_cbf_h {
     M tmp2 = A10 * B;
     M t1 = tmp1.array() * tmp2.array();
 
-    
-
     M t2 = ((A10*a) * (A10*b).transpose()).array() * B.array();
     M t3 = (A10*B*A10.transpose()).array() * (a*b.transpose()).array();
     M t4 = (A10*a * b.transpose() ).array()
@@ -55,7 +53,6 @@ namespace opt_cbf_h {
 		      const Matrix<F, Dynamic, Dynamic>& B10,
 		      const Matrix<F, Dynamic, 1>& b,
 		      Matrix<F, Dynamic, Dynamic>* res) {
-
     *res =
       (a1 * (B10 * b).transpose()).array() * A.array() +
       (a1 * b.transpose()).array() * (A * B10.transpose()).array();

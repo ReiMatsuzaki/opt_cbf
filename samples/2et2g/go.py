@@ -44,7 +44,7 @@ for i in range(len(z_list)):
 t1_calc = time.clock()
 
 t0_uniq = time.clock()
-zz_uniq  = take_uniq(zz_array, near_et(0.001))
+zz_uniq = take_uniq(zz_array, near_et(0.001))
 t1_uniq = time.clock()
 
 print "number:" + str(len(z_list)**2 * len(r_list)**2)

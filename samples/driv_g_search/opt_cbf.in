@@ -1,0 +1,11 @@
+channel: 1s->kp
+dipole: GTO
+custom_driv: 1.0 2 1.0
+energy: 0.5
+basis_type: GTO
+opt_basis: 2 (__x0r__,-__x0i__)
+opt_basis: 2 (__x1r__,-__x1i__)
+opt_basis: 2 (__x2r__,-__x2i__)
+eps: 0.00001
+
+
