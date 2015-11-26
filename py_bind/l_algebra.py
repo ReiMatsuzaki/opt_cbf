@@ -6,6 +6,7 @@ Same functions with ../l_algebra, but implemented in scipy.linalg
 """
 
 def calc_a_Aj_b(a, A10, b):
+    (n, m) = A10.shape
     A10_b = dot(A10, b)
     A10_a = dot(A10, a)
     return a * A10_b + b * A10_a

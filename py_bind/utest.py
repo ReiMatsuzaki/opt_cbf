@@ -73,7 +73,7 @@ class TestCalculations(unittest.TestCase):
         res = l_algebra.calc_a_Aij_a(a, A20, A11)
         self.assertAlmostEqual(1.664, res[0][0])
 
-    def test_grad(self):
+    def test_val_grad_hess(self):
         us   = [ l2.STO(1.0, 2, z) for z in [1.1, 1.2]]
         driv = l2.STOs()
         driv.add_one(1.0, l2.STO(1.0 / np.sqrt(2.0), 2, 1.0))
@@ -103,14 +103,34 @@ class TestCalculations(unittest.TestCase):
         self.assertAlmostEqual(5.10430865981922, hess[0][1])
         self.assertAlmostEqual(5.10430865981922, hess[1][0])
         self.assertAlmostEqual(5.77073843522357, hess[1][1])
+        
+    def test_val_grad_hess_partial(self):
+        us = [l2.STO(1.0, 2, z) for z in [1.1, 1.3, 1.5, 1.8]]
+        driv = l2.h_like_atom("1s").dipole_init_length(1)
+        l_op = l2.h_like_atom("2p").h_minus_energy_sto(0.5)
+        
+        (vf, gf, hf, ds) = opt_cbf.val_grad_hess(us, driv, l_op)
+        (v, g, h, ds) = opt_cbf.val_grad_hess(us, driv, l_op, opt_index = [0, 2])
 
+        self.assertAlmostEqual(vf, v)
+
+        self.assertEqual(2, len(g))
+        self.assertAlmostEqual(gf[0], g[0])
+        self.assertAlmostEqual(gf[2], g[1])
+
+        self.assertEqual((2, 2), h.shape)
+        self.assertAlmostEqual(hf[0,0], h[0, 0])
+        self.assertAlmostEqual(hf[2,0], h[1, 0])
+        self.assertAlmostEqual(hf[0,2], h[0, 1])
+        self.assertAlmostEqual(hf[2,2], h[1, 1])
+        
 
 class TestOpt(unittest.TestCase):
     def test_1basis_1skp(self):
         us = [ l2.STO(1.0, 2, 0.5-0.5j) ]
         res = opt_cbf.optimize_hydrogen_pi(us, '1s->kp', 0.9)
         self.assertTrue(res[0])
-        zs = [ basis.z for basis in res[-1]]
+        zs = [ basis.z for basis in res[1]]
         self.assertAlmostEqual(1.1117640506-0.3673558953j, zs[0])
         
     def test_3basis_1skp(self):
@@ -118,12 +138,12 @@ class TestOpt(unittest.TestCase):
                in [0.96-0.008j, 1.04-0.71j, 0.45-1.37j]]
         res = opt_cbf.optimize_hydrogen_pi(us, '1s->kp', 0.9, eps = 0.000001, max_iter = 100)
         self.assertTrue(res[0])
-        zs = [ basis.z for basis in res[-1]]
+        zs = [ basis.z for basis in res[1]]
         self.assertAlmostEqual(0.9899070351-0.0123382063j, zs[0])
         self.assertAlmostEqual(1.0418217968-0.7127594141j, zs[1])
         self.assertAlmostEqual(0.4509924544-1.3744734865j, zs[2])
 
-        (psi, cs, a) = opt_cbf.solve(res[-1], channel = '1s->kp', energy = 0.9)
+        (psi, cs, a) = opt_cbf.solve(res[1], channel = '1s->kp', energy = 0.9)
         self.assertAlmostEqual(0.7825445397-0.1236019852j, cs[0] / (-np.sqrt(3.0)))
         self.assertAlmostEqual(0.2031470249-0.0913057736j, cs[1] / (-np.sqrt(3.0)))
 #        self.assertAlmostEqual(0.0460737405+0.0097070218j, cs[2] / (-np.sqrt(3.0)))
@@ -135,17 +155,21 @@ class TestOpt(unittest.TestCase):
         us = [ l2.GTO(1.0, 2, z) for z in [(0.036-0.027j), (0.15-0.14j)] ]
         eps = 0.0000001
         opt_res = opt_cbf.optimize_hydrogen_pi(us, '1s->kp', 0.5, eps = eps)
-        self.assertTrue(opt_res[-1])
-        zs = [ basis.z for basis in opt_res[-1]]
+        self.assertTrue(opt_res[1])
+        zs = [ basis.z for basis in opt_res[1]]
         self.assertTrue( abs(0.0361962-0.0271314j - zs[0]) < eps * 10)
         self.assertTrue( abs(0.148847-0.145461j   - zs[1]) < eps * 10)
 
-        """
-    def test_solve_by_cbf(self):
-        us = [ l2.STO(1.0, 2, z) for z in [1.0, 0.6-0.4j]]
-        (psi, cs, a) = opt_cbf.solve(us, channel = '1s->kp', energy = 0.5)
-        print psi
-"""
-
+    def test_1skp_partial(self):
+        us = [ l2.STO(1.0, 2, z) for z 
+               in [0.96-0.008j, 1.04-0.71j, 0.45-1.37j]]
+        l_op = l2.h_like_atom('2p').h_minus_energy_sto(0.9)
+        driv = l2.h_like_atom('1s').dipole_init_length(1)
+        res1 = opt_cbf.optimize(us, driv, l_op, opt_index=[0,1,2])
+        res2 = opt_cbf.optimize(us, driv, l_op)
+        self.assertTrue(res1[0])
+        self.assertAlmostEqual(res1[1][0].z, res2[1][0].z)
+        self.assertAlmostEqual(res1[1][1].z, res2[1][1].z)
+        
 if __name__ == '__main__':
     unittest.main()

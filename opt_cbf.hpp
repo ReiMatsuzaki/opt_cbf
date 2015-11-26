@@ -6,7 +6,10 @@
 #include <vector>
 #include <Eigen/Core>
 
+// WARNING!! This is old version of opt_target.hpp
+// Look opt_target instead of this file.
 // represents optimization target for CBF
+
 
 namespace {
   using namespace Eigen;
@@ -47,8 +50,7 @@ namespace opt_cbf_h {
   };  
 
   // ====== calculator of alpha, gradient and hessian ==
-  template<class BasisPrim, class DrivPrim>
-  class OptCBF : public IOptTarget {
+  template<class BasisPrim, class DrivPrim> class OptCBF : public IOptTarget {
   private:
     // ------ Member Field -------
     class Impl;

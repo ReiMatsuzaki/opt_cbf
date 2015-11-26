@@ -8,6 +8,7 @@
 
 /**
  * this factory object create IOptTarget, IOptimizer, LinearComb<Prim> object
+ * from KeyValues object.
  */
 
 namespace {
