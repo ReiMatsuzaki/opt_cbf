@@ -29,17 +29,6 @@ namespace l2func {
 
 namespace opt_cbf_h {
 
-  // ------- type -----------------------
-  typedef const MatrixXcd cM;
-  typedef const VectorXcd cV;
-
-  // ------- logic ----------------------
-  // compute mD^-1m and its gradient and hessian.
-  void computeAlphaGradHess(cV& D_inv_m,
-			    cM& D00, cM& D10, cM& D20, cM& D11,
-			    cV& m0,  cV&m1,   cV& m2,
-			    CD* a, VectorXcd* g, MatrixXcd* h);
-
   // ====== interface to access cSTO or cGTO ======
   class IOptTarget {
   public:
@@ -72,7 +61,7 @@ namespace opt_cbf_h {
     // ------ method -----------
     // calculation of gradient and hessian from orbital exp.
     // this method will be used for optimization.
-    void Compute(cV& zs, CD* a, VectorXcd* g, MatrixXcd* h);
+    void Compute(VectorXcd& zs, CD* a, VectorXcd* g, MatrixXcd* h);
     l2func::LinearComb<BasisPrim> GetWaveFunction() const;
     void Display() const;
     void WritePsi(string, double, double) const;
