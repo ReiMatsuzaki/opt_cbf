@@ -23,6 +23,8 @@ ${L2_DIR}/l2.a:
 utest: utest.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o
 	${CXX} -o utest ${CXXFLAGS} utest.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${LIBGTEST}
 	./utest
+test: test.o l_algebra.o 
+	${CXX} -o test  test.o l_algebra.o ${L2_DIR}/l2.a ${CXXFLAGS} -lgtest
 
 factory.o: factory.cpp factory.hpp
 	${CXX} -o $@ -c ${CXXFLAGS} factory.cpp
@@ -33,6 +35,11 @@ opt_cbf: ${RUN_OBJS}
 	${CXX} -o opt_cbf ${CXXFLAGS} ${RUN_OBJS}
 	./opt_cbf samples/2sto/sample.in samples/2sto/sample.out
 	cat samples/2sto/sample.out
+
+.PHONY: check
+check: test
+	./test
+
 clean:
 	rm -f *.o
 	rm -f *.a
