@@ -30,34 +30,80 @@ def convergence_q(eps):
         return is_small(grad) and is_small(dz)
     return __func__
         
-def channel_to_op_and_driv(channel, ene, basis_type):
+def channel_to_op_and_driv(channel, ene):
 
     [init, final] = channel.split("->")    
-    if final == 'ks':
-        l1 = 0
-    elif final == 'kp':
-        l1 = 1
-    elif final == 'kd':
-        l1 = 2
-    elif final == 'kf':
-        l1 = 3
-        
-    h_init = l2.h_like_atom(init)    
-    driven_term = h_init.dipole_init_length(l1)
-    h_final = l2.h_like_atom(str(l1 + 1) + final[1])
-    if basis_type == l2.STO:
-        l_op = h_final.h_minus_energy_sto(ene)
-    elif basis_type == l2.GTO:
-        l_op = h_final.h_minus_energy_gto(ene)
+    if(channel   == "1s->kp"):
+        (n0, l0, l1) = (1, 0, 1)
+    elif(channel == "2p->ks"):
+        (n0, l0, l1) = (2, 1, 0)
+    elif final == '2p->kd':
+        (n0, l0, l1) = (2, 1, 2)
+    elif final == '3d->kp':
+        (n0, l0, l1) = (3, 2, 1)
+    elif final == '3d->kf':
+        (n0, l0, l1) = (3, 2, 3)
     else:
-        print 'opt_cbf.py::channel_to_op_and_driv'
-        print 'unsupported basis_type: ' + basis_type
+        raise Exception("unsuppoerted channel: "+channel)
+        
+    hatom = l2.HAtom(1.0)
+    driven_term = hatom.length(n0, l0, l1)
+    l_op = hatom.h_minus_ene_op(l1, ene)
         
     return (l_op, driven_term)
 
+def get_with_default(dict_obj, key, default):
+    if(key in dict_obj):
+        return dict_obj[key]
+    else:
+        return default
+
+# ==== Newton Method ====
+def newton(f, zs0, iter_max = 30, eps = 0.0000001, show_lvl = 0):
+    """ Newton method for multivariable real/complex function.
+    
+    Inputs
+    ------
+    f: lambda [scalar] -> (scalar, [scalar], [[scalar]], object)
+       compute function value, its gradient and its hessians
+    zs0: [scalar]
+       initial guess
+    iter_max: int (30)
+       maximum iteration
+    eps: double (0.0000001)
+       convergence epsilon
+    show_lvl: int (0)
+       0 => print nothing
+       1 => print iteration number i and zi, f(zi), abs_oo(grad), abs_oo(zi-z_(i-1))
+
+    Outputs
+    -------
+    results: bool,     convergence or not
+    zs     : [scalar], convergence point
+    f(zs)  : scalar,   function value at zs
+    grad   : [scalar], gradient at zs
+    """
+
+    zs = z0
+    for i in range(iter_max):
+        (val, grad, hess, dum)  = f(zs)
+        dz = -la.solve(hess, grad)
+        if(max(abs(grad)) < eps and max(abs(dz)) < eps):
+            return (True, zs, val, grad)
+        z += dz
+    return (False, zs, val, grad)
 
 # ====== Solve only linear program ======
-def solve(basis_set, driven_term, lop):
+def solve(basis_set, driven_term = None, lop = None, channel = None, energy = None):
+
+    if(channel != None and energy != None):
+        (lop, driven_term) = channel_to_op_and_driv(channel, energy)
+
+    if(lop == None and driven_term == None):
+        msg = "usage: solve(basis_set, driv, lop) or "
+        msg += "solve(basis_set,channel, energy)"
+        
+        raise Exception()
 
     def convert(basis):
         if type(basis) == l2.STO:
@@ -67,61 +113,47 @@ def solve(basis_set, driven_term, lop):
         else:
             return basis
     
-    A00 = np.array([[ l2.cip(a, l_op(b)) for a in us] for b in basis_set])
+    A00 = np.array([[ l2.cip(a, lop, b) for a in basis_set] for b in basis_set])
     a0  = np.array( [ l2.cip(a, driven_term) for a in basis_set] )
     coefs = la.solve(A00, a0)
     alpha = np.dot(a0, coefs)
-    psi = linear_combination(coefs, basis_set)
+    psi = l2.linear_combination(coefs, basis_set)
     return (psi, coefs, alpha)
 
 # ====== Optimize =======
 def val_grad_hess(basis_set, driven_term, l_op, opt_index=None):
     """ compute (value,grad,hess) of aA^{-1}a"""
 
-    ip_mat = get_sym_ip(type(basis_set[0]), type(basis_set[0]))
-    ip_vec = get_sym_ip(type(basis_set[0]), type(driven_term.prim_i(0)))
-
-    if type(basis_set[0]) == l2.STO:
-        normalized    = l2.normalized_sto
-        d_normalized  = l2.d_normalized_sto
-        dd_normalized = l2.dd_normalized_sto
-    elif type(basis_set[0]) == l2.GTO:
-        normalized    = l2.normalized_gto
-        d_normalized  = l2.d_normalized_gto
-        dd_normalized = l2.dd_normalized_gto
-    else:
-        print 'opt_cbf.py/val_grad_hess'
-        print 'unsupported type: ' + type(basis_type[0])
-        sys.exit(0)
-
-    def make_vec(flag_basis_set):
-        return np.array([ip_vec(u, driven_term) if f else 0
+    def make_vec(flag_basis_set, ip):
+        return np.array([ip(u, driven_term) if f else 0
                          for (f, u) in flag_basis_set])
 
-    def make_mat(flag_basis_set1, flag_basis_set2):
-        return np.array([[ip_mat(a, l_op(b)) if fa and fb else 0
+    def make_mat(flag_basis_set1, flag_basis_set2, ip):
+        return np.array([[ip(a, l_op, b) if fa and fb else 0
                           for (fb, b) in flag_basis_set2]
                          for (fa, a) in flag_basis_set1])
 
     if opt_index == None:
         opt_index = range(len(basis_set))
 
-    us    = [(True, normalized(u.n, u.z)) 
+    bt = type(basis_set[0])
+
+    us    = [(True, l2.d0_basis(bt, u.n, u.z)) 
              for (u, i) in with_index(basis_set)]
-    d_us  = [(i in opt_index, d_normalized(u.n, u.z))
+    d_us  = [(i in opt_index, l2.d1_basis(bt, u.n, u.z))
              for (u, i) in with_index(basis_set)]
-    dd_us = [(i in opt_index, dd_normalized(u.n, u.z))
+    dd_us = [(i in opt_index, l2.d2_basis(bt, u.n, u.z))
              for (u, i) in with_index(basis_set)]
 
-    a0 = make_vec(us)
-    A00 = make_mat(us, us)
+    a0 = make_vec(us, l2.cip)
+    A00 = make_mat(us, us, l2.cip)
 
-    a1 = make_vec(d_us)
-    A10 = make_mat(d_us, us)
+    a1 = make_vec(d_us, l2.cip)
+    A10 = make_mat(d_us, us, l2.cip)
     
-    a2 = make_vec(dd_us)
-    A11 = make_mat(d_us, d_us)
-    A20 = make_mat(dd_us, us)
+    a2 = make_vec(dd_us, l2.cip)
+    A11 = make_mat(d_us, d_us, l2.cip)
+    A20 = make_mat(dd_us, us, l2.cip)
 
     datas = { 'A00': A00, 'A10':A10, 'A11':A11, 'A20':A20, 
               'a0':a0, 'a1':a1, 'a2':a2 }
@@ -186,8 +218,10 @@ def optimize(init_basis_set, driven_term, l_op,
     y1 = x3 = x4
     y2 = x5
 
-    opt_index = [0, 1] : only optimize of first and second orbital 
+    opt_index = [0, 1] means only optimize of first and second orbital 
     """
+    if(opt_index == None):
+        opt_index = range(len(init_basis_set))
 
     conv_q = convergence_q(eps)
     res_list = []
@@ -231,16 +265,33 @@ def optimize(init_basis_set, driven_term, l_op,
 
     return (False, basis_set, res_list)
 
-def optimize_hydrogen_pi(basis_set, channel, ene, 
+def optimize_hydrogen_pi(basis_set, channel, energy, 
                          eps = 0.00001, 
                          iter_callable = None, 
                          max_iter = 50):
-    (l_op, driven_term) = channel_to_op_and_driv(channel, ene, type(basis_set[0]))
+    (l_op, driven_term) = channel_to_op_and_driv(channel, energy)
     return optimize(basis_set, driven_term, l_op, 
                     eps, 
                     iter_callable,
                     max_iter)
 
+
+def optimize_even_temp(et_num, et_n, et_z0, et_r0, nz_list):
+    """
+    Inputs
+    ------
+    et_num : int
+        number of the even tempered basis
+    et_n: int
+        princinple number of the even tempered basis
+    et_z0: complex
+        initial guess for first complex orbital exponents of the even-tempered basis
+    et_r: complex
+        initial guess for ratio of the even tempered basis
+    nz_list: [(int, complex)]
+        principle numbers and initial guess orbital exponents of basis to be optimize
+    """
+    pass
 
 # ====== Optimize for energies ========
 def optimize_for_energies_2pks(basis_set0, energy_list,  **keyargs):

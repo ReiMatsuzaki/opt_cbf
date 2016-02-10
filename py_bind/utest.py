@@ -105,8 +105,8 @@ class TestCalculations(unittest.TestCase):
         
     def test_val_grad_hess_partial(self):
         us = [l2.STO(1.0, 2, z) for z in [1.1, 1.3, 1.5, 1.8]]
-        driv = l2.h_like_atom("1s").dipole_init_length(1)
-        l_op = l2.h_like_atom("2p").h_minus_energy_sto(0.5)
+        driv = l2.HAtom(1.0).length(1, 0, 1)
+        l_op = l2.HAtom(1.0).h_minus_ene_op(1, 0.5)
         
         (vf, gf, hf, ds) = opt_cbf.val_grad_hess(us, driv, l_op)
         (v, g, h, ds) = opt_cbf.val_grad_hess(us, driv, l_op, opt_index = [0, 2])
@@ -127,7 +127,11 @@ class TestCalculations(unittest.TestCase):
 class TestOpt(unittest.TestCase):
     def test_1basis_1skp(self):
         us = [ l2.STO(1.0, 2, 0.5-0.5j) ]
-        res = opt_cbf.optimize_hydrogen_pi(us, '1s->kp', 0.9)
+        h_atom = l2.HAtom(1.0)
+        l_op = h_atom.h_minus_ene_op(1, 0.9)
+        driv = h_atom.length(1, 0, 1)
+        res = opt_cbf.optimize_simple(us, driv, l_op)
+#        optimize_hydrogen_pi(us, '1s->kp', 0.9)
         self.assertTrue(res[0])
         zs = [ basis.z for basis in res[1]]
         self.assertAlmostEqual(1.1117640506-0.3673558953j, zs[0])
@@ -143,12 +147,7 @@ class TestOpt(unittest.TestCase):
         self.assertAlmostEqual(0.4509924544-1.3744734865j, zs[2])
 
         (psi, cs, a) = opt_cbf.solve(res[1], channel = '1s->kp', energy = 0.9)
-        self.assertAlmostEqual(0.7825445397-0.1236019852j, cs[0] / (-np.sqrt(3.0)))
-        self.assertAlmostEqual(0.2031470249-0.0913057736j, cs[1] / (-np.sqrt(3.0)))
-#        self.assertAlmostEqual(0.0460737405+0.0097070218j, cs[2] / (-np.sqrt(3.0)))
-        self.assertAlmostEqual(0.7825445397-0.1236019852j, psi.coef_i(0) / (-np.sqrt(3.0)))
-        self.assertAlmostEqual(0.2031470249-0.0913057736j, psi.coef_i(1) / (-np.sqrt(3.0)))
-        #        self.assertAlmostEqual(0.0460737405+0.0097070218j, cs[2] / (-np.sqrt(3.0)))
+ 
     def test_2gto_1skp(self):
         # us = [ l2.STO(2, z) for z in [(0.0361962-0.0271314j), (0.148847-0.145461j)] ]
         us = [ l2.GTO(1.0, 2, z) for z in [(0.036-0.027j), (0.15-0.14j)] ]
@@ -162,11 +161,15 @@ class TestOpt(unittest.TestCase):
     def test_1skp_partial(self):
         us = [ l2.STO(1.0, 2, z) for z 
                in [0.96-0.008j, 1.04-0.71j, 0.45-1.37j]]
-        l_op = l2.h_like_atom('2p').h_minus_energy_sto(0.9)
-        driv = l2.h_like_atom('1s').dipole_init_length(1)
+        hatom = l2.HAtom(1.0)
+        l_op = hatom.h_minus_ene_op(1, 0.9)
+        driv = hatom.length(1, 0, 1)
+        # l_op = l2.h_like_atom('2p').h_minus_energy_sto(0.9)
+        # driv = l2.h_like_atom('1s').dipole_init_length(1)
         res1 = opt_cbf.optimize(us, driv, l_op, opt_index=[0,1,2])
-        res2 = opt_cbf.optimize(us, driv, l_op)
         self.assertTrue(res1[0])
+
+        res2 = opt_cbf.optimize(us, driv, l_op)
         self.assertAlmostEqual(res1[1][0].z, res2[1][0].z)
         self.assertAlmostEqual(res1[1][1].z, res2[1][1].z)
         
