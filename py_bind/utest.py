@@ -3,7 +3,7 @@ import l_algebra
 import numpy as np
 from numpy import dot, outer
 import sys
-sys.path.append('../../l2func')
+sys.path.append('../../l2func/py_bind')
 import l2func as l2
 import opt_cbf
 
@@ -75,11 +75,10 @@ class TestCalculations(unittest.TestCase):
 
     def test_val_grad_hess(self):
         us   = [ l2.STO(1.0, 2, z) for z in [1.1, 1.2]]
-        driv = l2.STOs()
-        driv.add_one(1.0, l2.STO(1.0 / np.sqrt(2.0), 2, 1.0))
+        driv = l2.STO(1.0 / np.sqrt(2.0), 2, 1.0)
 
-        h_atom = l2.h_like_atom('2p')
-        l_op = h_atom.h_minus_energy_sto(0.5)
+        h_atom = l2.HAtom(1.0)
+        l_op = h_atom.h_minus_ene_op(1, 0.5)
 
         (val, grad, hess, datas) = opt_cbf.val_grad_hess(us, driv, l_op)
 
