@@ -57,23 +57,7 @@ def channel_to_op_and_driv(channel, ene, basis_type):
 
 
 # ====== Solve only linear program ======
-def solve(basis_set, channel = None, energy = None, 
-                 driven_term = None, l_op = None):
-    if channel != None and energy != None:
-        if (type(basis_set[0]) == l2.STO or type(basis_set[0]) == l2.STOs):
-            b_type = l2.STO
-        elif (type(basis_set[0]) == l2.GTO or type(basis_set[0]) == l2.GTOs):
-            b_type = l2.GTO
-        else:
-            print 'opt_cbf.py/solve'
-            print 'unsupported type: ' + type(basis_type[0])
-        (l_op, driven_term) = channel_to_op_and_driv(channel, energy, b_type)
-
-    if l_op == None or driven_term == None:
-        print "use this function such as..."
-        print "solve_by_cbf(basis_set, channel = '1s->kp', energy = 0.5)"
-        print "solve_by_cbf(basis_set, driven_term = d_term, l_op = l_op)"
-        sys.exit()
+def solve(basis_set, driven_term, lop):
 
     def convert(basis):
         if type(basis) == l2.STO:
@@ -82,23 +66,13 @@ def solve(basis_set, channel = None, energy = None,
             return l2.normalized_gto(basis.n, basis.z)
         else:
             return basis
-
-    us = [ convert(basis) for basis in basis_set]
-    t_basis = type(us[0].prim_i(0))    
-    t_driv  = type(driven_term.prim_i(0))
-    ip_mat = get_sym_ip(t_basis, t_basis)
-    ip_vec = get_sym_ip(t_basis, t_driv)
     
-    A00 = np.array([[ ip_mat(a, l_op(b)) for a in us] for b in us])
-    a0  = np.array( [ ip_vec(a, driven_term) for a in us] )
+    A00 = np.array([[ l2.cip(a, l_op(b)) for a in us] for b in basis_set])
+    a0  = np.array( [ l2.cip(a, driven_term) for a in basis_set] )
     coefs = la.solve(A00, a0)
     alpha = np.dot(a0, coefs)
-
-    cum_psi = type(us[0])() # call constructor of same class 
-    for (c, u) in zip(coefs, us):
-        cum_psi.add(l2.scalar_prod(c, u))
-    return (cum_psi, coefs, alpha)
-
+    psi = linear_combination(coefs, basis_set)
+    return (psi, coefs, alpha)
 
 # ====== Optimize =======
 def val_grad_hess(basis_set, driven_term, l_op, opt_index=None):
