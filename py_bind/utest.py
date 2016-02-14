@@ -3,8 +3,13 @@ import l_algebra
 import numpy as np
 from numpy import dot, outer
 import sys
+
 sys.path.append('../../l2func/py_bind')
 import l2func as l2
+
+sys.path.append('nnewton')
+from nnewton import num_pd, num_pd2
+
 import opt_cbf
 
 class TestCalculations(unittest.TestCase):
@@ -123,15 +128,49 @@ class TestCalculations(unittest.TestCase):
         self.assertAlmostEqual(hf[0,2], h[0, 1])
         self.assertAlmostEqual(hf[2,2], h[1, 1])
         
+    def test_geometric_seq(self):
+        def func0(xs):
+            x = xs[0]
+            y = xs[1]
+            z = xs[2]
+            w = xs[3]
+            return np.sin(x*y)*z + np.exp(x**3*z)*np.cos(w**2) + z
+        def func0_et(ab):
+            a = ab[0]
+            b = ab[1]
+            xs = [a, a*b, a*b*b, a*b*b*b]
+            return func0(xs)
 
+        method = 'c1'
+        num = 4
+        h = 0.0001
+        ns = range(num)
+        ab = np.array([ 0.1, 1.5])
+        xs = [ab[0]*ab[1]**n for n in ns]
+        ref_g_et = [num_pd(func0_et, ab, h, 2, n, method)
+                    for n in [0, 1]]
+        ref_h_et = [[num_pd2(func0_et, ab, h, 2, n, m, method)
+                     for n in [0, 1]] for m in [0, 1]]
+	g_full = np.array([num_pd(func0, xs, h, num, n, method)
+                           for n in ns])
+	h_full = np.array([[num_pd2(func0, xs, h, num, n1, n2, method)
+			    for n1 in ns] for n2 in ns])
+        calc_g_et = opt_cbf.geometric_grad(g_full, ab)
+        calc_h_et = opt_cbf.geometric_hess(g_full, h_full, ab)
+        for (ref, calc) in zip(ref_g_et, calc_g_et):
+            self.assertAlmostEqual(ref, calc)
+
+        for (ref_list, calc_list) in zip(ref_h_et, calc_h_et):
+            for(ref, calc) in zip(ref_list, calc_list):
+                self.assertAlmostEqual(ref, calc)
+        
 class TestOpt(unittest.TestCase):
     def test_1basis_1skp(self):
         us = [ l2.STO(1.0, 2, 0.5-0.5j) ]
         h_atom = l2.HAtom(1.0)
         l_op = h_atom.h_minus_ene_op(1, 0.9)
         driv = h_atom.length(1, 0, 1)
-        res = opt_cbf.optimize_simple(us, driv, l_op)
-#        optimize_hydrogen_pi(us, '1s->kp', 0.9)
+        res = opt_cbf.optimize_simple(us, driv, l_op, eps=0.0000001, show_lvl=0)
         self.assertTrue(res[0])
         zs = [ basis.z for basis in res[1]]
         self.assertAlmostEqual(1.1117640506-0.3673558953j, zs[0])

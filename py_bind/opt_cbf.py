@@ -59,14 +59,47 @@ def get_with_default(dict_obj, key, default):
         return default
 
 # ==== Newton Method ====
-def newton(f, zs0, iter_max = 30, eps = 0.0000001, show_lvl = 0):
+def geometric_grad(grad, ab):
+    return geometric_grad_full(grad, ab)
+
+def geometric_hess(grad, hess, ab):
+    return geometric_hess_full(grad, hess, ab)
+    
+def geometric_grad_full(grad, ab):
+    a = ab[0]  # first element of geometric sequence
+    b = ab[1]  # ratio of geometric sequence
+    ns = range(len(grad))
+    dxi_da = [b**n for n in ns]        # dxi/da
+    dxi_db = [n*a*b**(n-1) for n in ns]  # dxi/db
+    da = sum([g*a for (g, a) in zip(grad, dxi_da)])
+    db = sum([g*b for (g, b) in zip(grad, dxi_db)])
+    return np.array([da, db])
+
+def geometric_hess_full(grad, hess, ab):
+    a = ab[0]
+    b = ab[1]
+    ns = range(len(grad))
+    dx_da    = [b**n for n in ns]                # {dxi/da}_i
+    dx_db    = [n*a*b**(n-1) for n in ns]        # {dxi/db}_i
+    d2x_da2  = [0 for n in ns]                   # {d2xi/da2}_i
+    d2x_dadb = [n*b**(n-1) for n in ns]          # {d2xi/dadb}_i
+    d2x_db2  = [a*n*(n-1)*b**(n-2) for n in ns]  # {d2xi/db2}_i
+    
+    da2 = np.dot(dx_da, np.dot(hess, dx_da)) + np.dot(grad, d2x_da2)
+    dadb= np.dot(dx_da, np.dot(hess, dx_db)) + np.dot(grad, d2x_dadb)
+    db2 = np.dot(dx_db, np.dot(hess, dx_db)) + np.dot(grad, d2x_db2)
+
+    return np.array([[da2, dadb],
+                     [dadb, db2]])
+
+def newton(f, z0s, iter_max = 30, eps = 0.0000001, show_lvl = 0):
     """ Newton method for multivariable real/complex function.
     
     Inputs
     ------
-    f: lambda [scalar] -> (scalar, [scalar], [[scalar]], object)
+    f: lambda [scalar] -> (scalar, [scalar], [[scalar]])
        compute function value, its gradient and its hessians
-    zs0: [scalar]
+    z0s: [scalar]
        initial guess
     iter_max: int (30)
        maximum iteration
@@ -74,7 +107,7 @@ def newton(f, zs0, iter_max = 30, eps = 0.0000001, show_lvl = 0):
        convergence epsilon
     show_lvl: int (0)
        0 => print nothing
-       1 => print iteration number i and zi, f(zi), abs_oo(grad), abs_oo(zi-z_(i-1))
+       1 => print iteration number i and zi, f(zi), abs_oo(grad)
 
     Outputs
     -------
@@ -84,13 +117,16 @@ def newton(f, zs0, iter_max = 30, eps = 0.0000001, show_lvl = 0):
     grad   : [scalar], gradient at zs
     """
 
-    zs = z0
+    zs = z0s
     for i in range(iter_max):
-        (val, grad, hess, dum)  = f(zs)
+        (val, grad, hess)  = f(zs)
+        if(show_lvl == 1):
+            print i, val, max(abs(grad))
+
         dz = -la.solve(hess, grad)
         if(max(abs(grad)) < eps and max(abs(dz)) < eps):
             return (True, zs, val, grad)
-        z += dz
+        zs += dz
     return (False, zs, val, grad)
 
 # ====== Solve only linear program ======
@@ -161,24 +197,22 @@ def val_grad_hess(basis_set, driven_term, l_op, opt_index=None):
     return (val, grad[opt_index], hess[opt_index].T[opt_index], datas)
 
 
-def optimize_simple(init_basis_set, driven_term, l_op, 
-                    eps = 0.00001, max_iter = 30):
-    conv_q = convergence_q(eps)
+def optimize_simple(init_basis_set, driven_term, l_op, **keyargs):
+
     res_list = []
-    basis_set = init_basis_set
-    for i in range(max_iter):
+    ns = [u.n for u in init_basis_set]
+    z0s= [u.z for u in init_basis_set]
+    bt = type(init_basis_set[0])
 
-        # compute value, gradient, hessian and other
-        (v, g, h, data) = val_grad_hess(basis_set, driven_term, l_op)
+    def one(zs):
+        us = [bt(1.0, n, z) for (n, z) in zip(ns, zs)]
+        (val, grad, hess, data) = val_grad_hess(us, driven_term, l_op)
+        return (val, grad, hess)
 
-        # update
-        dz_list = la.solve(h, g)
-        basis_set = [ type(basis_set[0])(1.0, basis.n, basis.z - dz)
-                      for (basis, dz) in zip(basis_set, dz_list)]
-        if conv_q(g, dz_list):
-            return (True, basis_set, res_list)
+    (res_conv, zs_opt, val_opt, grad_opt) = newton(one, z0s, **keyargs)
+    basis_opt = [l2.d0_basis(bt, n, z) for (n, z) in zip(ns, zs_opt)]
+    return (res_conv, basis_opt, res_list)
 
-    return (False, basis_set, res_list)
 
 def optimize_partial(init_basis_set, driven_term, l_op, 
                      eps=0.00001, max_iter = 30, opt_index=None):
@@ -276,7 +310,7 @@ def optimize_hydrogen_pi(basis_set, channel, energy,
                     max_iter)
 
 
-def optimize_even_temp(et_num, et_n, et_z0, et_r0, nz_list):
+def optimize_even_temp(bt, et_num, et_n, et_z0, et_r0, ns, z0s, driv, lop):
     """
     Inputs
     ------
@@ -291,8 +325,49 @@ def optimize_even_temp(et_num, et_n, et_z0, et_r0, nz_list):
     nz_list: [(int, complex)]
         principle numbers and initial guess orbital exponents of basis to be optimize
     """
-    pass
 
+    res_list = []
+    def one(vars):
+        alpha = vars[0]
+        beta = vars[1]
+        zs = vars[2:]
+        et_us = [bt(1.0, et_n, alpha*beta**n) for n in range(et_num)]
+        ind_us = [bt(1.0, n, z) for (n, z) in zip(ns, zs)]
+        us = et_us + ind_us
+        (val, grad_full, hess_full, data) = val_grad_hess(us, driv, lop)
+
+        grad_et = grad_full[0:et_num]
+
+        dzi_da = np.array([beta**i for i in range(et_num)])
+        dzi_db = np.array([alpha*i*beta**(i-1) for i in range(et_num)])
+        
+        grad_a = np.dot(grad_et, dzi_da)
+        grad_b = np.dot()
+        
+        et_beta_m = [beta**m for m in range(et_num)]
+        grad_a = sum([g*beta**m
+                      for (g, m)
+                      in zip(grad_full[0:et_num], range(et_num))])
+        grad_b = sum([g*alpha*beta**(m-1)*m
+                      for (g, m)
+                      in zip(grad_full[0:et_num], range(et_num))])
+        hess_aa = 0
+        hess_ab_1 = sum([hess_full[i, j]*alpha*beta**(i+j-1)*j
+                         for (i, j)
+                         in zip(range(et_num), range(et_num))]) 
+        hess_ab_2 = sum(grad_full[i]*alpha*beta**(i-1) for i in range(et_num))
+        hess_ab = hess_ab_1 + hess_ab_2
+        hess_bb_1 = sum([hess_full[i, j]*alpha**2*beta**(i+j-2)*j*i
+                         for (i, j)
+                         in zip(range(et_num), range(et_num))])
+        hess_bb_2 = sum(grad_full[i]*alpha*i*(i-1)*beta**(i-2)
+                        for i in zip(range(et_num)))
+        hess_bb = hess_bb_1 + hess_bb_2
+        hess_ai = []
+        
+        grad = np.array([grad_a, grad_b] + list(grad_full[2:]))
+        hess = np.array([])
+        
 # ====== Optimize for energies ========
 def optimize_for_energies_2pks(basis_set0, energy_list,  **keyargs):
     b_type = type(basis_set0[0])
