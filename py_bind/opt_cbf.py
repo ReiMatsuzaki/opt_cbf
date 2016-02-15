@@ -59,12 +59,12 @@ def get_with_default(dict_obj, key, default):
         return default
 
 # ==== Newton Method ====
-def geometric_grad(grad, ab):
-    return geometric_grad_full(grad, ab)
+def geometric_grad(grad, ab, num_et = None):
+    if(num_et == None):
+        return geometric_grad_full(grad, ab)
+    else:
+        return geometric_grad_part(grad, ab, num_et)
 
-def geometric_hess(grad, hess, ab):
-    return geometric_hess_full(grad, hess, ab)
-    
 def geometric_grad_full(grad, ab):
     a = ab[0]  # first element of geometric sequence
     b = ab[1]  # ratio of geometric sequence
@@ -75,6 +75,23 @@ def geometric_grad_full(grad, ab):
     db = sum([g*b for (g, b) in zip(grad, dxi_db)])
     return np.array([da, db])
 
+def geometric_grad_part(grad, abxs, num_et):
+    ab = [abxs[0], abxs[1]]
+
+    et_index_list = range(num_et)
+    et_grad = geometric_grad_full([grad[i] for i in et_index_list], ab)
+
+    ind_index_list = [i for i in range(len(grad)) if i not in et_index_list]
+    ind_grad = [grad[i] for i in ind_index_list]
+
+    return np.array(list(et_grad) + list(ind_grad))
+
+def geometric_hess(grad, hess, ab, num_et = None):
+    if(num_et == None):
+        return geometric_hess_full(grad, hess, ab)
+    else:
+        return geometric_hess_part(grad, hess, ab, num_et)
+    
 def geometric_hess_full(grad, hess, ab):
     a = ab[0]
     b = ab[1]
@@ -91,6 +108,32 @@ def geometric_hess_full(grad, hess, ab):
 
     return np.array([[da2, dadb],
                      [dadb, db2]])
+
+
+def geometric_hess_part(grad, hess, abxs, num_et):
+    ab = [abxs[0], abxs[1]]
+
+    num = len(grad)
+    
+    et_index_list = range(num_et)
+    et_g = grad[0:num_et]
+    et_h = hess[0:num_et, 0:num_et]    
+    et_hess = geometric_hess_full(et_g, et_h, ab)
+
+    ind_index_list = [i for i in range(len(grad)) if i not in et_index_list]
+    ind_hess = hess[num_et:num, num_et:num]
+
+    dxi_da = np.array([ab[1]**n for n in range(num_et)])          # dxi/da
+    dxi_db = np.array([n*ab[0]*ab[1]**(n-1) for n in range(num_et)])  # dxi/db
+
+    ind_d2_dxda = np.dot(hess[num_et:num,0:num_et], dxi_da)
+    ind_d2_dxdb = np.dot(hess[num_et:num,0:num_et], dxi_db)
+
+    ind_et = np.array([ind_d2_dxda,
+                       ind_d2_dxdb])
+
+    return np.r_[np.c_[et_hess,  ind_et],
+                 np.c_[ind_et.T, ind_hess]]
 
 def newton(f, z0s, iter_max = 30, eps = 0.0000001, show_lvl = 0):
     """ Newton method for multivariable real/complex function.

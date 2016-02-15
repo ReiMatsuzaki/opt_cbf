@@ -12,6 +12,26 @@ from nnewton import num_pd, num_pd2
 
 import opt_cbf
 
+def func0(xs):
+    x = xs[0]
+    y = xs[1]
+    z = xs[2]
+    w = xs[3]
+    return np.sin(x*y)*z + np.exp(x**3*z)*np.cos(w**2) + z
+
+def func0_et(ab):
+    a = ab[0]
+    b = ab[1]
+    xs = [a, a*b, a*b*b, a*b*b*b]
+    return func0(xs)
+
+def func0_et123_4(abx4):
+    a = abx4[0]
+    b = abx4[1]
+    x4 = abx4[2]
+    xs = [a, a*b, a*b*b, x4]
+    return func0(xs)
+ 
 class TestCalculations(unittest.TestCase):
     def setUp(self):
         pass
@@ -128,19 +148,7 @@ class TestCalculations(unittest.TestCase):
         self.assertAlmostEqual(hf[0,2], h[0, 1])
         self.assertAlmostEqual(hf[2,2], h[1, 1])
         
-    def test_geometric_seq(self):
-        def func0(xs):
-            x = xs[0]
-            y = xs[1]
-            z = xs[2]
-            w = xs[3]
-            return np.sin(x*y)*z + np.exp(x**3*z)*np.cos(w**2) + z
-        def func0_et(ab):
-            a = ab[0]
-            b = ab[1]
-            xs = [a, a*b, a*b*b, a*b*b*b]
-            return func0(xs)
-
+    def test_geometric_grad_hess(self):
         method = 'c1'
         num = 4
         h = 0.0001
@@ -163,7 +171,30 @@ class TestCalculations(unittest.TestCase):
         for (ref_list, calc_list) in zip(ref_h_et, calc_h_et):
             for(ref, calc) in zip(ref_list, calc_list):
                 self.assertAlmostEqual(ref, calc)
-        
+
+    def test_geometric_grad_hess_part(self):
+        method = 'c1'
+        num = 4
+        h = 0.0001
+        ns = range(num)
+        abx4 = np.array([0.1, 1.5, 0.23])
+        xs = [abx4[0], abx4[0]*abx4[1], abx4[0]*abx4[1]**2, abx4[2]]
+        ref_g_et = [num_pd(func0_et123_4,  abx4, h, 3, n, method)
+                    for n in range(3)]
+        ref_h_et = [[num_pd2(func0_et123_4, abx4, h, 3, n, m, method)
+                     for n in range(3)] for m in range(3)]
+	g_full = np.array([num_pd(func0, xs, h, num, n, method)
+                           for n in ns])
+	h_full = np.array([[num_pd2(func0, xs, h, num, n1, n2, method)
+			    for n1 in ns] for n2 in ns])
+        calc_g_et = opt_cbf.geometric_grad(g_full, abx4, 3)
+        calc_h_et = opt_cbf.geometric_hess(g_full, h_full, abx4, 3)
+        for (ref, calc) in zip(ref_g_et, calc_g_et):
+            self.assertAlmostEqual(ref, calc)
+        for (ref_list, calc_list) in zip(ref_h_et, calc_h_et):
+            for (ref, calc) in zip(ref_list, calc_list):
+                self.assertAlmostEqual(ref, calc)
+
 class TestOpt(unittest.TestCase):
     def test_1basis_1skp(self):
         us = [ l2.STO(1.0, 2, 0.5-0.5j) ]
