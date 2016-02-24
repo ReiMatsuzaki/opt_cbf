@@ -1,3 +1,8 @@
+def cond(q, true_case, false_case):
+    if(q):
+        return true_case
+    else:
+        return false_case
 
 def flatten(xs):
     return reduce(lambda a, b: a+b, xs)

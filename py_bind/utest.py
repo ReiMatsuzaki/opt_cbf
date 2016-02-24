@@ -242,6 +242,38 @@ class TestOpt(unittest.TestCase):
         res2 = opt_cbf.optimize(us, driv, l_op)
         self.assertAlmostEqual(res1[1][0].z, res2[1][0].z)
         self.assertAlmostEqual(res1[1][1].z, res2[1][1].z)
+
+    def test_1skp_et_2_0(self):
+        hatom = l2.HAtom(1.0)
+        l_op = hatom.h_minus_ene_op(1, 0.5)
+        driv = hatom.length(1, 0, 1)
+        z0 = 0.956-0.0623j 
+        z1 = 0.615-1.052j
+        a0 = z0
+        b0 = z1/z0
+        res_et = opt_cbf.optimize_even_temp(l2.STO, 2, 2, a0, b0, [], driv, l_op)
+        us = [l2.STO(1.0, 2, z) for z in [z0, z1]]
+        res_ind= opt_cbf.optimize_simple(us, driv, l_op)
+        self.assertTrue(res_et[0])
+        for (u_et, u_ind) in zip(res_et[1], res_ind[1]):
+            self.assertAlmostEqual(u_et.z, u_ind.z)
+
+    def test_1skp_et_2_1(self):
+        hatom = l2.HAtom(1.0)
+        l_op = hatom.h_minus_ene_op(1, 0.1)
+        driv = hatom.length(1, 0, 1)
+        z0 = 0.957-0.0083j
+        z1 = 0.689-0.5476j
+        z2 = 0.168-0.644j
+        a0 = z0
+        b0 = z1/z0
+        res_et = opt_cbf.optimize_even_temp(l2.STO, 2, 2, a0, b0, [(2, z2)], driv, l_op)
+        us = [l2.STO(1.0, 2, z) for z in [z0, z1, z2]]
+        res_ind= opt_cbf.optimize_simple(us, driv, l_op)
+        self.assertTrue(res_et[0])
+        for (u_et, u_ind) in zip(res_et[1], res_ind[1]):
+            self.assertAlmostEqual(u_et.z, u_ind.z)
+
         
 if __name__ == '__main__':
     unittest.main()

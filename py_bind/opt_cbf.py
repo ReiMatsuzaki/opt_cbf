@@ -353,7 +353,7 @@ def optimize_hydrogen_pi(basis_set, channel, energy,
                     max_iter)
 
 
-def optimize_even_temp(bt, et_num, et_n, et_z0, et_r0, ns, z0s, driv, lop):
+def optimize_even_temp(bt, et_num, et_n, et_z0, et_r0, nz0_list, driv, lop, **keyargs):
     """
     Inputs
     ------
@@ -371,46 +371,28 @@ def optimize_even_temp(bt, et_num, et_n, et_z0, et_r0, ns, z0s, driv, lop):
 
     res_list = []
     def one(vars):
-        alpha = vars[0]
-        beta = vars[1]
-        zs = vars[2:]
-        et_us = [bt(1.0, et_n, alpha*beta**n) for n in range(et_num)]
-        ind_us = [bt(1.0, n, z) for (n, z) in zip(ns, zs)]
-        us = et_us + ind_us
-        (val, grad_full, hess_full, data) = val_grad_hess(us, driv, lop)
+        a = vars[0]
+        b = vars[1]
+        et_ns = range(et_num)
+        zs = [a*b**n for n in et_ns] + list(vars[2:])
+        ns = [et_n for n in et_ns] + [n for (n, z) in nz0_list]
+        us = [bt(1.0, n, z) for (n, z) in zip(ns, zs)]
+        (v0, g0, h0, data) = val_grad_hess(us, driv, lop)
+        grad = geometric_grad(g0, [a, b], et_num)
+        hess = geometric_hess(g0, h0, [a, b], et_num)
+        return (v0, grad, hess)
 
-        grad_et = grad_full[0:et_num]
+    guess = [et_z0, et_r0] + [z for (n, z) in nz0_list]
+    (convq, zs_o, val_o, grad_o) = newton(one, guess, **keyargs)
+    a_o = zs_o[0]
+    b_o = zs_o[1]
+    zs_o= zs_o[2:]
+    n_o = [n for (n, z) in nz0_list]
+    nz_o = [(et_n, a_o*b_o**k) for k in range(et_num)] +\
+           [(n, z) for (n, z) in zip(n_o, zs_o)]
+    basis_o = [l2.d0_basis(bt, n, z) for (n, z) in nz_o]
+    return (convq, basis_o, res_list)
 
-        dzi_da = np.array([beta**i for i in range(et_num)])
-        dzi_db = np.array([alpha*i*beta**(i-1) for i in range(et_num)])
-        
-        grad_a = np.dot(grad_et, dzi_da)
-        grad_b = np.dot()
-        
-        et_beta_m = [beta**m for m in range(et_num)]
-        grad_a = sum([g*beta**m
-                      for (g, m)
-                      in zip(grad_full[0:et_num], range(et_num))])
-        grad_b = sum([g*alpha*beta**(m-1)*m
-                      for (g, m)
-                      in zip(grad_full[0:et_num], range(et_num))])
-        hess_aa = 0
-        hess_ab_1 = sum([hess_full[i, j]*alpha*beta**(i+j-1)*j
-                         for (i, j)
-                         in zip(range(et_num), range(et_num))]) 
-        hess_ab_2 = sum(grad_full[i]*alpha*beta**(i-1) for i in range(et_num))
-        hess_ab = hess_ab_1 + hess_ab_2
-        hess_bb_1 = sum([hess_full[i, j]*alpha**2*beta**(i+j-2)*j*i
-                         for (i, j)
-                         in zip(range(et_num), range(et_num))])
-        hess_bb_2 = sum(grad_full[i]*alpha*i*(i-1)*beta**(i-2)
-                        for i in zip(range(et_num)))
-        hess_bb = hess_bb_1 + hess_bb_2
-        hess_ai = []
-        
-        grad = np.array([grad_a, grad_b] + list(grad_full[2:]))
-        hess = np.array([])
-        
 # ====== Optimize for energies ========
 def optimize_for_energies_2pks(basis_set0, energy_list,  **keyargs):
     b_type = type(basis_set0[0])
