@@ -1,5 +1,8 @@
 import numpy as np
 import scipy.linalg as la
+import sys
+sys.path.append("..")
+from utils import *
 
 
 # ==== Numerical partial derivative ====
@@ -59,8 +62,19 @@ def num_pd2(g, x, h, num, k1, k2, method=0):
     return num_pd(dg1, x, h, num, k2, method)
 
 
+# ==== Check function ====
+def is_reasonable_val_grad_hess(f, xs0, eps = 10.0**(+8.0), method="r1", h=0.001):
+    (val, grad, hess) = f(xs0)
+    num = len(xs0)
+    ngrad = np.array([num_pd(lambda xs: f(xs)[0], xs0, h, num, k, method=method)
+                      for k in range(num)])
+    nhess = np.array([[num_pd2(lambda xs: f(xs)[0], xs0, h, num, k1, k2, method=method)
+             for k1 in range(num)] for k2 in range(num)])
+    return (abs(grad-ngrad)/num < eps and abs(flatten((hess-nhess)))/(num*num) < eps)
+    
+
 # ==== Numerical Newton-Raphson ====
-def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0):
+def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0, func="v"):
     """Newton method with numerical derivative.
 
     Inputs
@@ -71,6 +85,7 @@ def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0):
     eps: real, convergence torrelance
     show_lvl: int, 0=>no print, 1=>print value, 2=>print grad, 3=>print hess
     method: int, 0=>first order complex, 1=>third order real
+    func: character: "v"=> f return value, "vfh" => f return (value, grad, hess)
 
     Outputs
     -------
@@ -89,10 +104,15 @@ def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0):
         xs = x0
 
     for i in range(iter_max):
-	valu = f(xs)
-	grad = np.array([num_pd(f, xs, h, num, n, method) for n in ns])
-	hess = np.array([[num_pd2(f, xs, h, num, n1, n2, method)
-			  for n1 in ns] for n2 in ns])
+        if(func == "vgh"):
+            (valu, grad, hess) = f(xs)
+        elif(func == "v"):
+	    valu = f(xs)
+	    grad = np.array([num_pd(f, xs, h, num, n, method) for n in ns])
+	    hess = np.array([[num_pd2(f, xs, h, num, n1, n2, method)
+			      for n1 in ns] for n2 in ns])
+        else:
+            raise Exception("func<-{vgh, v}")
 	dx = -la.solve(hess, grad)
 
 	# check convergence
@@ -108,7 +128,6 @@ def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0):
 	xs += dx
 
     return (False, xs, f(xs), grad)
-
 
 # ==== Numerical Newton-Raphson with variables ====
 def nnewton_params(param_vs_to_val, params, param0_guess0, **args):
@@ -126,35 +145,25 @@ def nnewton_params(param_vs_to_val, params, param0_guess0, **args):
     (param0, guess0) = param0_guess0
     params_down = sorted([p for p in params if p < param0], reverse=True)
     params_up   = sorted([p for p in params if p >= param0])
-    calc_res = [] 
+    
     if("show_lvl" in args):
         show_lvl = args["show_lvl"]
     else:
         show_lvl = 0
-    print "show_lvl:", show_lvl
-    guess = guess0
-    for p in params_down:
-        if(show_lvl > 0):
-            print "param: {0}".format(p)
-        target = lambda vs: param_vs_to_val(p, vs)
-        (convq, vs, val, grad) = nnewton(target, guess, **args)
-        if(not convq):
-            print "optimization failed. at k = {0}".format(k)
-            break
-        calc_res.append((p, vs, val))
-        guess = list(vs)		  
 
-    guess = guess0
-    for p in params_up:
-        if(show_lvl > 0):
-            print "param: {0}".format(p)
-        target = lambda vs: param_vs_to_val(p, vs)
-        (convq, vs, val, grad) = nnewton(target, guess, **args)
-        if(not convq):
-            print "optimization failed. at k = {0}".format(k)
-            break
-        calc_res.append((p, vs, val))
-        guess = list(vs)		  
+    calc_res = [] 
+    for params_part in [params_up, params_down]:
+        guess = guess0
+        for p in params_part:
+            if(show_lvl > 0):
+                print "param: {0}".format(p)
+            target = lambda vs: param_vs_to_val(p, vs)
+            (convq, vs, val, grad) = nnewton(target, guess, **args)
+            if(not convq):
+                print "optimization failed. at param = {0}".format(p)
+                break
+            calc_res.append((p, vs, val))
+            guess = list(vs)		  
 
     calc_res = sorted(calc_res, key=lambda x:x[0])
     return calc_res	
