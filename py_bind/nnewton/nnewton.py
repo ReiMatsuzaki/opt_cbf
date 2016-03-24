@@ -6,6 +6,7 @@ from utils import *
 
 
 # ==== Numerical partial derivative ====
+# ---- impl ----
 def hs_for_num_pd(h, num, k):
     """ compute finite difference vector.
     
@@ -27,50 +28,98 @@ def hs_for_num_pd(h, num, k):
     hs = np.array([ one(i)*h for i in range(num)])
     return hs
 
-def num_pd_r1(g, x, h, num, k):
+def num_pd_r1(g, x, h, k):
     """partial derivative with first order real"""
-    hs = hs_for_num_pd(h, num, k)
-    return (g(x+hs)-g(x-hs))/(2*h)
+    num = len(x)
+    hh = h(abs(x[k])) if callable(h) else h
+    hs = hs_for_num_pd(hh, num, k)
+    return (g(x+hs)-g(x-hs))/(2*hh)
     
-def num_pd_c1(g, x, h, num, k):
+def num_pd_c1(g, x, h, k):    
     """ partial derivative with one first order complex"""
-    hs = hs_for_num_pd(h, num, k)
+    num = len(x)
+    hh = h(abs(x[k])) if callable(h) else h
+    hs = hs_for_num_pd(hh, num, k)
     ig = lambda y: 1.0j * g(y)
     ih = 1.0j*hs
-    return (g(x+hs)-g(x-hs)-ig(x+ih)+ig(x-ih))/(4*h)
+    return (g(x+hs)-g(x-hs)-ig(x+ih)+ig(x-ih))/(4*hh)
 
-def num_pd_r3(g, x, h, num, k):
+def num_pd_r3(g, x, h, k):
     """ partial derivative with one third order real"""
-    hs = hs_for_num_pd(h, num, k)
-    m1 = (g(x+hs)   - g(x-hs)  )/(2*h)
-    m2 = (g(x+2*hs) - g(x-2*hs))/(4*h)
-    m3 = (g(x+3*hs) - g(x-3*hs))/(6*h)
+    num = len(x)
+    hh = h(abs(x[k])) if callable(h) else h
+    hs = hs_for_num_pd(hh, num, k)
+    m1 = (g(x+hs)   - g(x-hs)  )/(2*hh)
+    m2 = (g(x+2*hs) - g(x-2*hs))/(4*hh)
+    m3 = (g(x+3*hs) - g(x-3*hs))/(6*hh)
     return 3.0/2.0*m1-3.0/5.0*m2+1.0/10.0*m3
 
-def num_pd(g, x, h, num, k, method=0):
-    """numerical partial derivative"""
-    if(method == 0 or method == "r1"):
-        return num_pd_r1(g, x, h, num, k)
-    if(method == "c1"):
-	return num_pd_c1(g, x, h, num, k)
-    if(method == "r3"):
-	return num_pd_r3(g, x, h, num, k)
 
-def num_pd2(g, x, h, num, k1, k2, method=0):
-    """numerical second partial derivative"""
-    dg1 = lambda y: num_pd(g, y, h, num, k1, method)
-    return num_pd(dg1, x, h, num, k2, method)
+# ---- numerical partial derivative ----
+def num_pd(g, x, h, k, method=0):
+    """numerical partial derivative
+    
+    Inputs 
+    ------
+    g : [Scalar]->Scalar
+    x : [Scalar]
+    h : Real || Real->Real (compute finite difference from absolute value of x)
+    k : int 
+    method : "r1" || "c1" || "r3"
+
+    Outpus
+    ------
+    result : Scalar
+    """
+    if(method == 0 or method == "r1"):
+        return num_pd_r1(g, x, h, k)
+    if(method == "c1"):
+	return num_pd_c1(g, x, h, k)
+    if(method == "r3"):
+	return num_pd_r3(g, x, h, k)
+
+def num_pd2(g, x, h, k1, k2, method=0):
+    """numerical second partial derivative
+    
+    Inputs 
+    ------
+    g : [Scalar]->Scalar
+    x : [Scalar]
+    h : Real || Real->Real (compute finite difference from absolute value of x)
+    k1 : int 
+    k2 : int
+    method : "r1" || "c1" || "r3"
+
+    Outpus
+    ------
+    result : Scalar
+    """
+    dg1 = lambda y: num_pd(g, y, h, k1, method)
+    return num_pd(dg1, x, h, k2, method)
+
+
+# ---- grad/hess ----
+def ngrad(g, x, h, method=0):
+    return np.array([num_pd(g, x, h, k, method)
+                     for k in range(x)])
+
+def nhess(g, x, h, method=0):
+    return np.array([[num_pd2(g, x, h, k1, k2, method)
+                      for k1 in range(len(x))]
+                     for k2 in range(len(x))])
 
 
 # ==== Check function ====
 def is_reasonable_val_grad_hess(f, xs0, eps = 10.0**(+8.0), method="r1", h=0.001):
     (val, grad, hess) = f(xs0)
+    target = lambda xs: f(xs)[0]
     num = len(xs0)
-    ngrad = np.array([num_pd(lambda xs: f(xs)[0], xs0, h, num, k, method=method)
+    ngrad = np.array([num_pd(target, xs0, h, k, method=method)
                       for k in range(num)])
-    nhess = np.array([[num_pd2(lambda xs: f(xs)[0], xs0, h, num, k1, k2, method=method)
+    nhess = np.array([[num_pd2(target, xs0, h, k1, k2, method=method)
              for k1 in range(num)] for k2 in range(num)])
-    return (abs(grad-ngrad)/num < eps and abs(flatten((hess-nhess)))/(num*num) < eps)
+    return (abs(grad-ngrad)/num < eps and
+            abs(flatten((hess-nhess)))/(num*num) < eps)
     
 
 # ==== Numerical Newton-Raphson ====
@@ -108,8 +157,9 @@ def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0, f
             (valu, grad, hess) = f(xs)
         elif(func == "v"):
 	    valu = f(xs)
-	    grad = np.array([num_pd(f, xs, h, num, n, method) for n in ns])
-	    hess = np.array([[num_pd2(f, xs, h, num, n1, n2, method)
+	    grad = np.array([num_pd(f, xs, h, n, method)
+                             for n in ns])
+	    hess = np.array([[num_pd2(f, xs, h, n1, n2, method)
 			      for n1 in ns] for n2 in ns])
         else:
             raise Exception("func<-{vgh, v}")
