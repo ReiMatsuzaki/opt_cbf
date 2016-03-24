@@ -143,7 +143,8 @@ def nnewton_params(param_vs_to_val, params, param0_guess0, **args):
     **args: nnewton options
     """
     (param0, guess0) = param0_guess0
-    params_down = sorted([p for p in params if p < param0], reverse=True)
+    params_down = sorted([p for p in params if p < param0],
+                         reverse=True)
     params_up   = sorted([p for p in params if p >= param0])
     
     if("show_lvl" in args):
