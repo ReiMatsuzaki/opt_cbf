@@ -23,8 +23,8 @@ ${L2_DIR}/l2.a:
 utest: utest.o ${OPT_CBF_OBJS} ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o
 	${CXX} -o utest ${CXXFLAGS} utest.o ${OPT_CBF_OBJS} ${L2_DIR}/l2.a ${UTILS_DIR}/keys_values.o ${UTILS_DIR}/timer.o ${LIBGTEST}
 	./utest
-test: test.o l_algebra.o 
-	${CXX} -o test  test.o l_algebra.o ${L2_DIR}/l2.a ${CXXFLAGS} -lgtest
+test: test.o  opt.o restrict.o l_algebra.o
+	${CXX} -o test  test.o opt.o restrict.o l_algebra.o ${L2_DIR}/l2.a ${CXXFLAGS} -lgtest
 
 factory.o: factory.cpp factory.hpp
 	${CXX} -o $@ -c ${CXXFLAGS} factory.cpp
@@ -35,6 +35,19 @@ opt_cbf: ${RUN_OBJS}
 	${CXX} -o opt_cbf ${CXXFLAGS} ${RUN_OBJS}
 	./opt_cbf samples/2sto/sample.in samples/2sto/sample.out
 	cat samples/2sto/sample.out
+
+run_1skp_l_sto: run_1skp_l_sto.o opt.o restrict.o l_algebra.o
+	${CXX} -o $@ run_1skp_l_sto.o opt.o restrict.o l_algebra.o  ${L2_DIR}/l2.a ${CXXFLAGS} -lgtest
+run_1skp_l_sto_2basis: run_1skp_l_sto
+	./run_1skp_l_sto --w 1.1 --zs 0.8-0.1j,0.4-0.6j
+
+run_delta_1skpl_cutsto: run_delta_1skpl_cutsto.o opt.o restrict.o l_algebra.o
+	${CXX} -o $@ run_delta_1skpl_cutsto.o opt.o restrict.o l_algebra.o  ${L2_DIR}/l2.a ${CXXFLAGS} -lgtest
+run_delta_1skpl_cutsto_1basis: run_delta_1skpl_cutsto
+	./run_delta_1skpl_cutsto --w 1.1 --zs 0.3-1.1j --r0 10.0
+
+run_delta_1skpl_cutsto_2basis: run_delta_1skpl_cutsto
+	./run_delta_1skpl_cutsto --w 1.1 --zs 0.3-1.1j,0.4-0.7j --r0 10.0 --maxit 1000 --file_psi psi.dat
 
 .PHONY: check
 check: test

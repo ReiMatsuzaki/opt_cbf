@@ -5,8 +5,8 @@ import scipy
 import scipy.sparse
 import scipy.sparse.linalg
 
-sys.path.append("../../l2func/py_bind")
-from l2func import *
+#sys.path.append("../../l2func/py_bind")
+#from l2func import *
 
 # ==== utility ====
 def flatten(xss):
@@ -41,6 +41,14 @@ def solve_driv(v, ene, s, n, h):
       number of grid points
     h: real
       grid width
+
+    Return
+    xs: [double]
+    .   grid points
+    ys  [complex]
+    .   function values on grid points
+    -------
+    
     """
 
     xs = np.array([(k+1)*h for k in range(n)])
@@ -56,16 +64,28 @@ def solve_driv(v, ene, s, n, h):
     return (xs, ys)
 
 def solve_h_length(ene, channel, n, h):
+
+    raise(Exception("Not supported. Use solve_h instead"))
+
+    (n0, l0, l1) = channel
+    v = lambda x: -1.0/x + l1*(l1+1)*0.5/(x*x)
+    driv_term = HAtom(1.0).length(n0, l0, l1)
+    s = lambda x: driv_term.at(x)
+    return solve_driv(v, ene, s, n, h)
+
+def solve_h(ene, channel, dipole, n, h):
     """
     solve (H-E)f=s with outgoing boundary condition.
 
     Inputs
     ------
     ene : scalar
-       E in operator (H-E)
+    .   E in operator (H-E)
+    dipole : string
+    .   dipole type (length or velocity)
     channel : integer tuple 
-       (n0, l0, l1) where n0 is initial quantum number, l0 and l1 are 
-       initial and final angular quantum number 
+    .   (n0, l0, l1) where n0 is initial quantum number, l0 and l1 are 
+    .   initial and final angular quantum number 
     n : number of grids
     h : grid width
 
@@ -77,11 +97,13 @@ def solve_h_length(ene, channel, n, h):
 
     (n0, l0, l1) = channel
     v = lambda x: -1.0/x + l1*(l1+1)*0.5/(x*x)
-    driv_term = HAtom(1.0).length(n0, l0, l1)
-    print "driv_term>>>"
-    print driv_term
-    print "driv_term<<<"
+    
+    if(dipole == "length"):
+        driv_term = HAtom(1.0).length(n0, l0, l1)
+    elif(dipole == "velocity"):
+        driv_term = HAtom(1.0).velocity(n0, l0, l1)
+    else:
+        raise(Exception("dipole must be length or velocity"))
+    
     s = lambda x: driv_term.at(x)
     return solve_driv(v, ene, s, n, h)
-
-

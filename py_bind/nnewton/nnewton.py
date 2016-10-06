@@ -85,9 +85,10 @@ def num_pd2(g, x, h, k1, k2, method=0):
     ------
     g : [Scalar]->Scalar
     x : [Scalar]
-    h : Real || Real->Real (compute finite difference from absolute value of x)
-    k1 : int 
-    k2 : int
+    h: Real || 
+       Real->Real (compute finite difference from absolute value of x)
+    
+    k1,k2 : int 
     method : "r1" || "c1" || "r3"
 
     Outpus
@@ -99,18 +100,53 @@ def num_pd2(g, x, h, k1, k2, method=0):
 
 
 # ---- grad/hess ----
+def num_grad_hess_r1(g, xs, h):
+    num = len(xs)
+    if(num != 1):
+        raise Exception("len(xs) != 1 is not supported")
+    x = xs[0]
+    gp = g([x+h])
+    gm = g([x-h])
+    g0 = g([x])
+    grad = np.array([(gp-gm)/(2*h)])
+    hess = np.array([[(gp+gm-2*g0)/(h*h)]])
+    return (grad, hess)
+
+def num_grad_hess_c1(g, xs, h):
+    num = len(xs)
+    if(num != 1):
+        raise Exception("len(xs)!=1 is not supported")
+    x = xs[0]
+    ii = 1.0j
+    ih= ii*h
+    gp = g([x+h])
+    gm = g([x-h])
+    gip= g([x+ih])
+    gim= g([x-ih])
+    grad = (gp - gm - ii*gip + ii*gim) / (4.0*h)
+    hess = (gp + gm - gip - gim) / (2.0*h*h)
+    return (np.array([grad]), np.array([[hess]]))
+
+def num_grad_hess(g, x, h, method=0):
+    if(method == "r1" or method==0):
+        return num_grad_hess_r1(g, x, h)
+    if(method == "c1"):
+        return num_grad_hess_c1(g, x, h)
+    else:
+        raise Exception("mehtod without c1 and r1 is not implemented")
+
 def ngrad(g, x, h, method=0):
     return np.array([num_pd(g, x, h, k, method)
-                     for k in range(x)])
+                     for k in range(len(x))])
 
 def nhess(g, x, h, method=0):
     return np.array([[num_pd2(g, x, h, k1, k2, method)
                       for k1 in range(len(x))]
                      for k2 in range(len(x))])
 
-
 # ==== Check function ====
-def is_reasonable_val_grad_hess(f, xs0, eps = 10.0**(+8.0), method="r1", h=0.001):
+def is_reasonable_val_grad_hess(f, xs0, eps = 10.0**(+8.0),
+                                method="r1", h=0.001):
     (val, grad, hess) = f(xs0)
     target = lambda xs: f(xs)[0]
     num = len(xs0)
@@ -123,7 +159,8 @@ def is_reasonable_val_grad_hess(f, xs0, eps = 10.0**(+8.0), method="r1", h=0.001
     
 
 # ==== Numerical Newton-Raphson ====
-def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0, func="v"):
+def nnewton(f, x0, iter_max=100, eps=0.0000001,
+            h=0.001, show_lvl=0, method=0, func="v"):
     """Newton method with numerical derivative.
 
     Inputs
@@ -146,23 +183,32 @@ def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0, f
     num = len(x0)
     ns = range(num)
 
+    # gradient/Hessian calculation
+    if(func == "vgh"):
+        def gh(xs):
+            (val, grad, hess) = f(xs)
+            return (grad, hess)
+
+    elif(func == "v" and len(x0) == 1 and (method=="r1" or method=="c1")):
+        def gh(xs):
+            return num_grad_hess(f, xs, h, method)
+    elif(func == "v"):
+        def gh(xs):
+            grad = ngrad(f, xs, h, method)
+            hess = nhess(f, xs, h, method)
+            return (grad, hess)
+    else:
+        raise Exception("func<-{vgh, v}")
+
     # variable in loop
     if(isinstance(x0, list)):
         xs = np.array(x0)
     else:
         xs = x0
 
+    # optimization loop
     for i in range(iter_max):
-        if(func == "vgh"):
-            (valu, grad, hess) = f(xs)
-        elif(func == "v"):
-	    valu = f(xs)
-	    grad = np.array([num_pd(f, xs, h, n, method)
-                             for n in ns])
-	    hess = np.array([[num_pd2(f, xs, h, n1, n2, method)
-			      for n1 in ns] for n2 in ns])
-        else:
-            raise Exception("func<-{vgh, v}")
+        (grad, hess) = gh(xs)
 	dx = -la.solve(hess, grad)
 
 	# check convergence
@@ -174,6 +220,7 @@ def nnewton(f, x0, iter_max=100, eps=0.0000001, h=0.001, show_lvl=0, method=0, f
 	    print i, xs, grad, hess
 
 	if(max(abs(grad)) < eps):
+            print "OPT", xs, f(xs), grad
 	    return (True, xs, f(xs), grad)
 	xs += dx
 

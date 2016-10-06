@@ -66,7 +66,7 @@ namespace opt_cbf_h {
     // ---- Method ----
     virtual void Compute(cV& zs, CD* a, V* g, M* h);
     void Display();
-    void WritePsi(string,double,double);
+    void WritePsi(string fn, double r1, double h);
     V    GetCoefs() const;
   };
 

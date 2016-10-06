@@ -1,6 +1,7 @@
 #ifndef OPT_TARGET_IMPL_TEMPLATE_H
 #define OPT_TARGET_IMPL_TEMPLATE_H
 
+#include <fstream>
 #include <Eigen/LU>
 #include "opt_target.hpp"
 #include "l_algebra.hpp"
@@ -8,7 +9,7 @@
 namespace opt_cbf_h {
 
   void AlphaGrad(cV& d, cV& c,
-		 cM& D10,
+   		 cM& D10,
 		 cV& r1,
 		 cV& s0, cV& s1,
 		 CD *a, V *g) {
@@ -27,17 +28,12 @@ namespace opt_cbf_h {
     *g = g2 + g3 - g1;
   }
 
-  void AlphaGradHess(
+  void AlphaGradHess(cV& c, cV& d, cM& U,
 		     cM& D00, cM& D10,
 		     cM& D20, cM& D11,
 		     cV& r0,  cV& r1,  cV& r2,
 		     cV& s0,  cV& s1,  cV& s2,
 		     CD* a, V* g, M* h) {
-
-    // basic
-    M U = D00.inverse();
-    V c = U*s0;
-    V d = U*r0;
 
     // alpha
     *a = (d.array() * s0.array()).sum();
@@ -192,16 +188,43 @@ namespace opt_cbf_h {
       this->computeMatrix(&D00, &D10, &D20, &D11);
       this->computeVector(&r0, &r1, &r2, &s0, &s1, &s2);
 
+      // compute coefficient
+      M U = D00.inverse();
+      coef_ = U*s0;
+      coef_star_ = U*r0;
+
+      // compute grad, hess
       CD aa;
       V gg;
       M hh;
-      AlphaGradHess(
+      AlphaGradHess(coef_, coef_star_, U,
 		    D00, D10, D20, D11,
 		    r0, r1, r2, s0, s1, s2,
 		    &aa, &gg, &hh);
       *a = aa;
       *g = gg;
       *h = hh;
+
+      
+    }
+    void WritePsi(string fn, double r1, double h) {
+
+      std::ofstream os;
+      os.open(fn, std::ios::out);
+
+      std::vector<CD> cs(coef_.size());
+      Eigen::Map<VectorXcd>(&cs[0], coef_.size(), 1) = coef_;
+
+      for(double x = 0.0; x < r1; x += h) {
+	CD acc(0.0);
+	std::vector<CD>::const_iterator it_c = cs.begin();
+	typename FuncBs::const_iterator it_u = basis_set_.begin();
+	for(; it_c != cs.end(); ++it_c, ++it_u) {
+	  acc += *it_c * it_u->at(x);
+	}
+	os << x << " " << acc.real() << " " << acc.imag() << std::endl;
+      }
+
     }
   };
 
@@ -224,8 +247,8 @@ namespace opt_cbf_h {
     
   }
   template<class FuncR, class FuncB, class FuncS, class OpL> 
-  void OptTarget<FuncR, FuncB, FuncS, OpL>::WritePsi(string,double,double) {
-
+  void OptTarget<FuncR, FuncB, FuncS, OpL>::WritePsi(string fn, double r1, double h) {
+    impl_->WritePsi(fn, r1, h);
   }
   template<class FuncR, class FuncB, class FuncS, class OpL> 
   V OptTarget<FuncR, FuncB, FuncS, OpL>::GetCoefs() const {

@@ -8,7 +8,7 @@ sys.path.append('../../l2func/py_bind')
 import l2func as l2
 
 sys.path.append('nnewton')
-from nnewton import num_pd, num_pd2
+from nnewton import num_pd, num_pd2, nnewton
 
 import opt_cbf
 
@@ -196,15 +196,20 @@ class TestCalculations(unittest.TestCase):
                 self.assertAlmostEqual(ref, calc)
 
 class TestOpt(unittest.TestCase):
+
     def test_1basis_1skp(self):
         us = [ l2.STO(1.0, 2, 0.5-0.5j) ]
         h_atom = l2.HAtom(1.0)
         l_op = h_atom.h_minus_ene_op(1, 0.9)
         driv = h_atom.length(1, 0, 1)
+        target = opt_cbf.newton_target(us, driv, l_op)
+        res = nnewton(target, [0.5-0.5j], func="vgh")
+        """
         res = opt_cbf.optimize_simple(us, driv, l_op, eps=0.0000001, show_lvl=0)
         self.assertTrue(res[0])
-        zs = [ basis.z for basis in res[1]]
-        self.assertAlmostEqual(1.1117640506-0.3673558953j, zs[0])
+        """
+        self.assertTrue(res[0])
+        self.assertAlmostEqual(1.1117640506-0.3673558953j, res[1][0])       
         
     def test_3basis_1skp(self):
         us = [ l2.STO(1.0, 2, z) for z 

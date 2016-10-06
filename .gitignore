@@ -12,3 +12,5 @@ utils/build/
 *.dtps
 *.pyc
 *.eps
+*.png
+*.csv

@@ -4,6 +4,7 @@ import cmath
 import numpy as np
 from numpy import sqrt
 from scipy.special import gamma
+import nnewton 
 import scipy.linalg as la
 import l_algebra
 import l2func as l2
@@ -58,6 +59,9 @@ def get_with_default(dict_obj, key, default):
     else:
         return default
 
+def sigmoid(v, x):
+    return 1.0/(1.0 + np.exp(-v*x))
+    
 # ==== Newton Method ====
 def geometric_grad(grad, ab, num_et = None):
     if(num_et == None):
@@ -135,6 +139,7 @@ def geometric_hess_part(grad, hess, abxs, num_et):
     return np.r_[np.c_[et_hess,  ind_et],
                  np.c_[ind_et.T, ind_hess]]
 
+# -- to be removed
 def newton(f, z0s, iter_max = 30, eps = 0.0000001, show_lvl = 0):
     """ Newton method for multivariable real/complex function.
     
@@ -161,12 +166,17 @@ def newton(f, z0s, iter_max = 30, eps = 0.0000001, show_lvl = 0):
     """
 
     zs = z0s
+    if(show_lvl > 0):
+        print "iteration, value, max(grad), zs"
     for i in range(iter_max):
         (val, grad, hess)  = f(zs)
-        if(show_lvl == 1):
-            print i, val, max(abs(grad))
 
         dz = -la.solve(hess, grad)
+        if(show_lvl == 1):
+            print i, val, max(abs(grad))
+        if(show_lvl == 2):
+            print i, val, max(abs(grad)), max(abs(dz)), zs
+
         if(max(abs(grad)) < eps and max(abs(dz)) < eps):
             return (True, zs, val, grad)
         zs += dz
@@ -200,6 +210,28 @@ def solve(basis_set, driven_term = None, lop = None, channel = None, energy = No
     return (psi, coefs, alpha)
 
 # ====== Optimize =======
+def val_only(us, driv, l_op, opt_index=None):
+    def make_vec(flag_basis_set, ip):
+        return np.array([ip(u, driv) if f else 0
+                         for (f, u) in flag_basis_set])
+
+    def make_mat(flag_basis_set1, flag_basis_set2, ip):
+        return np.array([[ip(a, l_op, b) if fa and fb else 0
+                          for (fb, b) in flag_basis_set2]
+                         for (fa, a) in flag_basis_set1])
+
+    if opt_index == None:
+        opt_index = range(len(us))
+
+    bt = type(us[0])
+
+    us    = [(True, l2.d0_basis(bt, u.n, u.z)) 
+             for (u, i) in with_index(us)]    
+    a0 = make_vec(us, l2.cip)
+    A00 = make_mat(us, us, l2.cip)
+    val = np.dot(a0, la.solve(A00, a0))
+    return val
+ 
 def val_grad_hess(basis_set, driven_term, l_op, opt_index=None):
     """ compute (value,grad,hess) of aA^{-1}a"""
 
@@ -240,6 +272,64 @@ def val_grad_hess(basis_set, driven_term, l_op, opt_index=None):
     return (val, grad[opt_index], hess[opt_index].T[opt_index], datas)
 
 
+def newton_target(basis_set, driv, l_op, opt_index=None):
+
+    if(opt_index == None):
+        opt_index = range(len(basis_set))
+    
+    def __func__(vs):
+        zs = [u.z for u in basis_set]
+        for (i, v) in zip(opt_index, vs):
+            zs[i] = v
+        us = [l2.d0_basis(type(u), u.n, z) for (u, z) in zip(basis_set, zs)]
+        (val, grad, hess, dum) =  val_grad_hess(us, driv, l_op, opt_index)
+        return (val, grad, hess)
+    return __func__
+        
+
+def basis_shift(basis_set, shift_z, shift_index):
+    return [l2.d0_basis(type(u), u.n, u.z + cond(i in shift_index, shift_z, 0))
+            for (u, i)
+            in with_index(basis_set)]
+    
+def newton_target_shift(basis_set, driv, l_op, opt_index=None):
+
+    if(opt_index == None):
+        opt_idnex = range(len(basis_set))
+
+    def __func__(vs):
+        shift_z = vs[0]
+        us = basis_shift(basis_set, shift_z, opt_index)
+        (val, grad, hess, dum) = val_grad_hess(us, driv, l_op, opt_index)
+        g = sum(grad)
+        h = sum([h for hs in hess for h in hs])
+        return (val, np.array([g]), np.array([[h]]))
+    return __func__
+
+
+def basis_scale(basis_set, scale_z, scale_index):
+    return [l2.d0_basis(type(u), u.n, u.z * cond(i in shift_index, scale_z, 1))
+            for (u, i)
+            in with_index(basis_set)]
+    
+def newton_target_scale(basis_set, driv, l_op, opt_index=None):
+
+    zs = [u.z for (i, u) in with_index(basis_set) if i in opt_index]
+
+    if(opt_index == None):
+        opt_idnex = range(len(zs))
+
+    def __func__(vs):
+        scale_z = vs[0]
+        us = basis_scale(basis_set, scale_z, opt_index)
+        (val, grad, hess, dum) = val_grad_hess(us, driv, l_op, opt_index)
+        
+        g = np.dot(grad, zs)
+        h = np.dot(zs, np.dot(hess, zs))
+        return (val, np.array([g]), np.array([[h]]))
+    return __func__
+
+
 def optimize_simple(init_basis_set, driven_term, l_op, **keyargs):
 
     res_list = []
@@ -259,6 +349,7 @@ def optimize_simple(init_basis_set, driven_term, l_op, **keyargs):
 
 def optimize_partial(init_basis_set, driven_term, l_op, 
                      eps=0.00001, max_iter = 30, opt_index=None):
+
     if(opt_index == None):
         return optimize_partial(init_basis_set, driven_term, l_op, 
                                 eps=eps, max_iter = max_iter)
@@ -275,7 +366,7 @@ def optimize_partial(init_basis_set, driven_term, l_op,
         # update
         dz_list = la.solve(h, g)
         dz_list_full = list_indexed(zip(opt_index, dz_list), len(basis_set))
-        basis_set = [ type(basis_set[0])(1.0, basis.n, basis.z - dz)
+        basis_set = [ l2.d0_basis(type(basis_set[0]), basis.n, basis.z - dz)
                       for (basis, dz) in zip(basis_set, dz_list_full)]
         if conv_q(g, dz_list):
             return (True, basis_set, i+1, res_list)
@@ -283,6 +374,100 @@ def optimize_partial(init_basis_set, driven_term, l_op,
     return (False, basis_set, max_iter, max_iter, res_list)
 
 
+def optimize_shift(u0s, driv, l_op, shift_z0, opt_index=None,
+                   **keyargs):
+    ns = [u.n for u in u0s]
+    zs = [u.z for u in u0s]
+    bt = type(u0s[0])
+
+    if(opt_index == None):
+        opt_index = range(len(zs))
+
+    def basis(shift_z):
+        return [l2.d0_basis(bt, n, z + cond(i in opt_index, shift_z, 0))
+                for (n, z, i)
+                in zip(ns, zs, range(len(zs)))]
+    
+    # numerical derivative
+    if('h' in keyargs):
+        def one(vs):
+            shift_z = vs[0]
+            us = basis(shift_z)
+            return val_only(us, driv, l_op)
+        res = nnewton.nnewton(one, [shift_z0], func='v', **keyargs)
+        (res_conv, shift_z_opt, val_opt, grad_opt) = res
+
+    # analytic derivative
+    else:
+        def one(vs):
+            shift_z = vs[0]
+            us = basis(shift_z)
+            (val, grad, hess, data) = val_grad_hess(us, driv, l_op)
+            g_val = sum([grad[i] for i in opt_index])
+            h_val = sum([hess[i, j]
+                         for i in opt_index
+                         for j in opt_index])
+            g = np.array([g_val])
+            h = np.array([[h_val]])
+            return (val, g, h)
+        res = nnewton.nnewton(one, [shift_z0], func="vgh", **keyargs)
+        (res_conv, shift_z_opt, val_opt, grad_opt) = res
+        
+    basis_opt = basis(shift_z_opt[0])
+    return (res_conv, basis_opt, shift_z_opt[0], val_opt, grad_opt)
+
+
+def optimize_scale(init_basis_set, driven_term, l_op, scale_z0,
+                   opt_index=None, **keyargs):
+
+    
+    ns = [u.n for u in init_basis_set]
+    zs= np.array([u.z for u in init_basis_set])
+    bt = type(init_basis_set[0])
+    opt_index = cond(opt_index==None, range(len(zs)), opt_index)
+
+    def basis(scale_z):
+        return [l2.d0_basis(bt, n, z * cond(i in opt_index, scale_z, 1))
+                for (n, z, i) in zip(ns, zs, range(len(zs)))]
+    
+    def one(vs):
+        scale_z = vs[0]
+        us = basis(scale_z)
+        (val, grad, hess, data) = val_grad_hess(us, driven_term, l_op)
+        g = np.array([np.dot(zs, grad)])
+        h = np.array([[np.dot(zs, np.dot(hess, zs))]])
+        return (val, g, h)
+
+    (res_conv, scale_opt, val_opt, grad_opt) = newton(one, [scale_z0], **keyargs)
+    basis_opt = basis(scale_opt[0])
+    return (res_conv, basis_opt, scale_opt[0])
+
+def optimize_smooth_a(u0s, driv, l_op, a0, b, v, xth, **keyargs):
+    res_list = []
+    ns = [u.n for u in u0s]
+    xs = np.array([u.z for u in u0s]) 
+    bt = type(u0s[0])
+    
+    def basis(a):        
+        zs = [(a*xi+b)*sigmoid(v, -xi+xth) +
+              xi      *sigmoid(v, +xi-xth)
+              for xi in xs]
+        return [l2.d0_basis(bt, n, z) for (n, z) in zip(ns, zs)]
+    
+    def one(vs):
+        a = vs[0]
+        us = basis(a)
+        (val, grad, hess, data) = val_grad_hess(us, driv, l_op)
+        dzeta_da = np.array([xi*sigmoid(v, -xi+xth) for xi in xs])
+        g = np.array([  np.dot(dzeta_da, grad)  ])
+        h = np.array([[ np.dot(dzeta_da, hess, dzeta_da)]])
+
+    (res_conv, vs_opt, val_opt, grad_opt) = newton(one, [a0], **keyargs)
+    basis_opt = basis(vs_opt[0])
+    return (res_conv, basis_opt, vs_opt[0])
+    
+
+# // to be removed
 def optimize(init_basis_set, driven_term, l_op, 
              eps = 0.00001, 
              iter_callable = None,
@@ -342,6 +527,8 @@ def optimize(init_basis_set, driven_term, l_op,
 
     return (False, basis_set, res_list)
 
+
+# // to be removed
 def optimize_hydrogen_pi(basis_set, channel, energy, 
                          eps = 0.00001, 
                          iter_callable = None, 
@@ -353,6 +540,7 @@ def optimize_hydrogen_pi(basis_set, channel, energy,
                     max_iter)
 
 
+# // to be removed
 def optimize_even_temp(bt, et_num, et_n, et_z0, et_r0, nz0_list, driv, lop, **keyargs):
     """
     Inputs

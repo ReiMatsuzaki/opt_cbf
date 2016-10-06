@@ -14,6 +14,10 @@ def func_grad_hess(k, xs):
             np.array([-a*np.sin(a*(x-k))]),
             np.array([[-a*a*np.cos(a*(x-k))]]))
 
+def func_keyarg(**keyargs):
+    print keyargs
+    print 'h' in keyargs
+
 class TestNNewton(unittest.TestCase):
     def setUp(self):
         pass
@@ -25,6 +29,18 @@ class TestNNewton(unittest.TestCase):
         target = lambda xs:func(0.3, xs)
         self.assertAlmostEqual(grad[0], num_pd(target, x, h, 0, "c1"))
 
+    def test_pd12(self):
+        x = [1.1]
+        (val, grad0, hess0) = func_grad_hess(0.3, x)
+        h = 0.001
+        target = lambda xs:func(0.3, xs)
+        (grad1, hess1) = num_grad_hess(target, x, h, "r1")
+        self.assertAlmostEqual(grad0[0], grad1[0], places=5)
+        self.assertAlmostEqual(hess0[0,0], hess1[0,0], places=5)
+        (grad1, hess1) = num_grad_hess(target, x, h, "c1")
+        self.assertAlmostEqual(grad0[0],   grad1[0]  , places=10)
+        self.assertAlmostEqual(hess0[0,0], hess1[0,0], places=9)
+
     def test_pd_scale(self):
         x = [1.1]
         (val, grad, hess) = func_grad_hess(0.3, x)
@@ -32,15 +48,6 @@ class TestNNewton(unittest.TestCase):
         target = lambda xs:func(0.3, xs)
         calc = num_pd(target, x, lambda az:0.001*az, 0, "c1")
         self.assertAlmostEqual(grad[0], calc)
-
-    """
-    def test_pd_(self):
-        x = [1.1]
-        (val, grad, hess) = func_grad_hess(0.3, x)
-        h = 0.001
-        self.assertAlmostEqual(grad, num_pd(func(0.3), x, h, 1, 0, "r1"))
-        self.assertAlmostEqual(grad, num_pd(func, x, h, 1, 0, "c1"))        
-    """
 
     def test_nnewton(self):
         k0 = 0.2
@@ -75,6 +82,8 @@ class TestNNewton(unittest.TestCase):
         self.assertAlmostEqual(k, 0.1)
         self.assertAlmostEqual(k, xs_o[0])
 
+    def test_keyargs(self):
+        func_keyarg(h=1.0, x=1.1)
 
 if __name__ == '__main__':
     unittest.main()
